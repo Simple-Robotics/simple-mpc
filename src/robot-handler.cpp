@@ -1,6 +1,5 @@
 #include "simple-mpc/robot-handler.hpp"
 
-#include <iostream>
 #include <pinocchio/algorithm/centroidal.hpp>
 #include <pinocchio/algorithm/compute-all-terms.hpp>
 #include <pinocchio/algorithm/crba.hpp>
@@ -14,10 +13,6 @@ namespace simple_mpc
     const Model & model, const std::string & reference_configuration_name, const std::string & base_frame_name)
   : model_(model)
   {
-    // Controlled joints index
-    for (auto joint_name : model_.names)
-      controlled_joints_ids_.push_back(model.getJointId(joint_name));
-
     // Root frame id
     base_id_ = model_.getFrameId(base_frame_name);
 
@@ -63,16 +58,6 @@ namespace simple_mpc
     dx.tail(nv) = x2.tail(nv) - x1.tail(nv);
 
     return dx;
-  }
-
-  std::vector<std::string> RobotModelHandler::getControlledJointNames() const
-  {
-    std::vector<std::string> joint_names;
-    for (JointIndex id : controlled_joints_ids_)
-    {
-      joint_names.push_back(model_.names.at(id));
-    }
-    return joint_names;
   }
 
   RobotDataHandler::RobotDataHandler(const RobotModelHandler & model_handler)

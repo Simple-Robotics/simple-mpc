@@ -10,8 +10,13 @@ def loadTalos():
     robotComplete = example_robot_data.load("talos")
     qComplete = robotComplete.model.referenceConfigurations["half_sitting"]
 
-    locked_joints = [20,21,22,23,28,29,30,31]
-    locked_joints += [32, 33]
+    locked_joints_names = ["arm_left_5_joint", "arm_left_6_joint", "arm_left_7_joint",
+                          "gripper_left_joint",
+                          "arm_right_5_joint", "arm_right_6_joint", "arm_right_7_joint",
+                          "gripper_right_joint",
+                          "head_1_joint",
+                          "head_2_joint"]
+    locked_joints = [robotComplete.model.getJointId(el) for el in locked_joints_names]
     robot = robotComplete.buildReducedRobot(locked_joints, qComplete)
     rmodel: pin.Model = robot.model
     q0 = rmodel.referenceConfigurations["half_sitting"]

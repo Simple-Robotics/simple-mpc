@@ -39,11 +39,6 @@ namespace simple_mpc
     double mass_;
 
     /**
-     * @brief Joint id to be controlled in full model
-     */
-    std::vector<unsigned long> controlled_joints_ids_;
-
-    /**
      * @brief Reference configuration and velocity (most probably null velocity)
      * to use
      */
@@ -127,8 +122,6 @@ namespace simple_mpc
     {
       return feet_names_;
     }
-
-    std::vector<std::string> getControlledJointNames() const;
 
     FrameIndex getBaseFrameId() const
     {
