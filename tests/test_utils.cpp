@@ -4,6 +4,7 @@
 #include "simple-mpc/fulldynamics.hpp"
 #include "simple-mpc/kinodynamics.hpp"
 #include "simple-mpc/robot-handler.hpp"
+#include <pinocchio/algorithm/model.hpp>
 #include <pinocchio/fwd.hpp>
 #include <pinocchio/parsers/srdf.hpp>
 #include <pinocchio/parsers/urdf.hpp>
@@ -13,13 +14,13 @@ using namespace simple_mpc;
 RobotModelHandler getTalosModelHandler()
 {
   // Load pinocchio model from example robot data
-  Model model;
+  Model modelFull;
   std::string urdf_path = EXAMPLE_ROBOT_DATA_MODEL_DIR "/talos_data/robots/talos_reduced.urdf";
   std::string srdf_path = EXAMPLE_ROBOT_DATA_MODEL_DIR "/talos_data/srdf/talos.srdf";
 
-  pinocchio::urdf::buildModel(urdf_path, JointModelFreeFlyer(), model);
-  srdf::loadReferenceConfigurations(model, srdf_path, false);
-  srdf::loadRotorParameters(model, srdf_path, false);
+  pinocchio::urdf::buildModel(urdf_path, JointModelFreeFlyer(), modelFull);
+  srdf::loadReferenceConfigurations(modelFull, srdf_path, false);
+  srdf::loadRotorParameters(modelFull, srdf_path, false);
 
   // Lock joint list
   const std::vector<std::string> controlled_joints_names{
@@ -30,7 +31,7 @@ RobotModelHandler getTalosModelHandler()
     "arm_right_1_joint", "arm_right_2_joint", "arm_right_3_joint", "arm_right_4_joint",
   };
 
-  std::vector<std::string> locked_joints_names{model.names};
+  std::vector<std::string> locked_joints_names{modelFull.names};
   locked_joints_names.erase(
     std::remove_if(
       locked_joints_names.begin(), locked_joints_names.end(),
@@ -40,9 +41,29 @@ RobotModelHandler getTalosModelHandler()
       }),
     locked_joints_names.end());
 
+  // Construct controlled and locked joints ids list
+  pinocchio::Model model;
+  std::vector<unsigned long> locked_joint_ids;
+  std::vector<pinocchio::JointIndex> controlled_joints_ids;
+  for (size_t i = 1; i < modelFull.names.size(); i++)
+  {
+    const std::string joint_name = modelFull.names.at(i);
+    if (count(locked_joints_names.begin(), locked_joints_names.end(), joint_name) == 0)
+    {
+      controlled_joints_ids.push_back(modelFull.getJointId(joint_name));
+    }
+    else
+    {
+      locked_joint_ids.push_back(modelFull.getJointId(joint_name));
+    }
+  }
+
+  // Build reduced model with locked joints
+  pinocchio::buildReducedModel(modelFull, locked_joint_ids, modelFull.referenceConfigurations["half_sitting"], model);
+
   // Actually create handler
   std::string base_joint = "root_joint";
-  RobotModelHandler model_handler(model, "half_sitting", base_joint, locked_joints_names);
+  RobotModelHandler model_handler(model, "half_sitting", base_joint);
 
   // Add feet
   model_handler.addFoot(

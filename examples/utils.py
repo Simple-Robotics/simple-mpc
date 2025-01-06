@@ -1,9 +1,27 @@
 import numpy as np
+import pinocchio as pin
+import example_robot_data
 import os
 
 CURRENT_DIRECTORY = os.getcwd()
 DEFAULT_SAVE_DIR = CURRENT_DIRECTORY + '/tmp'
 
+def loadTalos():
+    robotComplete = example_robot_data.load("talos")
+    qComplete = robotComplete.model.referenceConfigurations["half_sitting"]
+
+    locked_joints_names = ["arm_left_5_joint", "arm_left_6_joint", "arm_left_7_joint",
+                          "gripper_left_joint",
+                          "arm_right_5_joint", "arm_right_6_joint", "arm_right_7_joint",
+                          "gripper_right_joint",
+                          "head_1_joint",
+                          "head_2_joint"]
+    locked_joints = [robotComplete.model.getJointId(el) for el in locked_joints_names]
+    robot = robotComplete.buildReducedRobot(locked_joints, qComplete)
+    rmodel: pin.Model = robot.model
+    q0 = rmodel.referenceConfigurations["half_sitting"]
+
+    return robotComplete.model, rmodel, qComplete, q0
 
 def save_trajectory(
     xs,

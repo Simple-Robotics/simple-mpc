@@ -7,35 +7,27 @@ The contacts forces are modeled as 6D wrenches.
 import numpy as np
 import time
 from bullet_robot import BulletRobot
-import example_robot_data as erd
 import pinocchio as pin
 from simple_mpc import MPC, FullDynamicsOCP, RobotModelHandler, RobotDataHandler
+from utils import loadTalos
+import example_robot_data as erd
 
 # ####### CONFIGURATION  ############
 # RobotWrapper
 URDF_SUBPATH = "/talos_data/robots/talos_reduced.urdf"
 base_joint_name ="root_joint"
-robot_wrapper = erd.load('talos')
-
 reference_configuration_name = "half_sitting"
-locked_joints = [
-    'arm_left_5_joint',
-    'arm_left_6_joint',
-    'arm_left_7_joint',
-    'gripper_left_joint',
-    'arm_right_5_joint',
-    'arm_right_6_joint',
-    'arm_right_7_joint',
-    'gripper_right_joint',
-    'head_1_joint',
-    'head_2_joint'
-]
+
+rmodelComplete, rmodel, qComplete, q0 = loadTalos()
 
 # Create Model and Data handler
-model_handler = RobotModelHandler(robot_wrapper.model, reference_configuration_name, base_joint_name, locked_joints)
+model_handler = RobotModelHandler(rmodel, reference_configuration_name, base_joint_name)
 model_handler.addFoot("left_sole_link",  base_joint_name, pin.XYZQUATToSE3(np.array([ 0.0, 0.1, 0.0, 0,0,0,1])))
 model_handler.addFoot("right_sole_link", base_joint_name, pin.XYZQUATToSE3(np.array([ 0.0,-0.1, 0.0, 0,0,0,1])))
 data_handler = RobotDataHandler(model_handler)
+
+controlled_joints = rmodel.names[1:].tolist()
+controlled_ids = [rmodelComplete.getJointId(name_joint) for name_joint in controlled_joints[1:]]
 
 nq = model_handler.getModel().nq
 nv = model_handler.getModel().nv
@@ -150,7 +142,7 @@ device.initializeJoints(model_handler.getModel().referenceConfigurations[referen
 device.changeCamera(1.0, 90, -5, [1.5, 0, 1])
 
 q_meas, v_meas = device.measureState()
-x_measured  = np.concatenate([q_meas, v_meas])
+x_measured = np.concatenate((q_meas, v_meas))
 
 land_LF = -1
 land_RF = -1
@@ -181,6 +173,7 @@ for t in range(Tmpc + 800):
         str(land_LF),
     )
     start = time.time()
+
     mpc.iterate(x_measured)
     end = time.time()
     print("MPC iterate = " + str(end - start))
@@ -191,7 +184,7 @@ for t in range(Tmpc + 800):
 
     for j in range(10):
         q_meas, v_meas = device.measureState()
-        x_measured  = np.concatenate([q_meas, v_meas])
+        x_measured = np.concatenate((q_meas, v_meas))
 
         current_torque = mpc.us[0] - mpc.Ks[0] @ model_handler.difference(x_measured, mpc.xs[0])
         device.execute(current_torque)

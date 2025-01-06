@@ -21,24 +21,20 @@ namespace simple_mpc
     void exposeHandler()
     {
       bp::class_<RobotModelHandler>(
-        "RobotModelHandler",
-        bp::init<const pinocchio::Model &, const std::string &, const std::string &, const std::vector<std::string> &>(
-          bp::args("self", "model", "reference_configuration_name", "base_frame_name", "locked_joint_names")))
+        "RobotModelHandler", bp::init<const pinocchio::Model &, const std::string &, const std::string &>(
+                               bp::args("self", "model", "reference_configuration_name", "base_frame_name")))
         .def("addFoot", &RobotModelHandler::addFoot)
         .def("difference", &RobotModelHandler::difference)
-        .def("shapeState", &RobotModelHandler::shapeState)
         .def("getBaseFrameId", &RobotModelHandler::getBaseFrameId)
         .def("getReferenceState", &RobotModelHandler::getReferenceState)
         .def("getFootNb", &RobotModelHandler::getFootNb)
         .def("getFeetIds", &RobotModelHandler::getFeetIds, bp::return_internal_reference<>())
         .def("getFootName", &RobotModelHandler::getFootName, bp::return_internal_reference<>())
         .def("getFeetNames", &RobotModelHandler::getFeetNames, bp::return_internal_reference<>())
-        .def("getControlledJointNames", &RobotModelHandler::getControlledJointNames)
         .def("getFootId", &RobotModelHandler::getFootId)
         .def("getRefFootId", &RobotModelHandler::getRefFootId)
         .def("getMass", &RobotModelHandler::getMass)
-        .def("getModel", &RobotModelHandler::getModel, bp::return_internal_reference<>())
-        .def("getCompleteModel", &RobotModelHandler::getCompleteModel, bp::return_internal_reference<>());
+        .def("getModel", &RobotModelHandler::getModel, bp::return_internal_reference<>());
 
       ENABLE_SPECIFIC_MATRIX_TYPE(RobotDataHandler::CentroidalStateVector);
 

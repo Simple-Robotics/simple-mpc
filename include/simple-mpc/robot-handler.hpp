@@ -29,12 +29,7 @@ namespace simple_mpc
   {
   private:
     /**
-     * @brief Robot model with all joints unlocked
-     */
-    Model model_full_;
-
-    /**
-     * @brief Reduced model to be used by ocp
+     * @brief Model to be used by ocp
      */
     Model model_;
 
@@ -42,11 +37,6 @@ namespace simple_mpc
      * @brief Robot total mass
      */
     double mass_;
-
-    /**
-     * @brief Joint id to be controlled in full model
-     */
-    std::vector<unsigned long> controlled_joints_ids_;
 
     /**
      * @brief Reference configuration and velocity (most probably null velocity)
@@ -82,14 +72,9 @@ namespace simple_mpc
      * @param feet_names Name of the frames corresponding to the feet (e.g. can be
      * used for contact with the ground)
      * @param reference_configuration_name Reference configuration to use
-     * @param locked_joint_names List of joints to lock (values will be fixed at
-     * the reference configuration)
      */
     RobotModelHandler(
-      const Model & model,
-      const std::string & reference_configuration_name,
-      const std::string & base_frame_name,
-      const std::vector<std::string> & locked_joint_names = {});
+      const Model & model, const std::string & reference_configuration_name, const std::string & base_frame_name);
 
     /**
      * @brief
@@ -112,16 +97,6 @@ namespace simple_mpc
      * time to go from x1 to x2.
      */
     Eigen::VectorXd difference(const ConstVectorRef & x1, const ConstVectorRef & x2) const;
-
-    /**
-     * @brief Compute reduced state from measures by concatenating q,v of the
-     * reduced model.
-     *
-     * @param q Configuration vector of the full model
-     * @param v Velocity vector of the full model
-     * @return const Eigen::VectorXd State vector of the reduced model.
-     */
-    Eigen::VectorXd shapeState(const ConstVectorRef & q, const ConstVectorRef & v) const;
 
     // Const getters
     ConstVectorRef getReferenceState() const
@@ -148,8 +123,6 @@ namespace simple_mpc
       return feet_names_;
     }
 
-    std::vector<std::string> getControlledJointNames() const;
-
     FrameIndex getBaseFrameId() const
     {
       return base_id_;
@@ -173,11 +146,6 @@ namespace simple_mpc
     const Model & getModel() const
     {
       return model_;
-    }
-
-    const Model & getCompleteModel() const
-    {
-      return model_full_;
     }
   };
 

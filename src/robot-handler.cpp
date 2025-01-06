@@ -1,6 +1,5 @@
 #include "simple-mpc/robot-handler.hpp"
 
-#include <iostream>
 #include <pinocchio/algorithm/centroidal.hpp>
 #include <pinocchio/algorithm/compute-all-terms.hpp>
 #include <pinocchio/algorithm/crba.hpp>
@@ -11,37 +10,15 @@ namespace simple_mpc
 {
 
   RobotModelHandler::RobotModelHandler(
-    const Model & model,
-    const std::string & reference_configuration_name,
-    const std::string & base_frame_name,
-    const std::vector<std::string> & locked_joint_names)
-  : model_full_(model)
+    const Model & model, const std::string & reference_configuration_name, const std::string & base_frame_name)
+  : model_(model)
   {
-    // Construct controlled and locked joints ids list
-    std::vector<unsigned long> locked_joint_ids;
-    for (size_t i = 1; i < model_full_.names.size(); i++)
-    {
-      const std::string joint_name = model_full_.names.at(i);
-      if (count(locked_joint_names.begin(), locked_joint_names.end(), joint_name) == 0)
-      {
-        controlled_joints_ids_.push_back(model_full_.getJointId(joint_name));
-      }
-      else
-      {
-        locked_joint_ids.push_back(model_full_.getJointId(joint_name));
-      }
-    }
-
-    // Build reduced model with locked joints
-    buildReducedModel(
-      model_full_, locked_joint_ids, model_full_.referenceConfigurations[reference_configuration_name], model_);
-
     // Root frame id
     base_id_ = model_.getFrameId(base_frame_name);
 
     // Set reference state
-    reference_state_ = shapeState(
-      model_full_.referenceConfigurations[reference_configuration_name], Eigen::VectorXd::Zero(model_full_.nv));
+    reference_state_.resize(model_.nq + model_.nv);
+    reference_state_ << model_.referenceConfigurations[reference_configuration_name], Eigen::VectorXd::Zero(model_.nv);
 
     // Mass
     mass_ = pinocchio::computeTotalMass(model_);
@@ -66,37 +43,6 @@ namespace simple_mpc
     return frame_id;
   }
 
-  Eigen::VectorXd RobotModelHandler::shapeState(const ConstVectorRef & q, const ConstVectorRef & v) const
-  {
-    const long nq_full = model_full_.nq;
-    const long nv_full = model_full_.nv;
-    const long nq = model_.nq;
-    const long nv = model_.nv;
-    const long nx = nq + nv;
-    Eigen::VectorXd x(nx);
-
-    assert(nq_full == q.size() && "Configuration vector has wrong size.");
-    assert(nv_full == v.size() && "Velocity vector has wrong size.");
-
-    // Copy each controlled joint to state vector
-    int iq = 0;
-    int iv = (int)nq;
-    for (unsigned long jointId : controlled_joints_ids_)
-    {
-      const long j_idx_q = model_full_.idx_qs[jointId];
-      const long j_idx_v = model_full_.idx_vs[jointId];
-      const long j_nq = model_full_.nqs[jointId];
-      const long j_nv = model_full_.nvs[jointId];
-
-      x.segment(iq, j_nq) = q.segment(j_idx_q, j_nq);
-      x.segment(iv, j_nv) = v.segment(j_idx_v, j_nv);
-
-      iq += j_nq;
-      iv += j_nv;
-    }
-    return x;
-  }
-
   Eigen::VectorXd RobotModelHandler::difference(const ConstVectorRef & x1, const ConstVectorRef & x2) const
   {
     const size_t nq = (size_t)model_.nq;
@@ -112,16 +58,6 @@ namespace simple_mpc
     dx.tail(nv) = x2.tail(nv) - x1.tail(nv);
 
     return dx;
-  }
-
-  std::vector<std::string> RobotModelHandler::getControlledJointNames() const
-  {
-    std::vector<std::string> joint_names;
-    for (JointIndex id : controlled_joints_ids_)
-    {
-      joint_names.push_back(model_full_.names.at(id));
-    }
-    return joint_names;
   }
 
   RobotDataHandler::RobotDataHandler(const RobotModelHandler & model_handler)

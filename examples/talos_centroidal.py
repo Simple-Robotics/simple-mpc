@@ -3,29 +3,18 @@ import pinocchio as pin
 import example_robot_data as erd
 from bullet_robot import BulletRobot
 from simple_mpc import RobotModelHandler, RobotDataHandler, CentroidalOCP, MPC, IKIDSolver
+from utils import loadTalos
 import time
 
 # RobotWrapper
 URDF_SUBPATH = "/talos_data/robots/talos_reduced.urdf"
 base_joint_name ="root_joint"
-robot_wrapper = erd.load('talos')
-
 reference_configuration_name = "half_sitting"
-locked_joints = [
-    'arm_left_5_joint',
-    'arm_left_6_joint',
-    'arm_left_7_joint',
-    'gripper_left_joint',
-    'arm_right_5_joint',
-    'arm_right_6_joint',
-    'arm_right_7_joint',
-    'gripper_right_joint',
-    'head_1_joint',
-    'head_2_joint'
-]
+
+rmodelComplete, rmodel, qComplete, q0 = loadTalos()
 
 # Create Model and Data handler
-model_handler = RobotModelHandler(robot_wrapper.model, reference_configuration_name, base_joint_name, locked_joints)
+model_handler = RobotModelHandler(rmodel, reference_configuration_name, base_joint_name)
 model_handler.addFoot("left_sole_link",  base_joint_name, pin.XYZQUATToSE3(np.array([ 0.0, 0.1, 0.0, 0,0,0,1])))
 model_handler.addFoot("right_sole_link", base_joint_name, pin.XYZQUATToSE3(np.array([ 0.0,-0.1, 0.0, 0,0,0,1])))
 data_handler = RobotDataHandler(model_handler)

@@ -14,7 +14,7 @@ base_joint_name ="root_joint"
 robot_wrapper = erd.load('go2')
 
 # Create Model and Data handler
-model_handler = RobotModelHandler(robot_wrapper.model, "standing", base_joint_name, [])
+model_handler = RobotModelHandler(robot_wrapper.model, "standing", base_joint_name)
 model_handler.addFoot("FL_foot", base_joint_name, pin.XYZQUATToSE3(np.array([ 0.17, 0.15, 0.0, 0,0,0,1])))
 model_handler.addFoot("FR_foot", base_joint_name, pin.XYZQUATToSE3(np.array([ 0.17,-0.15, 0.0, 0,0,0,1])))
 model_handler.addFoot("RL_foot", base_joint_name, pin.XYZQUATToSE3(np.array([-0.24, 0.15, 0.0, 0,0,0,1])))
@@ -225,8 +225,8 @@ for t in range(300):
     com_measured.append(mpc.getDataHandler().getData().com[0].copy())
     L_measured.append(mpc.getDataHandler().getData().hg.angular.copy())
 
-    a0 = mpc.getStateDerivative(0)[nv:]
-    a1 = mpc.getStateDerivative(1)[nv:]
+    a0 = mpc.getStateDerivative(0)[nv:].copy()
+    a1 = mpc.getStateDerivative(1)[nv:].copy()
 
     a0[6:] = mpc.us[0][nk * force_size :]
     a1[6:] = mpc.us[1][nk * force_size :]

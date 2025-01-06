@@ -14,7 +14,7 @@ base_joint_name ="root_joint"
 robot_wrapper = erd.load('go2')
 
 # Create Model and Data handler
-model_handler = RobotModelHandler(robot_wrapper.model, "standing", base_joint_name, [])
+model_handler = RobotModelHandler(robot_wrapper.model, "standing", base_joint_name)
 model_handler.addFoot("FL_foot", base_joint_name, pin.XYZQUATToSE3(np.array([ 0.17, 0.15, 0.0, 0,0,0,1])))
 model_handler.addFoot("FR_foot", base_joint_name, pin.XYZQUATToSE3(np.array([ 0.17,-0.15, 0.0, 0,0,0,1])))
 model_handler.addFoot("RL_foot", base_joint_name, pin.XYZQUATToSE3(np.array([-0.24, 0.15, 0.0, 0,0,0,1])))
