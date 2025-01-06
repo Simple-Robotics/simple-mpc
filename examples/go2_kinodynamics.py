@@ -146,7 +146,7 @@ qp = IDSolver(id_conf, model_handler.getModel())
 
 """ Initialize simulation"""
 device = BulletRobot(
-    model_handler.getControlledJointNames(),
+    model_handler.getModel().names,
     erd.getModelPath(URDF_SUBPATH),
     URDF_SUBPATH,
     1e-3,
