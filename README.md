@@ -38,6 +38,7 @@ vcs import --recursive < simple-mpc/devel-git-deps.yaml
 ```
 
 4. Build all dependencies of simple-mpc:
+(Due to a renaming issue, you may need to rename hpp-fcl into coal in the package.xml file of the Pinocchio library)
 ```bash
 export MAKEFLAGS="-j4" # It is recommended to reduce the number of jobs as you ram might get full easily with the default number.
 cd ..
@@ -56,8 +57,14 @@ colcon build --event-handlers console_direct+ --packages-ignore simple-mpc --cma
 -DCOAL_BACKWARD_COMPATIBILITY_WITH_HPP_FCL=ON
 ```
 
-5. Source the environment
-(This step need to be repeated every time a new shell is opened. It can be put in your ~/.bashrc)
+5. Source the environment and install simple-mpc:
+```bash
+source install/setup.bash
+colcon build --packages-select simple-mpc
+```
+
+6. Source the environment one more time
+(This step needs to be repeated every time a new shell is opened. It can be put in your ~/.bashrc)
 ```bash
 mamba activate simple-mpc-devel # If not already done
 source install/setup.bash
