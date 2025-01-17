@@ -20,7 +20,7 @@ The **Simple-mpc** library provides:
 ```bash
 mkdir -p simple-mpc_ws/src
 cd simple-mpc_ws/src
-git clone git@github.com:edantec/simple-mpc.git --recursive
+git clone git@github.com:Simple-Robotics/simple-mpc.git --recursive
 ```
 
 2. Create conda environment.
@@ -37,11 +37,11 @@ mamba activate simple-mpc-devel
 vcs import --recursive < simple-mpc/devel-git-deps.yaml
 ```
 
-4. Build all packages
+4. Build all dependencies of simple-mpc:
 ```bash
 export MAKEFLAGS="-j4" # It is recommended to reduce the number of jobs as you ram might get full easily with the default number.
 cd ..
-colcon build --event-handlers console_direct+ --cmake-args \
+colcon build --event-handlers console_direct+ --packages-ignore simple-mpc --cmake-args \
 -DCMAKE_BUILD_TYPE=Release             \
 -DCMAKE_PREFIX_PATH=$CONDA_PREFIX      \
 -DPYTHON_EXECUTABLE=$(which python)    \
@@ -52,7 +52,8 @@ colcon build --event-handlers console_direct+ --cmake-args \
 -DBUILD_BENCHMARK=OFF                  \
 -DBUILD_BENCHMARKS=OFF                 \
 -DBUILD_WITH_COLLISION_SUPPORT=ON      \
--DGENERATE_PYTHON_STUBS=OFF
+-DGENERATE_PYTHON_STUBS=OFF            \
+-DCOAL_BACKWARD_COMPATIBILITY_WITH_HPP_FCL=ON
 ```
 
 5. Source the environment
