@@ -21,8 +21,8 @@ repositories:
     version: master
   pinocchio:
     type: git
-    url: git@gitlab.inria.fr:jucarpen/pinocchio.git
-    version: topic/simulation
+    url: git@github.com:stack-of-tasks/pinocchio.git
+    version: devel
   proxsuite-nlp:
     type: git
     url: git@github.com:simple-robotics/proxsuite-nlp.git
