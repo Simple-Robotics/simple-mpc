@@ -15,7 +15,7 @@ set(
   expose-kinodynamics.cpp
 )
 
-python3_add_library(${PY_NAME}_pywrap MODULE WITH_SOABI ${${PY_NAME}_SOURCES})
+Python3_add_library(${PY_NAME}_pywrap MODULE WITH_SOABI ${${PY_NAME}_SOURCES})
 target_link_libraries(${PY_NAME}_pywrap PUBLIC ${PROJECT_NAME} eigenpy::eigenpy)
 set_target_properties(
   ${PY_NAME}_pywrap
