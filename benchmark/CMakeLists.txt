@@ -16,3 +16,4 @@ function(create_bench exfile)
 endfunction()
 
 create_bench("talos.cpp")
+create_bench("go2.cpp")

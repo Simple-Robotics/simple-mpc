@@ -79,6 +79,7 @@ int main()
 
   RobotDataHandler data_handler(model_handler);
 
+  // Define settings for OCP
   size_t T = 100;
 
   FullDynamicsSettings problem_settings;
@@ -125,10 +126,14 @@ int main()
   problem_settings.mu = 0.8;
   problem_settings.Lfoot = 0.1;
   problem_settings.Wfoot = 0.075;
+  problem_settings.torque_limits = false;
+  problem_settings.kinematics_limits = false;
+  problem_settings.force_cone = false;
 
-  std::shared_ptr<OCPHandler> ocpPtr = std::make_shared<FullDynamicsOCP>(problem_settings, model_handler, data_handler);
+  std::shared_ptr<OCPHandler> ocpPtr = std::make_shared<FullDynamicsOCP>(problem_settings, model_handler);
   ocpPtr->createProblem(model_handler.getReferenceState(), T, 6, problem_settings.gravity[2], true);
 
+  // Define settings for MPC
   MPCSettings mpc_settings;
   mpc_settings.support_force = -problem_settings.gravity[2] * model_handler.getMass();
   mpc_settings.TOL = 1e-4;
@@ -138,6 +143,7 @@ int main()
 
   MPC mpc{mpc_settings, ocpPtr};
 
+  // Define the walking gait
   std::vector<std::map<std::string, bool>> contact_states;
   // std::vector<std::vector<bool>> contact_states;
   for (std::size_t i = 0; i < 10; i++)
