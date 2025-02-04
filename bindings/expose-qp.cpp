@@ -10,7 +10,7 @@
 #include <eigenpy/deprecation-policy.hpp>
 #include <eigenpy/std-vector.hpp>
 
-#include "simple-mpc/lowlevel-control.hpp"
+#include "simple-mpc/qp-solvers.hpp"
 #include <proxsuite/proxqp/dense/dense.hpp>
 #include <proxsuite/proxqp/dense/wrapper.hpp>
 

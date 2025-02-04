@@ -5,7 +5,7 @@
 // Copyright note valid unless otherwise stated in individual files.
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
-#include "simple-mpc/lowlevel-control.hpp"
+#include "simple-mpc/qp-solvers.hpp"
 #include <pinocchio/algorithm/frames.hpp>
 #include <pinocchio/algorithm/joint-configuration.hpp>
 #include <proxsuite/proxqp/settings.hpp>
@@ -75,7 +75,7 @@ namespace simple_mpc
     }
 
     // Set the block matrix for torque limits
-    C_.bottomRightCorner(model_.nv - 6, model_.nv - 6).diagonal() = Eigen::VectorXd::Ones(model_.nv - 6);
+    // C_.bottomRightCorner(model_.nv - 6, model_.nv - 6).diagonal() = Eigen::VectorXd::Ones(model_.nv - 6);
 
     // Set size of solutions
     solved_forces_.resize(force_dim_);

@@ -195,7 +195,7 @@ namespace simple_mpc
             space.ndx(), nu_, model_handler_.getModel(), Motion::Zero(), model_handler_.getFootId(name),
             pinocchio::LOCAL_WORLD_ALIGNED);
           FunctionSliceXpr vel_slice = FunctionSliceXpr(velocity_residual, vel_id);
-          stm.addConstraint(vel_slice, EqualityConstraint());
+          // stm.addConstraint(vel_slice, EqualityConstraint());
 
           std::vector<int> frame_id = {2};
 
@@ -205,7 +205,7 @@ namespace simple_mpc
 
           FunctionSliceXpr frame_slice = FunctionSliceXpr(frame_residual, frame_id);
 
-          stm.addConstraint(frame_slice, EqualityConstraint());
+          // stm.addConstraint(frame_slice, EqualityConstraint());
         }
       }
     }
