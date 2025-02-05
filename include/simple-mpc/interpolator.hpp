@@ -29,11 +29,20 @@ namespace simple_mpc
       std::vector<Eigen::VectorXd> ddqs,
       std::vector<Eigen::VectorXd> forces);
 
+    // Interpolated trajectories
     Eigen::VectorXd x_interpolated_;
     Eigen::VectorXd u_interpolated_;
     Eigen::VectorXd a_interpolated_;
     Eigen::VectorXd forces_interpolated_;
+
+    // Timestep of trajectories
     double MPC_timestep_;
+
+    // Time knot associated with current delay
+    size_t step_nb_;
+
+    // Interpolation time between two knots
+    double step_progress_;
   };
 } // namespace simple_mpc
 

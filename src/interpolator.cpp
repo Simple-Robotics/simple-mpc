@@ -27,25 +27,25 @@ namespace simple_mpc
     std::vector<Eigen::VectorXd> forces)
   {
     // Compute the time knot corresponding to the current delay
-    size_t step_nb = static_cast<size_t>(delay / MPC_timestep_);
-    double step_progress = (delay - (double)step_nb * MPC_timestep_) / MPC_timestep_;
+    step_nb_ = static_cast<size_t>(delay / MPC_timestep_);
+    step_progress_ = (delay - (double)step_nb_ * MPC_timestep_) / MPC_timestep_;
 
     // Interpolate state and command trajectories
-    if (step_nb >= xs.size() - 1)
+    if (step_nb_ >= xs.size() - 1)
     {
-      step_nb = xs.size() - 1;
-      step_progress = 0.0;
-      x_interpolated_ = xs[step_nb];
-      u_interpolated_ = us[step_nb];
-      a_interpolated_ = ddqs[step_nb];
-      forces_interpolated_ = forces[step_nb];
+      step_nb_ = xs.size() - 1;
+      step_progress_ = 0.0;
+      x_interpolated_ = xs[step_nb_];
+      u_interpolated_ = us[step_nb_];
+      a_interpolated_ = ddqs[step_nb_];
+      forces_interpolated_ = forces[step_nb_];
     }
     else
     {
-      x_interpolated_ = xs[step_nb + 1] * step_progress + xs[step_nb] * (1. - step_progress);
-      u_interpolated_ = us[step_nb + 1] * step_progress + us[step_nb] * (1. - step_progress);
-      a_interpolated_ = ddqs[step_nb + 1] * step_progress + ddqs[step_nb] * (1. - step_progress);
-      forces_interpolated_ = forces[step_nb + 1] * step_progress + forces[step_nb] * (1. - step_progress);
+      x_interpolated_ = xs[step_nb_ + 1] * step_progress_ + xs[step_nb_] * (1. - step_progress_);
+      u_interpolated_ = us[step_nb_ + 1] * step_progress_ + us[step_nb_] * (1. - step_progress_);
+      a_interpolated_ = ddqs[step_nb_ + 1] * step_progress_ + ddqs[step_nb_] * (1. - step_progress_);
+      forces_interpolated_ = forces[step_nb_ + 1] * step_progress_ + forces[step_nb_] * (1. - step_progress_);
     }
   }
 

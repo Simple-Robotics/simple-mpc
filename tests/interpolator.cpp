@@ -36,6 +36,8 @@ BOOST_AUTO_TEST_CASE(interpolate)
   BOOST_CHECK(us[2].isApprox(interpolator.u_interpolated_));
   BOOST_CHECK(ddqs[2].isApprox(interpolator.a_interpolated_));
   BOOST_CHECK(forces[2].isApprox(interpolator.forces_interpolated_));
+  BOOST_CHECK(interpolator.step_nb_ == 2);
+  BOOST_CHECK(interpolator.step_progress_ == 0.);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

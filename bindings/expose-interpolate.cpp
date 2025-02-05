@@ -27,7 +27,9 @@ namespace simple_mpc
         .add_property("x_interpolated", &Interpolator::x_interpolated_)
         .add_property("u_interpolated", &Interpolator::u_interpolated_)
         .add_property("a_interpolated", &Interpolator::a_interpolated_)
-        .add_property("forces_interpolated", &Interpolator::forces_interpolated_);
+        .add_property("forces_interpolated", &Interpolator::forces_interpolated_)
+        .add_property("step_nb", &Interpolator::step_nb_)
+        .add_property("step_progress", &Interpolator::step_progress_);
     }
 
   } // namespace python
