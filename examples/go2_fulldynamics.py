@@ -1,6 +1,6 @@
 import numpy as np
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, FullDynamicsOCP, MPC, IDSolver
+from simple_mpc import RobotModelHandler, RobotDataHandler, FullDynamicsOCP, MPC, IDSolver, FrictionCompensation
 import example_robot_data as erd
 import pinocchio as pin
 import time
@@ -21,6 +21,9 @@ model_handler.addFoot("RL_foot", base_joint_name, pin.XYZQUATToSE3(np.array([-0.
 model_handler.addFoot("RR_foot", base_joint_name, pin.XYZQUATToSE3(np.array([-0.24,-0.15, 0.0, 0,0,0,1])))
 data_handler = RobotDataHandler(model_handler)
 
+nq = model_handler.getModel().nq
+nv = model_handler.getModel().nv
+nu = nv - 6
 force_size = 3
 nk = len(model_handler.getFeetNames())
 gravity = np.array([0, 0, -9.81])
@@ -139,6 +142,9 @@ id_conf = dict(
 )
 
 qp = IDSolver(id_conf, model_handler.getModel())
+
+""" Friction """
+fcompensation = FrictionCompensation(model_handler.getModel(), nu)
 
 """ Initialize simulation"""
 device = BulletRobot(
@@ -270,9 +276,10 @@ for t in range(500):
             mpc.getDataHandler().getData().M,
         )
 
-        device.execute(qp.solved_torque)
+        fcompensation.computeFriction(x_interp[nq + 6:], qp.solved_torque)
+        device.execute(fcompensation.corrected_torque)
 
-        u_multibody.append(copy.deepcopy(qp.solved_torque))
+        u_multibody.append(copy.deepcopy(fcompensation.corrected_torque))
         x_multibody.append(x_measured)
 
 force_FL = np.array(force_FL)
