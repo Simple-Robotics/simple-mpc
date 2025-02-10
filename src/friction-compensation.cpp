@@ -6,7 +6,7 @@ namespace simple_mpc
   FrictionCompensation::FrictionCompensation(const Model & model, const long actuation_size)
   {
     corrected_torque_.resize(actuation_size);
-    dry_friction_ = model.lowerDryFrictionLimit;
+    dry_friction_ = model.friction;
     viscuous_friction_ = model.damping;
   }
 
