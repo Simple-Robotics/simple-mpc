@@ -65,13 +65,13 @@ problem_conf = dict(
     kinematics_limits=True,
     force_cone=False,
 )
-T = 100
+T = 50
 
 dynproblem = FullDynamicsOCP(problem_conf, model_handler)
 dynproblem.createProblem(model_handler.getReferenceState(), T, force_size, gravity[2], False)
 
-T_ds = 50
-T_ss = 10
+T_ds = 10
+T_ss = 30
 N_simu = int(0.01 / 0.001)
 mpc_conf = dict(
     ddpIteration=1,
@@ -113,11 +113,10 @@ contact_phase_lift = {
     "RL_foot": False,
     "RR_foot": False,
 }
-contact_phases = [contact_phase_quadru] * int(T_ds / 2)
-contact_phases += [contact_phase_lift] * T_ss
+contact_phases = [contact_phase_quadru] * T_ds
+contact_phases += [contact_phase_lift_FL] * T_ss
 contact_phases += [contact_phase_quadru] * T_ds
-contact_phases += [contact_phase_lift] * T_ss
-contact_phases += [contact_phase_quadru] * int(T_ds / 2)
+contact_phases += [contact_phase_lift_FR] * T_ss
 
 """ contact_phases = [contact_phase_quadru] * int(T_ds / 2)
 contact_phases += [contact_phase_lift] * T_ss
@@ -144,7 +143,7 @@ id_conf = dict(
 qp = IDSolver(id_conf, model_handler.getModel())
 
 """ Friction """
-fcompensation = FrictionCompensation(model_handler.getModel(), nu)
+fcompensation = FrictionCompensation(model_handler.getModel(), True)
 
 """ Initialize simulation"""
 device = BulletRobot(
@@ -277,10 +276,10 @@ for t in range(500):
         )
 
         qp_torque = qp.solved_torque.copy()
-        corrected_torque = fcompensation.computeFriction(x_interp[nq + 6:], qp_torque)
-        device.execute(corrected_torque)
+        fcompensation.computeFriction(x_interp[nq + 6:], qp_torque)
+        device.execute(qp_torque)
 
-        u_multibody.append(copy.deepcopy(corrected_torque))
+        u_multibody.append(copy.deepcopy(qp_torque))
         x_multibody.append(x_measured)
 
 force_FL = np.array(force_FL)

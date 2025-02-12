@@ -12,11 +12,11 @@ namespace simple_mpc
     }
     else
     {
-      // Ignore root joint
+      // Ignore universe joint
       nu_ = model.njoints - 1;
     }
-    dry_friction_ = model.friction.head(nu_);
-    viscuous_friction_ = model.damping.head(nu_);
+    dry_friction_ = model.friction.tail(nu_);
+    viscuous_friction_ = model.damping.tail(nu_);
   }
 
   void FrictionCompensation::computeFriction(Eigen::Ref<const VectorXd> velocity, Eigen::Ref<VectorXd> torque)
@@ -29,12 +29,7 @@ namespace simple_mpc
 
   double FrictionCompensation::signFunction(double x)
   {
-    if (x > 0)
-      return 1.0;
-    else if (x == 0)
-      return 0.0;
-    else
-      return -1.0;
+    return (x > 0) - (x < 0);
   }
 
 } // namespace simple_mpc
