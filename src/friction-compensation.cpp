@@ -3,25 +3,28 @@
 namespace simple_mpc
 {
 
-  FrictionCompensation::FrictionCompensation(const Model & model, const long actuation_size)
+  FrictionCompensation::FrictionCompensation(const Model & model, const bool with_free_flyer)
   {
-    corrected_torque_.resize(actuation_size);
-    dry_friction_ = model.friction;
-    viscuous_friction_ = model.damping;
+    if (with_free_flyer)
+    {
+      // Ignore universe and root joints
+      nu_ = model.njoints - 2;
+    }
+    else
+    {
+      // Ignore root joint
+      nu_ = model.njoints - 1;
+    }
+    dry_friction_ = model.friction.head(nu_);
+    viscuous_friction_ = model.damping.head(nu_);
   }
 
-  void FrictionCompensation::computeFriction(const Eigen::VectorXd & velocity, const Eigen::VectorXd & torque)
+  void FrictionCompensation::computeFriction(Eigen::Ref<const VectorXd> velocity, Eigen::Ref<VectorXd> torque)
   {
-    if (velocity.size() != corrected_torque_.size())
-    {
-      throw std::runtime_error("Velocity has wrong size");
-    }
-    if (torque.size() != corrected_torque_.size())
-    {
-      throw std::runtime_error("Torque has wrong size");
-    }
-    corrected_torque_ = torque + viscuous_friction_.cwiseProduct(velocity)
-                        + dry_friction_.cwiseProduct(velocity.unaryExpr(std::function(signFunction)));
+    assert(("Velocity size must be equal to actuation size", velocity.size() == nu_));
+    assert(("Torque size must be equal to actuation size", torque.size() == nu_));
+    torque += viscuous_friction_.cwiseProduct(velocity)
+              + dry_friction_.cwiseProduct(velocity.unaryExpr(std::function(signFunction)));
   }
 
   double FrictionCompensation::signFunction(double x)

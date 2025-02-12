@@ -30,23 +30,24 @@ namespace simple_mpc
     /**
      * @brief Construct a new Friction Compensation object
      *
-     * @param actuation_size Dimension of torque
+     * @param model Pinocchio model containing friction coefficients
+       @param with_free_flyer Bool indicating if model has free flyer joint
      */
-    FrictionCompensation(const Model & model, const long actuation_size);
+    FrictionCompensation(const Model & model, const bool with_free_flyer = true);
 
     /**
-     * @brief Compute the torque correction due to friction and store it internally.
+     * @brief Add friction correction to joint torque
      *
      * @param[in] velocity Joint velocity
      * @param[in] torque Joint torque
      */
-    void computeFriction(const Eigen::VectorXd & velocity, const Eigen::VectorXd & torque);
+    void computeFriction(Eigen::Ref<const VectorXd> velocity, Eigen::Ref<VectorXd> torque);
 
     // Sign function for internal computation
     static double signFunction(double x);
 
-    // Internal torque with friction compensation
-    Eigen::VectorXd corrected_torque_;
+    // Actuation size
+    int nu_;
 
     // Friction coefficients
     Eigen::VectorXd dry_friction_;

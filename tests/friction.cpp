@@ -19,15 +19,13 @@ BOOST_AUTO_TEST_CASE(dry_viscuous_friction)
   model.friction = Eigen::VectorXd::Constant(nu, .5);
   model.damping = Eigen::VectorXd::Constant(nu, .05);
 
-  FrictionCompensation friction = FrictionCompensation(model, nu);
+  FrictionCompensation friction = FrictionCompensation(model);
 
   BOOST_CHECK_EQUAL(model.friction, friction.dry_friction_);
   BOOST_CHECK_EQUAL(model.damping, friction.viscuous_friction_);
 
   Eigen::VectorXd velocity = Eigen::VectorXd::Random(nu);
   Eigen::VectorXd torque = Eigen::VectorXd::Random(nu);
-
-  friction.computeFriction(velocity, torque);
 
   Eigen::VectorXd ctorque(nu);
   for (long i = 0; i < nu; i++)
@@ -36,7 +34,9 @@ BOOST_AUTO_TEST_CASE(dry_viscuous_friction)
     ctorque[i] = torque[i] + model.friction[i] * sgn + model.damping[i] * velocity[i];
   }
 
-  BOOST_CHECK(friction.corrected_torque_.isApprox(ctorque));
+  friction.computeFriction(velocity, torque);
+
+  BOOST_CHECK(torque.isApprox(ctorque));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

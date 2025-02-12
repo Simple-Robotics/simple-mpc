@@ -65,13 +65,13 @@ problem_conf = dict(
     kinematics_limits=True,
     force_cone=False,
 )
-T = 50
+T = 100
 
 dynproblem = FullDynamicsOCP(problem_conf, model_handler)
 dynproblem.createProblem(model_handler.getReferenceState(), T, force_size, gravity[2], False)
 
-T_ds = 10
-T_ss = 30
+T_ds = 50
+T_ss = 10
 N_simu = int(0.01 / 0.001)
 mpc_conf = dict(
     ddpIteration=1,
@@ -114,9 +114,9 @@ contact_phase_lift = {
     "RR_foot": False,
 }
 contact_phases = [contact_phase_quadru] * int(T_ds / 2)
-contact_phases += [contact_phase_lift_FL] * T_ss
+contact_phases += [contact_phase_lift] * T_ss
 contact_phases += [contact_phase_quadru] * T_ds
-contact_phases += [contact_phase_lift_FR] * T_ss
+contact_phases += [contact_phase_lift] * T_ss
 contact_phases += [contact_phase_quadru] * int(T_ds / 2)
 
 """ contact_phases = [contact_phase_quadru] * int(T_ds / 2)
@@ -193,7 +193,7 @@ solve_time = []
 L_measured = []
 
 v = np.zeros(6)
-v[0] = 0.2
+v[0] = 0.
 mpc.velocity_base = v
 for t in range(500):
     print("Time " + str(t))
@@ -276,10 +276,11 @@ for t in range(500):
             mpc.getDataHandler().getData().M,
         )
 
-        fcompensation.computeFriction(x_interp[nq + 6:], qp.solved_torque)
-        device.execute(fcompensation.corrected_torque)
+        qp_torque = qp.solved_torque.copy()
+        corrected_torque = fcompensation.computeFriction(x_interp[nq + 6:], qp_torque)
+        device.execute(corrected_torque)
 
-        u_multibody.append(copy.deepcopy(fcompensation.corrected_torque))
+        u_multibody.append(copy.deepcopy(corrected_torque))
         x_multibody.append(x_measured)
 
 force_FL = np.array(force_FL)
