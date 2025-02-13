@@ -1,5 +1,5 @@
 #include "simple-mpc/friction-compensation.hpp"
-
+#include <iostream>
 namespace simple_mpc
 {
 
@@ -7,13 +7,13 @@ namespace simple_mpc
   {
     if (with_free_flyer)
     {
-      // Ignore universe and root joints
-      nu_ = model.njoints - 2;
+      // Ignore free flyer joint
+      nu_ = model.nv - 6;
     }
     else
     {
-      // Ignore universe joint
-      nu_ = model.njoints - 1;
+      // If no free flyer
+      nu_ = model.nv;
     }
     dry_friction_ = model.friction.tail(nu_);
     viscuous_friction_ = model.damping.tail(nu_);
@@ -21,8 +21,11 @@ namespace simple_mpc
 
   void FrictionCompensation::computeFriction(Eigen::Ref<const VectorXd> velocity, Eigen::Ref<VectorXd> torque)
   {
-    assert(("Velocity size must be equal to actuation size", velocity.size() == nu_));
-    assert(("Torque size must be equal to actuation size", torque.size() == nu_));
+    if (velocity.size() != nu_)
+      throw std::runtime_error("Velocity has wrong size");
+    if (torque.size() != nu_)
+      throw std::runtime_error("Torque has wrong size");
+
     torque += viscuous_friction_.cwiseProduct(velocity)
               + dry_friction_.cwiseProduct(velocity.unaryExpr(std::function(signFunction)));
   }
