@@ -51,6 +51,14 @@ BOOST_AUTO_TEST_CASE(interpolate)
   x_interp2.tail(model.nv) = (xs[0].tail(model.nv) + xs[1].tail(model.nv)) * 0.5;
 
   BOOST_CHECK(x_interp2.isApprox(x_interp));
+
+  std::vector<Eigen::VectorXd> xs2;
+  for (std::size_t i = 0; i < 2; i++)
+  {
+    xs2.push_back(xs[0]);
+  }
+  interpolator.interpolate(delay, timestep, xs2, x_interp);
+  BOOST_CHECK(xs2[0].isApprox(x_interp));
 }
 
 BOOST_AUTO_TEST_CASE(linear_interpolate)
@@ -88,6 +96,14 @@ BOOST_AUTO_TEST_CASE(linear_interpolate)
   v_interp2 = (vs[0] + vs[1]) * 0.5;
 
   BOOST_CHECK(v_interp2.isApprox(v_interp));
+
+  std::vector<Eigen::VectorXd> vs2;
+  for (std::size_t i = 0; i < 2; i++)
+  {
+    vs2.push_back(vs[0]);
+  }
+  interpolator.interpolate(delay, timestep, vs2, v_interp);
+  BOOST_CHECK(vs2[0].isApprox(v_interp));
 }
 
 BOOST_AUTO_TEST_SUITE_END()
