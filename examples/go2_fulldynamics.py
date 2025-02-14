@@ -270,7 +270,8 @@ for t in range(500):
 
     for j in range(N_simu):
         # time.sleep(0.01)
-        delay = j / float(N_simu)
+        delay = j / float(N_simu) * dt
+
         x_interp = state_interpolator.interpolate(delay, dt, xss)
         u_interp = u_interpolator.interpolate(delay, dt, uss)
         acc_interp = acc_interpolator.interpolate(delay, dt, ddqs)

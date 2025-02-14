@@ -37,6 +37,20 @@ BOOST_AUTO_TEST_CASE(interpolate)
   interpolator.interpolate(delay, timestep, xs, x_interp);
 
   BOOST_CHECK(xs[2].isApprox(x_interp));
+
+  delay = 0.5;
+  interpolator.interpolate(delay, timestep, xs, x_interp);
+  BOOST_CHECK(xs.back().isApprox(x_interp));
+
+  delay = 0.005;
+  interpolator.interpolate(delay, timestep, xs, x_interp);
+  Eigen::VectorXd x_interp2(model.nq + model.nv);
+  Eigen::VectorXd dq(model.nv);
+  pinocchio::difference(model, xs[0].head(model.nq), xs[1].head(model.nq), dq);
+  pinocchio::integrate(model, xs[0].head(model.nq), dq * 0.5, x_interp2.head(model.nq));
+  x_interp2.tail(model.nv) = (xs[0].tail(model.nv) + xs[1].tail(model.nv)) * 0.5;
+
+  BOOST_CHECK(x_interp2.isApprox(x_interp));
 }
 
 BOOST_AUTO_TEST_CASE(linear_interpolate)
@@ -62,8 +76,18 @@ BOOST_AUTO_TEST_CASE(linear_interpolate)
 
   Eigen::VectorXd v_interp(model.nv);
   interpolator.interpolate(delay, timestep, vs, v_interp);
-
   BOOST_CHECK(vs[2].isApprox(v_interp));
+
+  delay = 0.5;
+  interpolator.interpolate(delay, timestep, vs, v_interp);
+  BOOST_CHECK(vs.back().isApprox(v_interp));
+
+  delay = 0.005;
+  interpolator.interpolate(delay, timestep, vs, v_interp);
+  Eigen::VectorXd v_interp2(model.nv);
+  v_interp2 = (vs[0] + vs[1]) * 0.5;
+
+  BOOST_CHECK(v_interp2.isApprox(v_interp));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

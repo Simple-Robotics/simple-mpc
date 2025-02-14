@@ -28,7 +28,7 @@ namespace simple_mpc
 
     // Interpolate state and command trajectories
     if (step_nb >= xs.size() - 1)
-      x_interp = xs[step_nb];
+      x_interp = xs.back();
     else
     {
       // Compute the differential between configuration
@@ -59,7 +59,7 @@ namespace simple_mpc
 
     // Interpolate state and command trajectories
     if (step_nb >= vecs.size() - 1)
-      vec_interp = vecs[step_nb];
+      vec_interp = vecs.back();
     else
     {
       vec_interp = vecs[step_nb + 1] * step_progress + vecs[step_nb] * (1. - step_progress);
