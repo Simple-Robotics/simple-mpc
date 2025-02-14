@@ -17,19 +17,34 @@ namespace simple_mpc
   {
     namespace bp = boost::python;
 
-    void exposeInterpolator()
+    Eigen::VectorXd stateInterpolateProxy(
+      StateInterpolator & self, const double delay, const double timestep, const std::vector<Eigen::VectorXd> xs)
     {
-      bp::class_<Interpolator>(
-        "Interpolator", bp::init<const long, const long, const long, const long, const double>(
-                          bp::args("self", "nx", "nv", "nu", "nu", "MPC_timestep")))
-        .def("interpolate", &Interpolator::interpolate)
-        .add_property("MPC_timestep", &Interpolator::MPC_timestep_)
-        .add_property("x_interpolated", &Interpolator::x_interpolated_)
-        .add_property("u_interpolated", &Interpolator::u_interpolated_)
-        .add_property("a_interpolated", &Interpolator::a_interpolated_)
-        .add_property("forces_interpolated", &Interpolator::forces_interpolated_)
-        .add_property("step_nb", &Interpolator::step_nb_)
-        .add_property("step_progress", &Interpolator::step_progress_);
+      Eigen::VectorXd x_interp(xs[0].size());
+      self.interpolate(delay, timestep, xs, x_interp);
+
+      return x_interp;
+    }
+
+    Eigen::VectorXd linearInterpolateProxy(
+      LinearInterpolator & self, const double delay, const double timestep, const std::vector<Eigen::VectorXd> xs)
+    {
+      Eigen::VectorXd x_interp(xs[0].size());
+      self.interpolate(delay, timestep, xs, x_interp);
+
+      return x_interp;
+    }
+
+    void exposeStateInterpolator()
+    {
+      bp::class_<StateInterpolator>("StateInterpolator", bp::init<const Model &>(bp::args("self", "model")))
+        .def("interpolate", &stateInterpolateProxy);
+    }
+
+    void exposeLinearInterpolator()
+    {
+      bp::class_<LinearInterpolator>("LinearInterpolator", bp::init<const size_t>(bp::args("self", "vec_size")))
+        .def("interpolate", &linearInterpolateProxy);
     }
 
   } // namespace python

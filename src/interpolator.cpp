@@ -10,42 +10,59 @@
 namespace simple_mpc
 {
 
-  Interpolator::Interpolator(const long nx, const long nv, const long nu, const long nf, const double MPC_timestep)
-  : MPC_timestep_(MPC_timestep)
+  StateInterpolator::StateInterpolator(const Model & model)
   {
-    x_interpolated_.resize(nx);
-    u_interpolated_.resize(nu);
-    a_interpolated_.resize(nv);
-    forces_interpolated_.resize(nf);
+    model_ = model;
+    diff_q_.resize(model_.nv);
   }
 
-  void Interpolator::interpolate(
+  void StateInterpolator::interpolate(
     const double delay,
-    std::vector<Eigen::VectorXd> xs,
-    std::vector<Eigen::VectorXd> us,
-    std::vector<Eigen::VectorXd> ddqs,
-    std::vector<Eigen::VectorXd> forces)
+    const double timestep,
+    const std::vector<Eigen::VectorXd> xs,
+    Eigen::Ref<Eigen::VectorXd> x_interp)
   {
     // Compute the time knot corresponding to the current delay
-    step_nb_ = static_cast<size_t>(delay / MPC_timestep_);
-    step_progress_ = (delay - (double)step_nb_ * MPC_timestep_) / MPC_timestep_;
+    size_t step_nb = static_cast<size_t>(delay / timestep);
+    double step_progress = (delay - (double)step_nb * timestep) / timestep;
 
     // Interpolate state and command trajectories
-    if (step_nb_ >= xs.size() - 1)
-    {
-      step_nb_ = xs.size() - 1;
-      step_progress_ = 0.0;
-      x_interpolated_ = xs[step_nb_];
-      u_interpolated_ = us[step_nb_];
-      a_interpolated_ = ddqs[step_nb_];
-      forces_interpolated_ = forces[step_nb_];
-    }
+    if (step_nb >= xs.size() - 1)
+      x_interp = xs[step_nb];
     else
     {
-      x_interpolated_ = xs[step_nb_ + 1] * step_progress_ + xs[step_nb_] * (1. - step_progress_);
-      u_interpolated_ = us[step_nb_ + 1] * step_progress_ + us[step_nb_] * (1. - step_progress_);
-      a_interpolated_ = ddqs[step_nb_ + 1] * step_progress_ + ddqs[step_nb_] * (1. - step_progress_);
-      forces_interpolated_ = forces[step_nb_ + 1] * step_progress_ + forces[step_nb_] * (1. - step_progress_);
+      // Compute the differential between configuration
+      diff_q_ = pinocchio::difference(model_, xs[step_nb].head(model_.nq), xs[step_nb + 1].head(model_.nq));
+
+      pinocchio::integrate(model_, xs[step_nb].head(model_.nq), diff_q_ * step_progress, x_interp.head(model_.nq));
+
+      // Compute velocity interpolation
+      x_interp.tail(model_.nv) =
+        xs[step_nb + 1].tail(model_.nv) * step_progress + xs[step_nb].tail(model_.nv) * (1. - step_progress);
+    }
+  }
+
+  LinearInterpolator::LinearInterpolator(const size_t vec_size)
+  {
+    vec_size_ = vec_size;
+  }
+
+  void LinearInterpolator::interpolate(
+    const double delay,
+    const double timestep,
+    const std::vector<Eigen::VectorXd> vecs,
+    Eigen::Ref<Eigen::VectorXd> vec_interp)
+  {
+    // Compute the time knot corresponding to the current delay
+    size_t step_nb = static_cast<size_t>(delay / timestep);
+    double step_progress = (delay - (double)step_nb * timestep) / timestep;
+
+    // Interpolate state and command trajectories
+    if (step_nb >= vecs.size() - 1)
+      vec_interp = vecs[step_nb];
+    else
+    {
+      vec_interp = vecs[step_nb + 1] * step_progress + vecs[step_nb] * (1. - step_progress);
     }
   }
 

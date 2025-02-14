@@ -14,35 +14,40 @@
 #define SIMPLE_MPC_INTERPOLATOR_HPP_
 
 #include "simple-mpc/fwd.hpp"
+#include "simple-mpc/model-utils.hpp"
 
 namespace simple_mpc
 {
-  class Interpolator
+  class StateInterpolator
   {
   public:
-    explicit Interpolator(const long nx, const long nv, const long nu, const long nf, const double MPC_timestep);
+    explicit StateInterpolator(const Model & model);
 
     void interpolate(
       const double delay,
-      std::vector<Eigen::VectorXd> xs,
-      std::vector<Eigen::VectorXd> us,
-      std::vector<Eigen::VectorXd> ddqs,
-      std::vector<Eigen::VectorXd> forces);
+      const double timestep,
+      const std::vector<Eigen::VectorXd> xs,
+      Eigen::Ref<Eigen::VectorXd> x_interp);
 
-    // Interpolated trajectories
-    Eigen::VectorXd x_interpolated_;
-    Eigen::VectorXd u_interpolated_;
-    Eigen::VectorXd a_interpolated_;
-    Eigen::VectorXd forces_interpolated_;
+    // Intermediate differential configuration
+    Eigen::VectorXd diff_q_;
 
-    // Timestep of trajectories
-    double MPC_timestep_;
+    // Pinocchio model
+    Model model_;
+  };
 
-    // Time knot associated with current delay
-    size_t step_nb_;
+  class LinearInterpolator
+  {
+  public:
+    explicit LinearInterpolator(const size_t vec_size);
 
-    // Interpolation time between two knots
-    double step_progress_;
+    void interpolate(
+      const double delay,
+      const double timestep,
+      const std::vector<Eigen::VectorXd> vecs,
+      Eigen::Ref<Eigen::VectorXd> vec_interp);
+
+    size_t vec_size_;
   };
 } // namespace simple_mpc
 

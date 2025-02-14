@@ -1,6 +1,15 @@
 import numpy as np
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, FullDynamicsOCP, MPC, IDSolver, FrictionCompensation, Interpolator
+from simple_mpc import (
+    RobotModelHandler,
+    RobotDataHandler,
+    FullDynamicsOCP,
+    MPC,
+    IDSolver,
+    StateInterpolator,
+    LinearInterpolator,
+    FrictionCompensation
+)
 import example_robot_data as erd
 import pinocchio as pin
 import time
@@ -147,7 +156,10 @@ qp = IDSolver(id_conf, model_handler.getModel())
 """ Friction """
 fcompensation = FrictionCompensation(model_handler.getModel(), True)
 """ Interpolation """
-interpolator = Interpolator(nq + nv, nv, nu, nf, dt)
+state_interpolator = StateInterpolator(model_handler.getModel())
+acc_interpolator = LinearInterpolator(model_handler.getModel().nv)
+u_interpolator = LinearInterpolator(nu)
+force_interpolator = LinearInterpolator(nf)
 
 """ Initialize simulation"""
 device = BulletRobot(
@@ -258,24 +270,28 @@ for t in range(500):
 
     for j in range(N_simu):
         # time.sleep(0.01)
-        interpolator.interpolate(j / float(N_simu), xss, uss, ddqs, forces)
+        delay = j / float(N_simu)
+        x_interp = state_interpolator.interpolate(delay, dt, xss)
+        u_interp = u_interpolator.interpolate(delay, dt, uss)
+        acc_interp = acc_interpolator.interpolate(delay, dt, ddqs)
+        force_interp = force_interpolator.interpolate(delay, dt, forces)
 
         q_meas, v_meas = device.measureState()
         x_measured = np.concatenate([q_meas, v_meas])
 
         mpc.getDataHandler().updateInternalData(x_measured, True)
 
-        current_torque = interpolator.u_interpolated - 1. * mpc.Ks[0] @ model_handler.difference(
-            x_measured, interpolator.x_interpolated
+        current_torque = u_interp - 1. * mpc.Ks[0] @ model_handler.difference(
+            x_measured, x_interp
         )
 
         qp.solveQP(
             mpc.getDataHandler().getData(),
             contact_states,
             x_measured[nq:],
-            interpolator.a_interpolated,
+            acc_interp,
             current_torque,
-            interpolator.forces_interpolated,
+            force_interp,
             mpc.getDataHandler().getData().M,
         )
 
