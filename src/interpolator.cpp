@@ -6,6 +6,7 @@
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
 #include "simple-mpc/interpolator.hpp"
+#include <pinocchio/algorithm/joint-configuration.hpp>
 
 namespace simple_mpc
 {
