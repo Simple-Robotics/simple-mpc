@@ -276,10 +276,13 @@ for t in range(500):
         )
 
         qp_torque = qp.solved_torque.copy()
-        fcompensation.computeFriction(x_interp[nq + 6:], qp_torque)
-        device.execute(qp_torque)
+        exit()
+        friction_torque = fcompensation.computeFriction(x_interp[nq + 6:], qp_torque)
+        device.execute(friction_torque)
 
-        u_multibody.append(copy.deepcopy(qp_torque))
+
+
+        u_multibody.append(copy.deepcopy(friction_torque))
         x_multibody.append(x_measured)
 
 force_FL = np.array(force_FL)
