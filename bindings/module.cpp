@@ -17,6 +17,7 @@ namespace simple_mpc::python
   void exposeMPC();
   void exposeIDSolver();
   void exposeIKIDSolver();
+  void exposeFrictionCompensation();
 
   /* PYTHON MODULE */
   BOOST_PYTHON_MODULE(simple_mpc_pywrap)
@@ -35,6 +36,7 @@ namespace simple_mpc::python
     exposeMPC();
     exposeIDSolver();
     exposeIKIDSolver();
+    exposeFrictionCompensation();
   }
 
 } // namespace simple_mpc::python

@@ -13,6 +13,7 @@ set(
   expose-centroidal.cpp
   expose-fulldynamics.cpp
   expose-kinodynamics.cpp
+  expose-friction-compensation.cpp
 )
 
 Python3_add_library(${PY_NAME}_pywrap MODULE WITH_SOABI ${${PY_NAME}_SOURCES})

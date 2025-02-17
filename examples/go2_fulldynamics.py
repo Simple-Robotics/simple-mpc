@@ -1,6 +1,6 @@
 import numpy as np
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, FullDynamicsOCP, MPC, IDSolver
+from simple_mpc import RobotModelHandler, RobotDataHandler, FullDynamicsOCP, MPC, IDSolver, FrictionCompensation
 import example_robot_data as erd
 import pinocchio as pin
 import time
@@ -21,6 +21,9 @@ model_handler.addFoot("RL_foot", base_joint_name, pin.XYZQUATToSE3(np.array([-0.
 model_handler.addFoot("RR_foot", base_joint_name, pin.XYZQUATToSE3(np.array([-0.24,-0.15, 0.0, 0,0,0,1])))
 data_handler = RobotDataHandler(model_handler)
 
+nq = model_handler.getModel().nq
+nv = model_handler.getModel().nv
+nu = nv - 6
 force_size = 3
 nk = len(model_handler.getFeetNames())
 gravity = np.array([0, 0, -9.81])
@@ -110,11 +113,10 @@ contact_phase_lift = {
     "RL_foot": False,
     "RR_foot": False,
 }
-contact_phases = [contact_phase_quadru] * int(T_ds / 2)
+contact_phases = [contact_phase_quadru] * T_ds
 contact_phases += [contact_phase_lift_FL] * T_ss
 contact_phases += [contact_phase_quadru] * T_ds
 contact_phases += [contact_phase_lift_FR] * T_ss
-contact_phases += [contact_phase_quadru] * int(T_ds / 2)
 
 """ contact_phases = [contact_phase_quadru] * int(T_ds / 2)
 contact_phases += [contact_phase_lift] * T_ss
@@ -139,6 +141,9 @@ id_conf = dict(
 )
 
 qp = IDSolver(id_conf, model_handler.getModel())
+
+""" Friction """
+fcompensation = FrictionCompensation(model_handler.getModel(), True)
 
 """ Initialize simulation"""
 device = BulletRobot(
@@ -187,7 +192,7 @@ solve_time = []
 L_measured = []
 
 v = np.zeros(6)
-v[0] = 0.2
+v[0] = 0.
 mpc.velocity_base = v
 for t in range(500):
     print("Time " + str(t))
@@ -270,9 +275,11 @@ for t in range(500):
             mpc.getDataHandler().getData().M,
         )
 
-        device.execute(qp.solved_torque)
+        qp_torque = qp.solved_torque.copy()
+        friction_torque = fcompensation.computeFriction(x_interp[nq + 6:], qp_torque)
+        device.execute(friction_torque)
 
-        u_multibody.append(copy.deepcopy(qp.solved_torque))
+        u_multibody.append(copy.deepcopy(friction_torque))
         x_multibody.append(x_measured)
 
 force_FL = np.array(force_FL)
