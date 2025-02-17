@@ -17,35 +17,29 @@ namespace simple_mpc
   {
     namespace bp = boost::python;
 
-    Eigen::VectorXd stateInterpolateProxy(
-      StateInterpolator & self, const double delay, const double timestep, const std::vector<Eigen::VectorXd> xs)
+    Eigen::VectorXd interpolateConfigurationProxy(
+      Interpolator & self, const double delay, const double timestep, const std::vector<Eigen::VectorXd> & qs)
     {
-      Eigen::VectorXd x_interp(xs[0].size());
-      self.interpolate(delay, timestep, xs, x_interp);
+      Eigen::VectorXd q_interp(qs[0].size());
+      self.interpolateConfiguration(delay, timestep, qs, q_interp);
 
-      return x_interp;
+      return q_interp;
     }
 
-    Eigen::VectorXd linearInterpolateProxy(
-      LinearInterpolator & self, const double delay, const double timestep, const std::vector<Eigen::VectorXd> xs)
+    Eigen::VectorXd interpolateLinearProxy(
+      Interpolator & self, const double delay, const double timestep, const std::vector<Eigen::VectorXd> & vs)
     {
-      Eigen::VectorXd x_interp(xs[0].size());
-      self.interpolate(delay, timestep, xs, x_interp);
+      Eigen::VectorXd v_interp(vs[0].size());
+      self.interpolateLinear(delay, timestep, vs, v_interp);
 
-      return x_interp;
+      return v_interp;
     }
 
-    void exposeStateInterpolator()
+    void exposeInterpolator()
     {
-      bp::class_<StateInterpolator>("StateInterpolator", bp::init<const Model &>(bp::args("self", "model")))
-        .def("interpolate", &stateInterpolateProxy);
+      bp::class_<Interpolator>("Interpolator", bp::init<const Model &>(bp::args("self", "model")))
+        .def("interpolateConfiguration", &interpolateConfigurationProxy)
+        .def("interpolateLinear", &interpolateLinearProxy);
     }
-
-    void exposeLinearInterpolator()
-    {
-      bp::class_<LinearInterpolator>("LinearInterpolator", bp::init<const size_t>(bp::args("self", "vec_size")))
-        .def("interpolate", &linearInterpolateProxy);
-    }
-
   } // namespace python
 } // namespace simple_mpc

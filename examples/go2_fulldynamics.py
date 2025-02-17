@@ -6,8 +6,7 @@ from simple_mpc import (
     FullDynamicsOCP,
     MPC,
     IDSolver,
-    StateInterpolator,
-    LinearInterpolator,
+    Interpolator,
     FrictionCompensation
 )
 import example_robot_data as erd
@@ -156,10 +155,7 @@ qp = IDSolver(id_conf, model_handler.getModel())
 """ Friction """
 fcompensation = FrictionCompensation(model_handler.getModel(), True)
 """ Interpolation """
-state_interpolator = StateInterpolator(model_handler.getModel())
-acc_interpolator = LinearInterpolator(model_handler.getModel().nv)
-u_interpolator = LinearInterpolator(nu)
-force_interpolator = LinearInterpolator(nf)
+interpolator = Interpolator(model_handler.getModel())
 
 """ Initialize simulation"""
 device = BulletRobot(
@@ -253,7 +249,8 @@ for t in range(500):
 
     forces = [total_forces, total_forces]
     ddqs = [a0, a1]
-    xss = [mpc.xs[0], mpc.xs[1]]
+    qss = [mpc.xs[0][:model_handler.getModel().nq], mpc.xs[1][:model_handler.getModel().nq]]
+    vss = [mpc.xs[0][model_handler.getModel().nq:], mpc.xs[1][model_handler.getModel().nq:]]
     uss = [mpc.us[0], mpc.us[1]]
 
     FL_measured.append(mpc.getDataHandler().getFootPose("FL_foot").translation)
@@ -272,10 +269,13 @@ for t in range(500):
         # time.sleep(0.01)
         delay = j / float(N_simu) * dt
 
-        x_interp = state_interpolator.interpolate(delay, dt, xss)
-        u_interp = u_interpolator.interpolate(delay, dt, uss)
-        acc_interp = acc_interpolator.interpolate(delay, dt, ddqs)
-        force_interp = force_interpolator.interpolate(delay, dt, forces)
+        q_interp = interpolator.interpolateConfiguration(delay, dt, qss)
+        v_interp = interpolator.interpolateLinear(delay, dt, vss)
+        u_interp = interpolator.interpolateLinear(delay, dt, uss)
+        acc_interp = interpolator.interpolateLinear(delay, dt, ddqs)
+        force_interp = interpolator.interpolateLinear(delay, dt, forces)
+
+        x_interp = np.concatenate((q_interp, v_interp))
 
         q_meas, v_meas = device.measureState()
         x_measured = np.concatenate([q_meas, v_meas])

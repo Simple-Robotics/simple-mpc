@@ -13,42 +13,34 @@
 #ifndef SIMPLE_MPC_INTERPOLATOR_HPP_
 #define SIMPLE_MPC_INTERPOLATOR_HPP_
 
+#include <pinocchio/algorithm/joint-configuration.hpp>
+
 #include "simple-mpc/fwd.hpp"
 #include "simple-mpc/model-utils.hpp"
 
 namespace simple_mpc
 {
-  class StateInterpolator
+  class Interpolator
   {
   public:
-    explicit StateInterpolator(const Model & model);
+    explicit Interpolator(const Model & model);
 
-    void interpolate(
+    void interpolateConfiguration(
       const double delay,
       const double timestep,
-      const std::vector<Eigen::VectorXd> xs,
-      Eigen::Ref<Eigen::VectorXd> x_interp);
+      const std::vector<Eigen::VectorXd> & qs,
+      Eigen::Ref<Eigen::VectorXd> q_interp);
 
-    // Intermediate differential configuration
-    Eigen::VectorXd diff_q_;
+    void interpolateLinear(
+      const double delay,
+      const double timestep,
+      const std::vector<Eigen::VectorXd> & vs,
+      Eigen::Ref<Eigen::VectorXd> v_interp);
 
     // Pinocchio model
     Model model_;
   };
 
-  class LinearInterpolator
-  {
-  public:
-    explicit LinearInterpolator(const size_t vec_size);
-
-    void interpolate(
-      const double delay,
-      const double timestep,
-      const std::vector<Eigen::VectorXd> vecs,
-      Eigen::Ref<Eigen::VectorXd> vec_interp);
-
-    size_t vec_size_;
-  };
 } // namespace simple_mpc
 
 /* --- Details -------------------------------------------------------------- */
