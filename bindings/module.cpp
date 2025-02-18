@@ -17,6 +17,7 @@ namespace simple_mpc::python
   void exposeMPC();
   void exposeIDSolver();
   void exposeIKIDSolver();
+  void exposeInterpolator();
   void exposeFrictionCompensation();
 
   /* PYTHON MODULE */
@@ -36,6 +37,7 @@ namespace simple_mpc::python
     exposeMPC();
     exposeIDSolver();
     exposeIKIDSolver();
+    exposeInterpolator();
     exposeFrictionCompensation();
   }
 

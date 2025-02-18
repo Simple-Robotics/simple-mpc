@@ -54,8 +54,9 @@ set(
   robot_handler
   problem
   mpc
-  lowlevel
   friction
+  qpsolvers
+  interpolator
 )
 
 foreach(test_name ${TEST_NAMES})

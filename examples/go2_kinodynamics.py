@@ -1,6 +1,6 @@
 import numpy as np
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC, IDSolver
+from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC, IDSolver, Interpolator
 import example_robot_data as erd
 import pinocchio as pin
 import time
@@ -21,6 +21,10 @@ model_handler.addFoot("RL_foot", base_joint_name, pin.XYZQUATToSE3(np.array([-0.
 model_handler.addFoot("RR_foot", base_joint_name, pin.XYZQUATToSE3(np.array([-0.24,-0.15, 0.0, 0,0,0,1])))
 data_handler = RobotDataHandler(model_handler)
 
+nq = model_handler.getModel().nq
+nv = model_handler.getModel().nv
+nu = nv - 6
+nf = 12
 force_size = 3
 nk = len(model_handler.getFeetNames())
 gravity = np.array([0, 0, -9.81])
@@ -144,6 +148,9 @@ id_conf = dict(
 
 qp = IDSolver(id_conf, model_handler.getModel())
 
+""" Interpolation """
+interpolator = Interpolator(nq + nv, nv, nu, nf, 0.01)
+
 """ Initialize simulation"""
 device = BulletRobot(
     model_handler.getModel().names,
@@ -155,10 +162,7 @@ device = BulletRobot(
 )
 
 device.initializeJoints(model_handler.getReferenceState()[:model_handler.getModel().nq])
-
 device.changeCamera(1.0, 60, -15, [0.6, -0.2, 0.5])
-nq = mpc.getModelHandler().getModel().nq
-nv = mpc.getModelHandler().getModel().nv
 
 q_meas, v_meas = device.measureState()
 x_measured  = np.concatenate([q_meas, v_meas])
@@ -234,6 +238,11 @@ for t in range(300):
     forces1 = mpc.us[1][: nk * force_size]
     contact_states = mpc.ocp_handler.getContactState(0)
 
+    forces = [forces0, forces1]
+    ddqs = [a0, a1]
+    xss = [mpc.xs[0], mpc.xs[1]]
+    uss = [mpc.us[0], mpc.us[1]]
+
     device.moveQuadrupedFeet(
         mpc.getReferencePose(0, "FL_foot").translation,
         mpc.getReferencePose(0, "FR_foot").translation,
@@ -243,21 +252,20 @@ for t in range(300):
 
     for j in range(N_simu):
         # time.sleep(0.01)
+        interpolator.interpolate(j / float(N_simu), xss, uss, ddqs, forces)
+
         q_meas, v_meas = device.measureState()
         x_measured  = np.concatenate([q_meas, v_meas])
 
         mpc.getDataHandler().updateInternalData(x_measured, True)
 
-        a_interp = (N_simu - j) / N_simu * a0 + j / N_simu * a1
-        f_interp = (N_simu - j) / N_simu * forces0 + j / N_simu * forces1
-
         qp.solveQP(
             mpc.getDataHandler().getData(),
             contact_states,
             x_measured[nq:],
-            a_interp,
+            interpolator.a_interpolated,
             np.zeros(12),
-            f_interp,
+            interpolator.forces_interpolated,
             mpc.getDataHandler().getData().M,
         )
 

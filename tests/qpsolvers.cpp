@@ -2,11 +2,11 @@
 #include <boost/test/unit_test.hpp>
 #include <proxsuite-nlp/manifold-base.hpp>
 
-#include "simple-mpc/lowlevel-control.hpp"
+#include "simple-mpc/qp-solvers.hpp"
 #include "simple-mpc/robot-handler.hpp"
 #include "test_utils.cpp"
 
-BOOST_AUTO_TEST_SUITE(lowlevel)
+BOOST_AUTO_TEST_SUITE(qpsolvers)
 
 using namespace simple_mpc;
 

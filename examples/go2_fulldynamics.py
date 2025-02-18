@@ -1,6 +1,14 @@
 import numpy as np
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, FullDynamicsOCP, MPC, IDSolver, FrictionCompensation
+from simple_mpc import (
+    RobotModelHandler,
+    RobotDataHandler,
+    FullDynamicsOCP,
+    MPC,
+    IDSolver,
+    Interpolator,
+    FrictionCompensation
+)
 import example_robot_data as erd
 import pinocchio as pin
 import time
@@ -26,6 +34,8 @@ nv = model_handler.getModel().nv
 nu = nv - 6
 force_size = 3
 nk = len(model_handler.getFeetNames())
+nf = force_size
+
 gravity = np.array([0, 0, -9.81])
 fref = np.zeros(force_size)
 fref[2] = -model_handler.getMass() / nk * gravity[2]
@@ -144,6 +154,8 @@ qp = IDSolver(id_conf, model_handler.getModel())
 
 """ Friction """
 fcompensation = FrictionCompensation(model_handler.getModel(), True)
+""" Interpolation """
+interpolator = Interpolator(model_handler.getModel())
 
 """ Initialize simulation"""
 device = BulletRobot(
@@ -155,8 +167,6 @@ device = BulletRobot(
     model_handler.getReferenceState()[:3],
 )
 
-nq = mpc.getModelHandler().getModel().nq
-nv = mpc.getModelHandler().getModel().nv
 device.initializeJoints(model_handler.getReferenceState()[:nq])
 
 for i in range(40):
@@ -237,6 +247,12 @@ for t in range(500):
     force_RL.append(RL_f)
     force_RR.append(RR_f)
 
+    forces = [total_forces, total_forces]
+    ddqs = [a0, a1]
+    qss = [mpc.xs[0][:model_handler.getModel().nq], mpc.xs[1][:model_handler.getModel().nq]]
+    vss = [mpc.xs[0][model_handler.getModel().nq:], mpc.xs[1][model_handler.getModel().nq:]]
+    uss = [mpc.us[0], mpc.us[1]]
+
     FL_measured.append(mpc.getDataHandler().getFootPose("FL_foot").translation)
     FR_measured.append(mpc.getDataHandler().getFootPose("FR_foot").translation)
     RL_measured.append(mpc.getDataHandler().getFootPose("RL_foot").translation)
@@ -251,10 +267,15 @@ for t in range(500):
 
     for j in range(N_simu):
         # time.sleep(0.01)
-        u_interp = (N_simu - j) / N_simu * mpc.us[0] + j / N_simu * mpc.us[1]
-        a_interp = (N_simu - j) / N_simu * a0 + j / N_simu * a1
-        x_interp = (N_simu - j) / N_simu * mpc.xs[0] + j / N_simu * mpc.xs[1]
-        K_interp = (N_simu - j) / N_simu * mpc.Ks[0] + j / N_simu * mpc.Ks[1]
+        delay = j / float(N_simu) * dt
+
+        q_interp = interpolator.interpolateConfiguration(delay, dt, qss)
+        v_interp = interpolator.interpolateLinear(delay, dt, vss)
+        u_interp = interpolator.interpolateLinear(delay, dt, uss)
+        acc_interp = interpolator.interpolateLinear(delay, dt, ddqs)
+        force_interp = interpolator.interpolateLinear(delay, dt, forces)
+
+        x_interp = np.concatenate((q_interp, v_interp))
 
         q_meas, v_meas = device.measureState()
         x_measured = np.concatenate([q_meas, v_meas])
@@ -269,9 +290,9 @@ for t in range(500):
             mpc.getDataHandler().getData(),
             contact_states,
             x_measured[nq:],
-            a0,
+            acc_interp,
             current_torque,
-            total_forces,
+            force_interp,
             mpc.getDataHandler().getData().M,
         )
 

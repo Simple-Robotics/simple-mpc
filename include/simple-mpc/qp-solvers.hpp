@@ -6,13 +6,12 @@
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
 /**
- * @file lowlevel-control.hpp
- * @brief Build a low-level control for kinodynamics
- * and centroidal MPC schemes
+ * @file qp-solvers.hpp
+ * @brief QP inverse dynamics for MPC schemes
  */
 
-#ifndef SIMPLE_MPC_LOWLEVEL_CONTROL_HPP_
-#define SIMPLE_MPC_LOWLEVEL_CONTROL_HPP_
+#ifndef SIMPLE_MPC_QP_SOLVERS_HPP_
+#define SIMPLE_MPC_QP_SOLVERS_HPP_
 
 #include "simple-mpc/deprecated.hpp"
 #include "simple-mpc/fwd.hpp"
@@ -241,4 +240,4 @@ namespace simple_mpc
 /* --- Details -------------------------------------------------------------- */
 /* --- Details -------------------------------------------------------------- */
 
-#endif // SIMPLE_MPC_LOWLEVEL_CONTROL_HPP_
+#endif // SIMPLE_MPC_QP_SOLVERS_HPP_
