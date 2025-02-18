@@ -60,6 +60,45 @@ BOOST_AUTO_TEST_CASE(interpolate)
   interpolator.interpolateConfiguration(delay, timestep, qs2, q_interp);
   BOOST_CHECK(qs2[0].isApprox(q_interp));
 
+  // Test state interpolation method
+  std::vector<Eigen::VectorXd> xs;
+  for (std::size_t i = 0; i < 4; i++)
+  {
+    Eigen::VectorXd x0(model.nq + model.nv);
+    x0.head(model.nq) = pinocchio::neutral(model);
+    Eigen::VectorXd dq(model.nv);
+    dq.setRandom();
+    pinocchio::integrate(model, x0.head(model.nq), dq, x0.head(model.nq));
+    x0.tail(model.nv).setRandom();
+
+    xs.push_back(x0);
+  }
+  delay = 0.02;
+
+  Eigen::VectorXd x_interp(model.nq + model.nv);
+  interpolator.interpolateState(delay, timestep, xs, x_interp);
+  BOOST_CHECK(xs[2].isApprox(x_interp));
+
+  delay = 0.5;
+  interpolator.interpolateState(delay, timestep, xs, x_interp);
+  BOOST_CHECK(xs.back().isApprox(x_interp));
+
+  delay = 0.005;
+  interpolator.interpolateState(delay, timestep, xs, x_interp);
+  Eigen::VectorXd x_interp2(model.nq + model.nv);
+  pinocchio::difference(model, xs[0].head(model.nq), xs[1].head(model.nq), dq);
+  pinocchio::integrate(model, xs[0].head(model.nq), dq * 0.5, x_interp2.head(model.nq));
+  x_interp2.tail(model.nv) = (xs[0].tail(model.nv) + xs[1].tail(model.nv)) * 0.5;
+  BOOST_CHECK(x_interp2.isApprox(x_interp));
+
+  std::vector<Eigen::VectorXd> xs2;
+  for (std::size_t i = 0; i < 2; i++)
+  {
+    xs2.push_back(xs[0]);
+  }
+  interpolator.interpolateState(delay, timestep, xs2, x_interp);
+  BOOST_CHECK(xs2[0].isApprox(x_interp));
+
   // Test linear interpolation method
   std::vector<Eigen::VectorXd> vs;
   for (std::size_t i = 0; i < 4; i++)

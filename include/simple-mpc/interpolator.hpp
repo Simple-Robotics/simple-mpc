@@ -31,6 +31,12 @@ namespace simple_mpc
       const std::vector<Eigen::VectorXd> & qs,
       Eigen::Ref<Eigen::VectorXd> q_interp);
 
+    void interpolateState(
+      const double delay,
+      const double timestep,
+      const std::vector<Eigen::VectorXd> & xs,
+      Eigen::Ref<Eigen::VectorXd> x_interp);
+
     void interpolateLinear(
       const double delay,
       const double timestep,

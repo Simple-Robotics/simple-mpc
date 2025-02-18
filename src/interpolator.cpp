@@ -36,6 +36,30 @@ namespace simple_mpc
     }
   }
 
+  void Interpolator::interpolateState(
+    const double delay,
+    const double timestep,
+    const std::vector<Eigen::VectorXd> & xs,
+    Eigen::Ref<Eigen::VectorXd> x_interp)
+  {
+    assert(("State is not of the right size", xs[0].size() == model_.nq + model_.nv));
+
+    // Compute the time knot corresponding to the current delay
+    size_t step_nb = static_cast<size_t>(delay / timestep);
+    double step_progress = (delay - (double)step_nb * timestep) / timestep;
+
+    // Interpolate state trajectory
+    if (step_nb >= xs.size() - 1)
+      x_interp = xs.back();
+    else
+    {
+      x_interp.head(model_.nq) =
+        pinocchio::interpolate(model_, xs[step_nb].head(model_.nq), xs[step_nb + 1].head(model_.nq), step_progress);
+      x_interp.tail(model_.nv) =
+        xs[step_nb + 1].tail(model_.nv) * step_progress + xs[step_nb].tail(model_.nv) * (1. - step_progress);
+    }
+  }
+
   void Interpolator::interpolateLinear(
     const double delay,
     const double timestep,

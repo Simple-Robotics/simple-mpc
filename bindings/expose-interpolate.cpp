@@ -26,6 +26,15 @@ namespace simple_mpc
       return q_interp;
     }
 
+    Eigen::VectorXd interpolateStateProxy(
+      Interpolator & self, const double delay, const double timestep, const std::vector<Eigen::VectorXd> & xs)
+    {
+      Eigen::VectorXd x_interp(xs[0].size());
+      self.interpolateState(delay, timestep, xs, x_interp);
+
+      return x_interp;
+    }
+
     Eigen::VectorXd interpolateLinearProxy(
       Interpolator & self, const double delay, const double timestep, const std::vector<Eigen::VectorXd> & vs)
     {
@@ -39,6 +48,7 @@ namespace simple_mpc
     {
       bp::class_<Interpolator>("Interpolator", bp::init<const Model &>(bp::args("self", "model")))
         .def("interpolateConfiguration", &interpolateConfigurationProxy)
+        .def("interpolateState", &interpolateStateProxy)
         .def("interpolateLinear", &interpolateLinearProxy);
     }
   } // namespace python
