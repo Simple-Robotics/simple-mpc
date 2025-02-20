@@ -84,7 +84,6 @@ T_ds = 10
 T_ss = 30
 N_simu = int(0.01 / 0.001)
 mpc_conf = dict(
-    ddpIteration=1,
     support_force=-model_handler.getMass() * gravity[2],
     TOL=1e-4,
     mu_init=1e-8,

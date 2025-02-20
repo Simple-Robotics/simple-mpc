@@ -92,7 +92,6 @@ T_ss = 80
 T_ds = 20
 totalSteps = 1
 mpc_conf = dict(
-    ddpIteration=1,
     support_force=-model_handler.getMass() * gravity[2],
     TOL=1e-4,
     mu_init=1e-8,

@@ -31,7 +31,7 @@ gravity = np.array([0, 0, -9.81])
 fref = np.zeros(force_size)
 fref[2] = -model_handler.getMass() / nk * gravity[2]
 u0 = np.concatenate((fref, fref, fref, fref, np.zeros(model_handler.getModel().nv - 6)))
-
+dt = 0.01
 
 w_basepos = [0, 0, 100, 10, 10, 0]
 w_legpos = [1, 1, 1]
@@ -60,7 +60,7 @@ w_centder_ang = np.ones(3) * 0.1
 w_centder = np.diag(np.concatenate((w_centder_lin, w_centder_ang)))
 
 problem_conf = dict(
-    timestep=0.01,
+    timestep=dt,
     w_x=w_x,
     w_u=w_u,
     w_cent=w_cent,
@@ -85,7 +85,6 @@ T_ds = 10
 T_ss = 30
 
 mpc_conf = dict(
-    ddpIteration=1,
     support_force=-model_handler.getMass() * gravity[2],
     TOL=1e-4,
     mu_init=1e-8,
@@ -94,7 +93,7 @@ mpc_conf = dict(
     swing_apex=0.15,
     T_fly=T_ss,
     T_contact=T_ds,
-    timestep=0.01,
+    timestep=dt,
 )
 
 mpc = MPC(mpc_conf, dynproblem)
@@ -149,7 +148,7 @@ id_conf = dict(
 qp = IDSolver(id_conf, model_handler.getModel())
 
 """ Interpolation """
-interpolator = Interpolator(nq + nv, nv, nu, nf, 0.01)
+interpolator = Interpolator(model_handler.getModel())
 
 """ Initialize simulation"""
 device = BulletRobot(
@@ -252,7 +251,10 @@ for t in range(300):
 
     for j in range(N_simu):
         # time.sleep(0.01)
-        interpolator.interpolate(j / float(N_simu), xss, uss, ddqs, forces)
+        delay = j / float(N_simu) * dt
+
+        acc_interp = interpolator.interpolateLinear(delay, dt, ddqs)
+        force_interp = interpolator.interpolateLinear(delay, dt, forces)
 
         q_meas, v_meas = device.measureState()
         x_measured  = np.concatenate([q_meas, v_meas])
@@ -263,9 +265,9 @@ for t in range(300):
             mpc.getDataHandler().getData(),
             contact_states,
             x_measured[nq:],
-            interpolator.a_interpolated,
+            acc_interp,
             np.zeros(12),
-            interpolator.forces_interpolated,
+            force_interp,
             mpc.getDataHandler().getData().M,
         )
 

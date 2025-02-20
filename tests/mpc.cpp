@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(mpc_fulldynamics)
   fdproblem.createProblem(model_handler.getReferenceState(), T, 6, -settings.gravity[2], true);
 
   MPCSettings mpc_settings;
-  mpc_settings.ddpIteration = 1;
+  mpc_settings.max_iters = 1;
 
   mpc_settings.support_force = -model_handler.getMass() * settings.gravity[2];
 
@@ -108,7 +108,7 @@ BOOST_AUTO_TEST_CASE(mpc_kinodynamics)
   kinoproblem.createProblem(model_handler.getReferenceState(), T, 6, -settings.gravity[2], true);
 
   MPCSettings mpc_settings;
-  mpc_settings.ddpIteration = 1;
+  mpc_settings.max_iters = 1;
 
   mpc_settings.support_force = support_force;
 
@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE(mpc_centroidal)
   centproblem.createProblem(data_handler.getCentroidalState(), T, 6, -settings.gravity[2], false);
 
   MPCSettings mpc_settings;
-  mpc_settings.ddpIteration = 1;
+  mpc_settings.max_iters = 1;
 
   mpc_settings.support_force = support_force;
 
