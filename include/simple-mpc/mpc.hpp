@@ -37,7 +37,6 @@ namespace simple_mpc
     double mu_init = 1e-8;
     std::size_t max_iters = 1;
     std::size_t num_threads = 2;
-    int ddpIteration = 1;
 
     // Timings
     int T_fly = 80;

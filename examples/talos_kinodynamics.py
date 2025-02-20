@@ -100,7 +100,6 @@ problem.createProblem(model_handler.getReferenceState(), T, 6, gravity[2], False
 T_ds = 20
 T_ss = 80
 mpc_conf = dict(
-    ddpIteration=1,
     support_force=-model_handler.getMass() * gravity[2],
     TOL=1e-4,
     mu_init=1e-8,

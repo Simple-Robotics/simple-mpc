@@ -29,8 +29,6 @@ namespace simple_mpc
     {
       MPCSettings conf;
 
-      conf.ddpIteration = bp::extract<int>(settings["ddpIteration"]);
-
       conf.support_force = bp::extract<double>(settings["support_force"]);
 
       conf.TOL = bp::extract<double>(settings["TOL"]);
@@ -50,7 +48,6 @@ namespace simple_mpc
     {
       MPCSettings & conf = self.settings_;
       bp::dict settings;
-      settings["ddpIteration"] = conf.ddpIteration;
       settings["support_force"] = conf.support_force;
       settings["TOL"] = conf.TOL;
       settings["mu_init"] = conf.mu_init;
