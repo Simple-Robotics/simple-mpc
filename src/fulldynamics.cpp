@@ -12,6 +12,7 @@
 #include <aligator/modelling/multibody/frame-velocity.hpp>
 #include <aligator/modelling/multibody/multibody-friction-cone.hpp>
 #include <aligator/modelling/multibody/multibody-wrench-cone.hpp>
+#include <pinocchio/multibody/fwd.hpp>
 
 namespace simple_mpc
 {
@@ -190,7 +191,7 @@ namespace simple_mpc
         }
         if (land_constraint.at(name))
         {
-          std::vector<int> vel_id = {0, 1, 2};
+          /* std::vector<int> vel_id = {0, 1, 2};
           FrameVelocityResidual velocity_residual = FrameVelocityResidual(
             space.ndx(), nu_, model_handler_.getModel(), Motion::Zero(), model_handler_.getFootId(name),
             pinocchio::LOCAL_WORLD_ALIGNED);
@@ -205,7 +206,7 @@ namespace simple_mpc
 
           FunctionSliceXpr frame_slice = FunctionSliceXpr(frame_residual, frame_id);
 
-          stm.addConstraint(frame_slice, EqualityConstraint());
+          stm.addConstraint(frame_slice, EqualityConstraint());*/
         }
       }
     }
@@ -405,10 +406,8 @@ namespace simple_mpc
     auto cent_mom =
       CentroidalMomentumResidual(ter_space.ndx(), nu_, model_handler_.getModel(), Eigen::VectorXd::Zero(6));
 
-    term_cost.addCost("state_cost", QuadraticStateCost(ter_space, nu_, x0_, settings_.w_x));
-    /* term_cost.addCost(
-        "centroidal_cost",
-        QuadraticResidualCost(ter_space, cent_mom, settings_.w_cent)); */
+    term_cost.addCost("state_cost", QuadraticStateCost(ter_space, nu_, x0_, 10 * settings_.w_x));
+    term_cost.addCost("centroidal_cost", QuadraticResidualCost(ter_space, cent_mom, 10 * settings_.w_cent));
 
     return term_cost;
   }
@@ -419,29 +418,32 @@ namespace simple_mpc
     {
       throw std::runtime_error("Create problem first!");
     }
-    CenterOfMassTranslationResidual com_cstr =
+    auto space = MultibodyPhaseSpace(model_handler_.getModel());
+
+    std::vector<int> frame_id = {2};
+
+    Eigen::Vector3d b;
+    b << 0, 0, -0.01;
+
+    for (auto const & name : model_handler_.getFeetNames())
+    {
+      FrameTranslationResidual frame_residual_foot = FrameTranslationResidual(
+        space.ndx(), nu_, model_handler_.getModel(), Eigen::Vector3d::Zero(), model_handler_.getFootId(name));
+
+      LinearUnaryFunctionComposition cst_height_foot =
+        LinearUnaryFunctionComposition(frame_residual_foot, -Eigen::Matrix3d::Identity());
+      FunctionSliceXpr frame_slice_foot = FunctionSliceXpr(cst_height_foot, frame_id);
+
+      problem_->addTerminalConstraint(frame_slice_foot, NegativeOrthant());
+    }
+
+    /* CenterOfMassTranslationResidual com_cstr =
       CenterOfMassTranslationResidual(ndx_, nu_, model_handler_.getModel(), com_ref);
 
     double tau = sqrt(com_ref[2] / 9.81);
     DCMPositionResidual dcm_cstr = DCMPositionResidual(ndx_, nu_, model_handler_.getModel(), com_ref, tau);
 
-    problem_->addTerminalConstraint(dcm_cstr, EqualityConstraint());
-
-    Motion v_ref = Motion::Zero();
-    for (auto const & name : model_handler_.getFeetNames())
-    {
-      FrameVelocityResidual frame_vel = FrameVelocityResidual(
-        ndx_, nu_, model_handler_.getModel(), v_ref, model_handler_.getFootId(name), pinocchio::LOCAL_WORLD_ALIGNED);
-      if (settings_.force_size == 6)
-        problem_->addTerminalConstraint(frame_vel, EqualityConstraint());
-      else
-      {
-        std::vector<int> vel_id = {0, 1, 2};
-
-        FunctionSliceXpr vel_slice = FunctionSliceXpr(frame_vel, vel_id);
-        problem_->addTerminalConstraint(vel_slice, EqualityConstraint());
-      }
-    }
+    problem_->addTerminalConstraint(dcm_cstr, EqualityConstraint());*/
 
     terminal_constraint_ = true;
   }

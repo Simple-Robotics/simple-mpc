@@ -14,6 +14,7 @@
 #include <aligator/modelling/costs/quad-state-cost.hpp>
 #include <aligator/modelling/costs/sum-of-costs.hpp>
 #include <aligator/modelling/function-xpr-slice.hpp>
+#include <aligator/modelling/linear-function-composition.hpp>
 #include <proxsuite-nlp/modelling/constraints/box-constraint.hpp>
 #include <proxsuite-nlp/modelling/constraints/negative-orthant.hpp>
 #ifndef ALIGATOR_PINOCCHIO_V3
@@ -33,6 +34,7 @@ namespace simple_mpc
   using NegativeOrthant = proxsuite::nlp::NegativeOrthantTpl<double>;
   using EqualityConstraint = proxsuite::nlp::EqualityConstraintTpl<double>;
   using FunctionSliceXpr = FunctionSliceXprTpl<double>;
+  using LinearUnaryFunctionComposition = LinearUnaryFunctionCompositionTpl<double>;
 
 #define SIMPLE_MPC_DEFINE_DEFAULT_MOVE_CTORS(Type)                                                                     \
   Type(Type &&) = default;                                                                                             \
