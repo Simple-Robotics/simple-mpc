@@ -186,9 +186,11 @@ namespace simple_mpc
       return int_data->continuous_data->xdot_;
     }
 
-    const std::vector<Eigen::Vector3d> getContactForces(const std::size_t t)
+    const Eigen::VectorXd getContactForces(const std::size_t t)
     {
-      std::vector<Eigen::Vector3d> contact_forces;
+      Eigen::VectorXd contact_forces;
+      contact_forces.resize(3 * (long)ee_names_.size());
+
       ExplicitIntegratorData * int_data =
         dynamic_cast<ExplicitIntegratorData *>(&*solver_->workspace_.problem_data.stage_data[t]->dynamics_data);
       assert(int_data != nullptr);
@@ -202,12 +204,12 @@ namespace simple_mpc
       {
         if (contact_state[i])
         {
-          contact_forces.push_back(mc_data->constraint_datas_[force_id].contact_force.linear());
+          contact_forces.segment((long)i * 3, 3) = mc_data->constraint_datas_[force_id].contact_force.linear();
           force_id += 1;
         }
         else
         {
-          contact_forces.push_back(Eigen::Vector3d::Zero());
+          contact_forces.segment((long)i * 3, 3).setZero();
         }
       }
       return contact_forces;

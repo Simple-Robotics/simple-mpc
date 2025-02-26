@@ -241,16 +241,16 @@ for t in range(1000):
     a0 = mpc.getStateDerivative(0)[nv:]
     a1 = mpc.getStateDerivative(1)[nv:]
 
-    forces_vec = mpc.getContactForces(0)
+    forces_vec0 = mpc.getContactForces(0)
+    forces_vec1 = mpc.getContactForces(1)
     contact_states = mpc.ocp_handler.getContactState(0)
-    total_forces = np.concatenate((forces_vec[0], forces_vec[1], forces_vec[2], forces_vec[3]))
 
-    force_FL.append(forces_vec[0])
-    force_FR.append(forces_vec[1])
-    force_RL.append(forces_vec[2])
-    force_RR.append(forces_vec[3])
+    force_FL.append(forces_vec0[:3])
+    force_FR.append(forces_vec0[3:6])
+    force_RL.append(forces_vec0[6:9])
+    force_RR.append(forces_vec0[9:12])
 
-    forces = [total_forces, total_forces]
+    forces = [forces_vec0, forces_vec1]
     ddqs = [a0, a1]
     xss = [mpc.xs[0], mpc.xs[1]]
     uss = [mpc.us[0], mpc.us[1]]
