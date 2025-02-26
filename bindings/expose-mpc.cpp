@@ -64,9 +64,12 @@ namespace simple_mpc
     void exposeMPC()
     {
       using StageVec = std::vector<std::shared_ptr<StageModel>>;
+      using ForceVec = std::vector<Eigen::Vector3d>;
       using MapBool = std::map<std::string, bool>;
       StdVectorPythonVisitor<StageVec, true>::expose(
         "StdVec_StageModel", eigenpy::details::overload_base_get_item_for_std_vector<StageVec>());
+      StdVectorPythonVisitor<ForceVec, true>::expose(
+        "StdVec_Force", eigenpy::details::overload_base_get_item_for_std_vector<ForceVec>());
 
       StdVectorPythonVisitor<std::vector<MapBool>, true>::expose("StdVec_MapBool");
 
@@ -88,6 +91,7 @@ namespace simple_mpc
         .def("getFootTakeoffCycle", &MPC::getFootTakeoffCycle, ("self"_a, "ee_name"))
         .def("getFootLandCycle", &MPC::getFootLandCycle, ("self"_a, "ee_name"))
         .def("getStateDerivative", &MPC::getStateDerivative, ("self"_a, "t"))
+        .def("getContactForces", &MPC::getContactForces, ("self"_a, "t"))
         .def("getCyclingContactState", &MPC::getCyclingContactState, ("self"_a, "t", "ee_name"))
         .def(
           "getModelHandler", &MPC::getModelHandler, "self"_a, bp::return_internal_reference<>(),

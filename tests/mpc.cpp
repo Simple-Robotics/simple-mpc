@@ -90,6 +90,8 @@ BOOST_AUTO_TEST_CASE(mpc_fulldynamics)
   BOOST_CHECK_EQUAL(mpc.foot_land_times_.at("right_sole_link")[0], 150);
 
   Eigen::VectorXd xdot = mpc.getStateDerivative(0);
+
+  std::vector<Eigen::Vector3d> forces = mpc.getContactForces(0);
 }
 
 BOOST_AUTO_TEST_CASE(mpc_kinodynamics)

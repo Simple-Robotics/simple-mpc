@@ -11,6 +11,7 @@
 #include <aligator/fwd.hpp>
 #include <aligator/modelling/dynamics/fwd.hpp>
 #include <aligator/modelling/dynamics/integrator-explicit.hpp>
+#include <aligator/modelling/dynamics/multibody-constraint-fwd.hpp>
 #include <aligator/solvers/proxddp/solver-proxddp.hpp>
 
 #include "simple-mpc/deprecated.hpp"
@@ -22,6 +23,8 @@
 namespace simple_mpc
 {
   using ExplicitIntegratorData = dynamics::ExplicitIntegratorDataTpl<double>;
+  using MultibodyConstraintFwdData = dynamics::MultibodyConstraintFwdDataTpl<double>;
+  using MultibodyConstraintFwdDynamics = dynamics::MultibodyConstraintFwdDynamicsTpl<double>;
 
   struct MPCSettings
   {
@@ -181,6 +184,33 @@ namespace simple_mpc
         dynamic_cast<ExplicitIntegratorData *>(&*solver_->workspace_.problem_data.stage_data[t]->dynamics_data);
       assert(int_data != nullptr);
       return int_data->continuous_data->xdot_;
+    }
+
+    const std::vector<Eigen::Vector3d> getContactForces(const std::size_t t)
+    {
+      std::vector<Eigen::Vector3d> contact_forces;
+      ExplicitIntegratorData * int_data =
+        dynamic_cast<ExplicitIntegratorData *>(&*solver_->workspace_.problem_data.stage_data[t]->dynamics_data);
+      assert(int_data != nullptr);
+      MultibodyConstraintFwdData * mc_data = dynamic_cast<MultibodyConstraintFwdData *>(&*int_data->continuous_data);
+      assert(mc_data != nullptr);
+
+      std::vector<bool> contact_state = ocp_handler_->getContactState(t);
+
+      size_t force_id = 0;
+      for (size_t i = 0; i < contact_state.size(); i++)
+      {
+        if (contact_state[i])
+        {
+          contact_forces.push_back(mc_data->constraint_datas_[force_id].contact_force.linear());
+          force_id += 1;
+        }
+        else
+        {
+          contact_forces.push_back(Eigen::Vector3d::Zero());
+        }
+      }
+      return contact_forces;
     }
 
     void switchToWalk(const Vector6d & velocity_base);

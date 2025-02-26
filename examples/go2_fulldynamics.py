@@ -44,7 +44,7 @@ u0 = np.zeros(model_handler.getModel().nv - 6)
 w_basepos = [0, 0, 0, 0, 0, 0]
 w_legpos = [10, 10, 10]
 
-w_basevel = [10, 10, 10, 10, 10, 10]
+w_basevel = [0, 0, 0, 0, 0, 0]
 w_legvel = [0.1, 0.1, 0.1]
 w_x = np.array(w_basepos + w_legpos * 4 + w_basevel + w_legvel * 4)
 w_cent_lin = np.array([0.0, 0.0, 0])
@@ -201,9 +201,9 @@ solve_time = []
 L_measured = []
 
 v = np.zeros(6)
-v[0] = 0.
+v[5] = 0.2
 mpc.velocity_base = v
-for t in range(500):
+for t in range(1000):
     print("Time " + str(t))
     land_LF = mpc.getFootLandCycle("FL_foot")
     land_RF = mpc.getFootLandCycle("RL_foot")
@@ -214,7 +214,10 @@ for t in range(500):
         str(land_RF) + ", takeoff_LF = " + str(takeoff_LF) + ", landing_LF = ",
         str(land_LF),
     ) """
-
+    if t == 400:
+        v = np.zeros(6)
+        v[0] = 0.2
+        mpc.velocity_base = v
     """ if t == 200:
         for s in range(T):
             device.resetState(mpc.xs[s][:nq])
@@ -238,13 +241,14 @@ for t in range(500):
     a0 = mpc.getStateDerivative(0)[nv:]
     a1 = mpc.getStateDerivative(1)[nv:]
 
-    FL_f, FR_f, RL_f, RR_f = extract_forces(mpc.getTrajOptProblem(), mpc.solver.workspace, 0)
+    forces_vec = mpc.getContactForces(0)
     contact_states = mpc.ocp_handler.getContactState(0)
-    total_forces = np.concatenate((FL_f, FR_f, RL_f, RR_f))
-    force_FL.append(FL_f)
-    force_FR.append(FR_f)
-    force_RL.append(RL_f)
-    force_RR.append(RR_f)
+    total_forces = np.concatenate((forces_vec[0], forces_vec[1], forces_vec[2], forces_vec[3]))
+
+    force_FL.append(forces_vec[0])
+    force_FR.append(forces_vec[1])
+    force_RL.append(forces_vec[2])
+    force_RR.append(forces_vec[3])
 
     forces = [total_forces, total_forces]
     ddqs = [a0, a1]
