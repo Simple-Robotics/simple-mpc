@@ -342,6 +342,43 @@ namespace simple_mpc
     return ocp_handler_->getProblem();
   }
 
+  const ConstVectorRef MPC::getStateDerivative(const std::size_t t)
+  {
+    ExplicitIntegratorData * int_data =
+      dynamic_cast<ExplicitIntegratorData *>(&*solver_->workspace_.problem_data.stage_data[t]->dynamics_data);
+    assert(int_data != nullptr);
+    return int_data->continuous_data->xdot_;
+  }
+
+  const Eigen::VectorXd MPC::getContactForces(const std::size_t t)
+  {
+    Eigen::VectorXd contact_forces;
+    contact_forces.resize(3 * (long)ee_names_.size());
+
+    ExplicitIntegratorData * int_data =
+      dynamic_cast<ExplicitIntegratorData *>(&*solver_->workspace_.problem_data.stage_data[t]->dynamics_data);
+    assert(int_data != nullptr);
+    MultibodyConstraintFwdData * mc_data = dynamic_cast<MultibodyConstraintFwdData *>(&*int_data->continuous_data);
+    assert(mc_data != nullptr);
+
+    std::vector<bool> contact_state = ocp_handler_->getContactState(t);
+
+    size_t force_id = 0;
+    for (size_t i = 0; i < contact_state.size(); i++)
+    {
+      if (contact_state[i])
+      {
+        contact_forces.segment((long)i * 3, 3) = mc_data->constraint_datas_[force_id].contact_force.linear();
+        force_id += 1;
+      }
+      else
+      {
+        contact_forces.segment((long)i * 3, 3).setZero();
+      }
+    }
+    return contact_forces;
+  }
+
   void MPC::switchToWalk(const Vector6d & velocity_base)
   {
     now_ = WALKING;
