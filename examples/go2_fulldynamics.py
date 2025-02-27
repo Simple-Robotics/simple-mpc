@@ -201,7 +201,7 @@ solve_time = []
 L_measured = []
 
 v = np.zeros(6)
-v[0] = 0.
+v[0] = 0.2
 mpc.velocity_base = v
 for t in range(500):
     print("Time " + str(t))
@@ -214,7 +214,6 @@ for t in range(500):
         str(land_RF) + ", takeoff_LF = " + str(takeoff_LF) + ", landing_LF = ",
         str(land_LF),
     ) """
-
     """ if t == 200:
         for s in range(T):
             device.resetState(mpc.xs[s][:nq])
@@ -238,15 +237,16 @@ for t in range(500):
     a0 = mpc.getStateDerivative(0)[nv:]
     a1 = mpc.getStateDerivative(1)[nv:]
 
-    FL_f, FR_f, RL_f, RR_f = extract_forces(mpc.getTrajOptProblem(), mpc.solver.workspace, 0)
+    forces_vec0 = mpc.getContactForces(0)
+    forces_vec1 = mpc.getContactForces(1)
     contact_states = mpc.ocp_handler.getContactState(0)
-    total_forces = np.concatenate((FL_f, FR_f, RL_f, RR_f))
-    force_FL.append(FL_f)
-    force_FR.append(FR_f)
-    force_RL.append(RL_f)
-    force_RR.append(RR_f)
 
-    forces = [total_forces, total_forces]
+    force_FL.append(forces_vec0[:3])
+    force_FR.append(forces_vec0[3:6])
+    force_RL.append(forces_vec0[6:9])
+    force_RR.append(forces_vec0[9:12])
+
+    forces = [forces_vec0, forces_vec1]
     ddqs = [a0, a1]
     xss = [mpc.xs[0], mpc.xs[1]]
     uss = [mpc.us[0], mpc.us[1]]
