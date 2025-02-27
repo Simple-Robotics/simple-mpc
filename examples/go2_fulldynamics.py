@@ -44,7 +44,7 @@ u0 = np.zeros(model_handler.getModel().nv - 6)
 w_basepos = [0, 0, 0, 0, 0, 0]
 w_legpos = [10, 10, 10]
 
-w_basevel = [0, 0, 0, 0, 0, 0]
+w_basevel = [10, 10, 10, 10, 10, 10]
 w_legvel = [0.1, 0.1, 0.1]
 w_x = np.array(w_basepos + w_legpos * 4 + w_basevel + w_legvel * 4)
 w_cent_lin = np.array([0.0, 0.0, 0])
@@ -201,9 +201,9 @@ solve_time = []
 L_measured = []
 
 v = np.zeros(6)
-v[5] = 0.2
+v[0] = 0.2
 mpc.velocity_base = v
-for t in range(1000):
+for t in range(500):
     print("Time " + str(t))
     land_LF = mpc.getFootLandCycle("FL_foot")
     land_RF = mpc.getFootLandCycle("RL_foot")
@@ -214,10 +214,6 @@ for t in range(1000):
         str(land_RF) + ", takeoff_LF = " + str(takeoff_LF) + ", landing_LF = ",
         str(land_LF),
     ) """
-    if t == 400:
-        v = np.zeros(6)
-        v[0] = 0.2
-        mpc.velocity_base = v
     """ if t == 200:
         for s in range(T):
             device.resetState(mpc.xs[s][:nq])
