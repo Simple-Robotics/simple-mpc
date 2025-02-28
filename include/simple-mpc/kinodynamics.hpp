@@ -100,7 +100,6 @@ namespace simple_mpc
 
   protected:
     KinodynamicsSettings settings_;
-    Eigen::VectorXd x0_;
   };
 
 } // namespace simple_mpc

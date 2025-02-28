@@ -131,6 +131,11 @@ namespace simple_mpc
       pose_base_ = pose_ref;
     }
 
+    void setReferenceState(const VectorXd & state_ref)
+    {
+      ocp_handler_->setReferenceState(state_ref);
+    }
+
     ConstVectorRef getPoseBase(const std::size_t t) const;
 
     // getters and setters

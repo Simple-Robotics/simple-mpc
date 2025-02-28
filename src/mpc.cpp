@@ -303,7 +303,6 @@ namespace simple_mpc
     }
 
     ocp_handler_->setVelocityBase(ocp_handler_->getSize() - 1, velocity_base_);
-    ocp_handler_->setPoseBase(ocp_handler_->getSize() - 1, pose_base_);
 
     Eigen::Vector3d com_ref;
     com_ref << 0, 0, 0;

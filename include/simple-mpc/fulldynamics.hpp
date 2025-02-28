@@ -112,9 +112,6 @@ namespace simple_mpc
     FullDynamicsSettings settings_;
     ProximalSettings prox_settings_;
 
-    // State reference
-    Eigen::VectorXd x0_;
-
     // Actuation matrix
     Eigen::MatrixXd actuation_matrix_;
 

@@ -77,6 +77,8 @@ namespace simple_mpc
           ("self"_a, "x0", "horizon", "force_size", "gravity", "terminal_constraint"))
         .def("setReferenceControl", &OCPHandler::setReferenceControl, ("self"_a, "t", "u_ref"))
         .def("getReferenceControl", &OCPHandler::getReferenceControl, ("self"_a, "t"))
+        .def("setReferenceState", &OCPHandler::setReferenceState, ("self"_a, "x_ref"))
+        .def("getReferenceState", &OCPHandler::getReferenceState, ("self"_a))
         .def("getProblem", +[](OCPHandler & ocp) { return boost::ref(ocp.getProblem()); }, "self"_a);
 
       exposeContainers();

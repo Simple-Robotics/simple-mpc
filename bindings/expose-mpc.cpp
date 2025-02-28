@@ -89,6 +89,7 @@ namespace simple_mpc
         .def("getFootLandCycle", &MPC::getFootLandCycle, ("self"_a, "ee_name"))
         .def("getStateDerivative", &MPC::getStateDerivative, ("self"_a, "t"))
         .def("getContactForces", &MPC::getContactForces, ("self"_a, "t"))
+        .def("setReferenceState", &MPC::setReferenceState, ("self"_a, "state_ref"))
         .def("getCyclingContactState", &MPC::getCyclingContactState, ("self"_a, "t", "ee_name"))
         .def(
           "getModelHandler", &MPC::getModelHandler, "self"_a, bp::return_internal_reference<>(),
