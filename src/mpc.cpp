@@ -36,6 +36,7 @@ namespace simple_mpc
 
     foot_trajectories_.updateApex(settings.swing_apex);
     x0_ = ocp_handler_->getProblemState(*data_handler_);
+    x_reference_ = ocp_handler_->getReferenceState(0);
 
     solver_ = std::make_unique<SolverProxDDP>(settings_.TOL, settings_.mu_init, maxiters, aligator::QUIET);
     solver_->rollout_type_ = aligator::RolloutType::LINEAR;
@@ -89,7 +90,7 @@ namespace simple_mpc
 
     com0_ = data_handler_->getData().com[0];
     now_ = WALKING;
-    pose_base_ = x0_.head<7>();
+
     velocity_base_.setZero();
     next_pose_.setZero();
     twist_vect_.setZero();
@@ -302,6 +303,7 @@ namespace simple_mpc
       }
     }
 
+    ocp_handler_->setReferenceState(ocp_handler_->getSize() - 1, x_reference_);
     ocp_handler_->setVelocityBase(ocp_handler_->getSize() - 1, velocity_base_);
 
     Eigen::Vector3d com_ref;
@@ -329,11 +331,6 @@ namespace simple_mpc
   const pinocchio::SE3 MPC::getReferencePose(const std::size_t t, const std::string & ee_name) const
   {
     return ocp_handler_->getReferencePose(t, ee_name);
-  }
-
-  ConstVectorRef MPC::getPoseBase(const std::size_t t) const
-  {
-    return ocp_handler_->getPoseBase(t);
   }
 
   TrajOptProblem & MPC::getTrajOptProblem()

@@ -69,7 +69,7 @@ namespace simple_mpc
     return qc->getTarget();
   }
 
-  void OCPHandler::setReferenceState(const ConstVectorRef & x_ref)
+  /* void OCPHandler::setReferenceState(const ConstVectorRef & x_ref)
   {
     assert(x_ref.size() == x0_.size() && "x_ref not of the right size");
     x0_ = x_ref;
@@ -78,7 +78,7 @@ namespace simple_mpc
   ConstVectorRef OCPHandler::getReferenceState()
   {
     return x0_;
-  }
+  } */
 
   CostStack * OCPHandler::getCostStack(std::size_t t)
   {

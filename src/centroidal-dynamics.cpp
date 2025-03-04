@@ -33,6 +33,7 @@ namespace simple_mpc
     control_ref_.resize(nu_);
     control_ref_.setZero();
     com_ref_.setZero();
+    x0_.resize(9);
   }
 
   StageModel CentroidalOCP::createStage(
@@ -225,6 +226,7 @@ namespace simple_mpc
 
   void CentroidalOCP::setVelocityBase(const std::size_t t, const ConstVectorRef & velocity_base)
   {
+    assert(velocity_base.size() == 6 && "velocity_base not of the right size");
     CostStack * cs = getCostStack(t);
     QuadraticResidualCost * qcm = cs->getComponent<QuadraticResidualCost>("linear_mom_cost");
     LinearMomentumResidual * cfm = qcm->getResidual<LinearMomentumResidual>();
@@ -246,10 +248,7 @@ namespace simple_mpc
 
   void CentroidalOCP::setPoseBase(const std::size_t t, const ConstVectorRef & pose_base)
   {
-    if (pose_base.size() != 7)
-    {
-      throw std::runtime_error("pose_base size should be 7");
-    }
+    assert(pose_base.size() == 3 && "pose_base not of the right size");
     CostStack * cs = getCostStack(t);
     QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("com_cost");
     CentroidalCoMResidual * cfr = qrc->getResidual<CentroidalCoMResidual>();
@@ -288,6 +287,20 @@ namespace simple_mpc
       contact_state.push_back(ode->contact_map_.getContactState(name));
 
     return contact_state;
+  }
+
+  void CentroidalOCP::setReferenceState(const std::size_t t, const ConstVectorRef & x_ref)
+  {
+    assert(x_ref.size() == 9 && "x_ref not of the right size");
+    setPoseBase(t, x_ref.head(3));
+    setVelocityBase(t, x_ref.tail(6));
+  }
+
+  const ConstVectorRef CentroidalOCP::getReferenceState(const std::size_t t)
+  {
+    x0_.head(3) = getPoseBase(t);
+    x0_.tail(6) = getVelocityBase(t);
+    return x0_;
   }
 
   CostStack CentroidalOCP::createTerminalCost()

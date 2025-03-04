@@ -90,6 +90,8 @@ namespace simple_mpc
     const Eigen::VectorXd getProblemState(const RobotDataHandler & data_handler) override;
     size_t getContactSupport(const std::size_t t) override;
     std::vector<bool> getContactState(const std::size_t t) override;
+    void setReferenceState(const std::size_t t, const ConstVectorRef & x_ref) override;
+    const ConstVectorRef getReferenceState(const std::size_t t) override;
 
     void computeControlFromForces(const std::map<std::string, Eigen::VectorXd> & force_refs);
 
