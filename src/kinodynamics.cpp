@@ -57,7 +57,7 @@ namespace simple_mpc
     auto centder_mom = CentroidalMomentumDerivativeResidual(
       space.ndx(), model_handler_.getModel(), settings_.gravity, contact_states, model_handler_.getFeetIds(),
       settings_.force_size);
-    rcost.addCost("state_cost", QuadraticStateCost(space, nu_, x0_, settings_.w_x));
+    rcost.addCost("state_cost", QuadraticStateCost(space, nu_, model_handler_.getReferenceState(), settings_.w_x));
     rcost.addCost("control_cost", QuadraticControlCost(space, control_ref_, settings_.w_u));
     rcost.addCost("centroidal_cost", QuadraticResidualCost(space, cent_mom, settings_.w_cent));
     rcost.addCost("centroidal_derivative_cost", QuadraticResidualCost(space, centder_mom, settings_.w_centder));
@@ -278,6 +278,7 @@ namespace simple_mpc
     }
     CostStack * cs = getCostStack(t);
     QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
+    x0_ = getReferenceState(t);
     x0_.segment(nq_, 6) = velocity_base;
     qc->setTarget(x0_);
   }
@@ -297,6 +298,7 @@ namespace simple_mpc
     }
     CostStack * cs = getCostStack(t);
     QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
+    x0_ = getReferenceState(t);
     x0_.head(7) = pose_base;
     qc->setTarget(x0_);
   }
@@ -304,6 +306,21 @@ namespace simple_mpc
   const Eigen::VectorXd KinodynamicsOCP::getProblemState(const RobotDataHandler & data_handler)
   {
     return data_handler.getState();
+  }
+
+  void KinodynamicsOCP::setReferenceState(const std::size_t t, const ConstVectorRef & x_ref)
+  {
+    assert(x_ref.size() == nq_ + nv_ && "x_ref not of the right size");
+    CostStack * cs = getCostStack(t);
+    QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
+    qc->setTarget(x_ref);
+  }
+
+  const ConstVectorRef KinodynamicsOCP::getReferenceState(const std::size_t t)
+  {
+    CostStack * cs = getCostStack(t);
+    QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
+    return qc->getTarget();
   }
 
   size_t KinodynamicsOCP::getContactSupport(const std::size_t t)
@@ -337,7 +354,8 @@ namespace simple_mpc
     auto cent_mom =
       CentroidalMomentumResidual(ter_space.ndx(), nu_, model_handler_.getModel(), Eigen::VectorXd::Zero(6));
 
-    term_cost.addCost("state_cost", QuadraticStateCost(ter_space, nu_, x0_, settings_.w_x));
+    term_cost.addCost(
+      "state_cost", QuadraticStateCost(ter_space, nu_, model_handler_.getReferenceState(), settings_.w_x));
     term_cost.addCost("centroidal_cost", QuadraticResidualCost(ter_space, cent_mom, settings_.w_cent * 10));
 
     return term_cost;

@@ -96,6 +96,8 @@ namespace simple_mpc
     virtual const Eigen::VectorXd getProblemState(const RobotDataHandler & data_handler) = 0;
     virtual size_t getContactSupport(const std::size_t t) = 0;
     virtual std::vector<bool> getContactState(const std::size_t t) = 0;
+    virtual void setReferenceState(const std::size_t t, const ConstVectorRef & x_ref) = 0;
+    virtual const ConstVectorRef getReferenceState(const std::size_t t) = 0;
 
     /// Common functions for all problems
 
@@ -107,7 +109,7 @@ namespace simple_mpc
       const double gravity,
       const bool terminal_constraint);
 
-    // Setter and getter for control reference
+    // Setter and getter for state and control reference
     void setReferenceControl(const std::size_t t, const ConstVectorRef & u_ref);
     ConstVectorRef getReferenceControl(const std::size_t t);
 
@@ -149,6 +151,9 @@ namespace simple_mpc
     int nu_;
     bool problem_initialized_ = false;
     bool terminal_constraint_ = false;
+
+    /// State reference
+    Eigen::VectorXd x0_;
 
     /// The robot model
     RobotModelHandler model_handler_;

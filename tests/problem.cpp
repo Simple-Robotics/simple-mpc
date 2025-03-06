@@ -94,6 +94,13 @@ BOOST_AUTO_TEST_CASE(fulldynamics)
   pose_base << 0, 0, 2, 0, 0, 0, 1;
   fdproblem.setPoseBase(2, pose_base);
   BOOST_CHECK_EQUAL(fdproblem.getPoseBase(2), pose_base);
+
+  Eigen::VectorXd new_q = pinocchio::randomConfiguration(model_handler.getModel());
+  Eigen::VectorXd new_x(model_handler.getModel().nq + model_handler.getModel().nv);
+  new_x.head(model_handler.getModel().nq) = new_q;
+  new_x.tail(model_handler.getModel().nv).setRandom();
+  fdproblem.setReferenceState(2, new_x);
+  BOOST_CHECK_EQUAL(fdproblem.getReferenceState(2), new_x);
 }
 
 BOOST_AUTO_TEST_CASE(kinodynamics)
@@ -179,6 +186,13 @@ BOOST_AUTO_TEST_CASE(kinodynamics)
   pose_base << 0, 0, 2, 0, 0, 0, 1;
   knproblem.setPoseBase(2, pose_base);
   BOOST_CHECK_EQUAL(knproblem.getPoseBase(2), pose_base);
+
+  Eigen::VectorXd new_q = pinocchio::randomConfiguration(model_handler.getModel());
+  Eigen::VectorXd new_x(model_handler.getModel().nq + model_handler.getModel().nv);
+  new_x.head(model_handler.getModel().nq) = new_q;
+  new_x.tail(model_handler.getModel().nv).setRandom();
+  knproblem.setReferenceState(2, new_x);
+  BOOST_CHECK_EQUAL(knproblem.getReferenceState(2), new_x);
 }
 
 BOOST_AUTO_TEST_CASE(centroidal)
@@ -260,10 +274,15 @@ BOOST_AUTO_TEST_CASE(centroidal)
   BOOST_CHECK_EQUAL(cproblem.getReferencePose(3, "left_sole_link"), new_poses.at("left_sole_link"));
   BOOST_CHECK_EQUAL(cproblem.getReferencePose(3, "right_sole_link"), new_poses.at("right_sole_link"));
 
-  Eigen::VectorXd pose_base(7);
-  pose_base << 0, 0, 2, 0, 0, 0, 1;
+  Eigen::VectorXd pose_base(3);
+  pose_base << 0, 0, 2;
   cproblem.setPoseBase(2, pose_base);
-  BOOST_CHECK_EQUAL(cproblem.getPoseBase(2), pose_base.head(3));
+  BOOST_CHECK_EQUAL(cproblem.getPoseBase(2), pose_base);
+
+  Eigen::VectorXd new_x(9);
+  new_x << 0, 0, 1, 0, 0.1, 0.1, 0.2, 0.2, 0.2;
+  cproblem.setReferenceState(2, new_x);
+  BOOST_CHECK_EQUAL(cproblem.getReferenceState(2), new_x);
 }
 
 BOOST_AUTO_TEST_CASE(centroidal_solo)
