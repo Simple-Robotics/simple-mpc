@@ -88,7 +88,7 @@ namespace simple_mpc
     auto space = MultibodyPhaseSpace(model_handler_.getModel());
     auto rcost = CostStack(space, nu_);
 
-    rcost.addCost("state_cost", QuadraticStateCost(space, nu_, x0_, settings_.w_x));
+    rcost.addCost("state_cost", QuadraticStateCost(space, nu_, model_handler_.getReferenceState(), settings_.w_x));
     rcost.addCost("control_cost", QuadraticControlCost(space, Eigen::VectorXd::Zero(nu_), settings_.w_u));
 
     auto cent_mom = CentroidalMomentumResidual(space.ndx(), nu_, model_handler_.getModel(), Eigen::VectorXd::Zero(6));
@@ -337,6 +337,7 @@ namespace simple_mpc
     }
     CostStack * cs = getCostStack(t);
     QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
+    x0_ = getReferenceState(t);
     x0_.segment(nq_, 6) = velocity_base;
     qc->setTarget(x0_);
   }
@@ -356,6 +357,7 @@ namespace simple_mpc
     }
     CostStack * cs = getCostStack(t);
     QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
+    x0_ = getReferenceState(t);
     x0_.head(7) = pose_base;
     qc->setTarget(x0_);
   }
@@ -398,6 +400,21 @@ namespace simple_mpc
     return contact_state;
   }
 
+  void FullDynamicsOCP::setReferenceState(const std::size_t t, const ConstVectorRef & x_ref)
+  {
+    assert(x_ref.size() == nq_ + nv_ && "x_ref not of the right size");
+    CostStack * cs = getCostStack(t);
+    QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
+    qc->setTarget(x_ref);
+  }
+
+  const ConstVectorRef FullDynamicsOCP::getReferenceState(const std::size_t t)
+  {
+    CostStack * cs = getCostStack(t);
+    QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
+    return qc->getTarget();
+  }
+
   CostStack FullDynamicsOCP::createTerminalCost()
   {
     auto ter_space = MultibodyPhaseSpace(model_handler_.getModel());
@@ -405,7 +422,8 @@ namespace simple_mpc
     auto cent_mom =
       CentroidalMomentumResidual(ter_space.ndx(), nu_, model_handler_.getModel(), Eigen::VectorXd::Zero(6));
 
-    term_cost.addCost("state_cost", QuadraticStateCost(ter_space, nu_, x0_, settings_.w_x));
+    term_cost.addCost(
+      "state_cost", QuadraticStateCost(ter_space, nu_, model_handler_.getReferenceState(), settings_.w_x));
     /* term_cost.addCost(
         "centroidal_cost",
         QuadraticResidualCost(ter_space, cent_mom, settings_.w_cent)); */

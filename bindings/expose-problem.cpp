@@ -69,6 +69,8 @@ namespace simple_mpc
         .def("getVelocityBase", bp::pure_virtual(&OCPHandler::getVelocityBase), bp::args("self", "t"))
         .def("setPoseBase", bp::pure_virtual(&OCPHandler::setPoseBase), bp::args("self", "t", "pose_base"))
         .def("getPoseBase", bp::pure_virtual(&OCPHandler::getPoseBase), bp::args("self", "t"))
+        .def("setReferenceState", bp::pure_virtual(&OCPHandler::setReferenceState), bp::args("self", "t", "x_ref"))
+        .def("getReferenceState", bp::pure_virtual(&OCPHandler::getReferenceState), bp::args("self", "t"))
         .def("getProblemState", bp::pure_virtual(&OCPHandler::getProblemState), bp::args("self", "data_handler"))
         .def("getContactSupport", bp::pure_virtual(&OCPHandler::getContactSupport), bp::args("self", "t"))
         .def("getContactState", bp::pure_virtual(&OCPHandler::getContactState), bp::args("self", "t"))

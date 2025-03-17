@@ -88,7 +88,6 @@ namespace simple_mpc
   public:
     std::unique_ptr<SolverProxDDP> solver_;
     Vector6d velocity_base_;
-    Vector7d pose_base_;
     Eigen::Vector3d next_pose_;
     Eigen::Vector2d twist_vect_;
     MPCSettings settings_;
@@ -120,18 +119,10 @@ namespace simple_mpc
       velocity_base_ = v;
     }
 
-    void setPoseBaseFromSE3(const pin::SE3 & pose_ref)
+    void setReferenceState(const VectorXd & state_ref)
     {
-      Eigen::Map<pin::SE3::Quaternion> q{pose_base_.tail<4>().data()};
-      pose_base_.head<3>() = pose_ref.translation();
-      q = pose_ref.rotation();
+      x_reference_ = state_ref;
     }
-    SIMPLE_MPC_DEPRECATED void setPoseBase(const Vector7d & pose_ref)
-    {
-      pose_base_ = pose_ref;
-    }
-
-    ConstVectorRef getPoseBase(const std::size_t t) const;
 
     // getters and setters
     TrajOptProblem & getTrajOptProblem();
@@ -198,6 +189,7 @@ namespace simple_mpc
     std::vector<VectorXd> us_;
     // Riccati gains
     std::vector<MatrixXd> Ks_;
+    VectorXd x_reference_;
 
     // Initial quantities
     VectorXd x0_;
