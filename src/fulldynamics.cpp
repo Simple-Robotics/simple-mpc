@@ -187,7 +187,7 @@ namespace simple_mpc
             space.ndx(), model_handler_.getModel(), actuation_matrix_, cms, prox_settings_, name, settings_.mu);
           stm.addConstraint(friction_residual, NegativeOrthant());
         }
-        if (land_constraint.at(name))
+        /* if (land_constraint.at(name))
         {
           std::vector<int> vel_id = {0, 1, 2};
           FrameVelocityResidual velocity_residual = FrameVelocityResidual(
@@ -205,7 +205,7 @@ namespace simple_mpc
           FunctionSliceXpr frame_slice = FunctionSliceXpr(frame_residual, frame_id);
 
           stm.addConstraint(frame_slice, EqualityConstraint());
-        }
+        }  */
       }
     }
 
@@ -423,9 +423,9 @@ namespace simple_mpc
 
     term_cost.addCost(
       "state_cost", QuadraticStateCost(ter_space, nu_, model_handler_.getReferenceState(), settings_.w_x));
-    /* term_cost.addCost(
+    term_cost.addCost(
         "centroidal_cost",
-        QuadraticResidualCost(ter_space, cent_mom, settings_.w_cent)); */
+        QuadraticResidualCost(ter_space, cent_mom, settings_.w_cent));
 
     return term_cost;
   }
