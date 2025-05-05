@@ -96,7 +96,7 @@ namespace simple_mpc
         state_id.push_back(i);
       }
       FunctionSliceXpr state_slice = FunctionSliceXpr(state_fn, state_id);
-      stm.addConstraint(state_slice, BoxConstraint(-settings_.qmax, -settings_.qmin));
+      stm.addConstraint(state_slice, BoxConstraint(settings_.qmin, settings_.qmax));
     }
 
     Motion v_ref = Motion::Zero();
