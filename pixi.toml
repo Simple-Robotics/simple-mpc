@@ -19,7 +19,7 @@ pkg-config = ">=0.29.2"
 libboost-python-devel = ">=1.80.0"
 python = "3.11"
 eigenpy = ">=3.10.1"
-aligator = ">=0.10"
+aligator = ">=0.13"
 benchmark = ">=1.8.0"
 pytest = ">=8.3.0"
 matplotlib = ">=3.9"
@@ -44,9 +44,9 @@ configure = { cmd = [
   "-DBUILD_TESTING=ON",
   "-DGENERATE_PYTHON_STUBS=ON",
 ] }
-build = { cmd = "cmake --build build --target all", depends_on = ["configure"] }
+build = { cmd = "cmake --build build --target all", depends-on = ["configure"] }
 clean = { cmd = "rm -rf build" }
-test = { cmd = "ctest --test-dir build --output-on-failure", depends_on = [
+test = { cmd = "ctest --test-dir build --output-on-failure", depends-on = [
   "build",
 ] }
 
