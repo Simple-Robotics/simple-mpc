@@ -22,6 +22,7 @@ class BulletRobot:
         simuStep,
         rmodelComplete,
         robotPose=[0.0, 0.0, 1.01927],
+        robotOrientation=[0, 0, 0],
         inertiaOffset=True,
     ):
         p.connect(p.GUI)  # Start the client for PyBullet
@@ -30,7 +31,7 @@ class BulletRobot:
 
         # place CoM of root link
         robotStartPosition = robotPose
-        robotStartOrientation = p.getQuaternionFromEuler([0, 0, 0])
+        robotStartOrientation = p.getQuaternionFromEuler(robotOrientation)
         p.setAdditionalSearchPath(modelPath)
 
         self.robotId = p.loadURDF(
@@ -45,10 +46,15 @@ class BulletRobot:
         p.loadURDF("plane.urdf")
 
         self.localInertiaPos = np.array([0, 0, 0])
+        self.localInertiaOrient = np.array([0, 0, 0, 0])
         if inertiaOffset:
             self.localInertiaPos = p.getDynamicsInfo(self.robotId, -1)[
                 3
             ]  # of the base link
+
+            self.localInertiaOrient = p.getDynamicsInfo(self.robotId, -1)[
+                4
+            ]
 
         # leg_left (45-50), leg_right (52-57), torso (0-1), arm_left (11-17),
         # gripper_left (21), arm_right (28-34), gripper_right (38), head (3,4).
@@ -60,6 +66,9 @@ class BulletRobot:
             self.bulletJointNames.index(rmodelComplete.names[i])
             for i in range(2, rmodelComplete.njoints)
         ]
+
+        # Contact frame for Go2
+        self.id_contact_bullet = [10, 3, 24, 17]
 
         # Joints controlled with crocoddyl
         self.bulletControlledJoints = [
@@ -90,12 +99,15 @@ class BulletRobot:
 
     def initializeJoints(self, q0CompleteStart):
         # Initialize position in pyBullet
+        rotation = R.from_quat(q0CompleteStart[3:7])
+
+        offset = rotation.as_matrix() @ self.localInertiaPos
         p.resetBasePositionAndOrientation(
             self.robotId,
             posObj=[
-                q0CompleteStart[0] + self.localInertiaPos[0],
-                q0CompleteStart[1] + self.localInertiaPos[1],
-                q0CompleteStart[2] + self.localInertiaPos[2],
+                q0CompleteStart[0] + offset[0],
+                q0CompleteStart[1] + offset[1],
+                q0CompleteStart[2] + offset[2],
             ],
             ornObj=q0CompleteStart[3:7],
         )
@@ -116,12 +128,15 @@ class BulletRobot:
 
     def resetState(self, q0Start):
         # Initialize position in pyBullet
+        rotation = R.from_quat(q0Start[3:7])
+
+        offset = rotation.as_matrix() @ self.localInertiaPos
         p.resetBasePositionAndOrientation(
             self.robotId,
             posObj=[
-                q0Start[0] + self.localInertiaPos[0],
-                q0Start[1] + self.localInertiaPos[1],
-                q0Start[2] + self.localInertiaPos[2],
+                q0Start[0] + offset[0],
+                q0Start[1] + offset[1],
+                q0Start[2] + offset[2],
             ],
             ornObj=q0Start[3:7],
         )
@@ -169,6 +184,9 @@ class BulletRobot:
             cameraDistance, cameraYaw, cameraPitch, cameraTargetPos
         )
 
+    def contactPoints(self):
+        return p.getContactPoints()
+
     def measureState(self):
         jointStates = p.getJointStates(
             self.robotId, self.JointIndicesComplete
@@ -191,8 +209,15 @@ class BulletRobot:
                 [jointStates[i_joint][1] for i_joint in range(len(jointStates))],
             ]
         )
-        rotation = R.from_quat(q[3:7])
-        q[:3] -= rotation.as_matrix() @ self.localInertiaPos
+
+        # Correct offset due to frame center position
+        baseRotation = R.from_quat(q[3:7])
+        q[:3] -= baseRotation.as_matrix() @ self.localInertiaPos
+
+        # Cast velocity measure in base frame
+        v[:3] = baseRotation.as_matrix().T @ v[:3]
+        v[3:6] = baseRotation.as_matrix().T @ v[3:6]
+
         return q, v
 
     def addTable(self, path, position):

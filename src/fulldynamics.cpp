@@ -68,8 +68,7 @@ namespace simple_mpc
       else
       {
         pinocchio::RigidConstraintModel constraint_model = pinocchio::RigidConstraintModel(
-          pinocchio::ContactType::CONTACT_3D, model_handler_.getModel(), joint_ids, pl1, 0, pl2,
-          pinocchio::LOCAL_WORLD_ALIGNED);
+          pinocchio::ContactType::CONTACT_3D, model_handler_.getModel(), joint_ids, pl1, 0, pl2, pinocchio::LOCAL);
         constraint_model.corrector.Kp = settings.Kp_correction;
         constraint_model.corrector.Kd = settings.Kd_correction;
         constraint_model.name = name;
