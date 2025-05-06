@@ -74,6 +74,7 @@ problem_conf = dict(
     torque_limits=True,
     kinematics_limits=True,
     force_cone=False,
+    land_cstr=False
 )
 T = 50
 

@@ -89,6 +89,7 @@ problem_conf = dict(
     Wfoot=0.075,
     kinematics_limits=True,
     force_cone=False,
+    land_cstr=False
 )
 
 T = 100

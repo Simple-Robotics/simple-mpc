@@ -46,7 +46,7 @@ BOOST_AUTO_TEST_CASE(fulldynamics)
   CostStack * cs = dynamic_cast<CostStack *>(&*sm.cost_);
 
   BOOST_CHECK_EQUAL(cs->components_.size(), 6);
-  BOOST_CHECK_EQUAL(sm.numConstraints(), 4);
+  BOOST_CHECK_EQUAL(sm.numConstraints(), 3);
 
   fdproblem.createProblem(model_handler.getReferenceState(), 100, 6, settings.gravity[2], true);
 
