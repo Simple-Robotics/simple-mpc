@@ -171,7 +171,7 @@ namespace simple_mpc
           stm.addConstraint(wrench_residual, NegativeOrthant());
         }
 
-        if (land_constraint.at(name))
+        if (settings_.land_cstr and land_constraint.at(name))
         {
           FrameVelocityResidual velocity_residual = FrameVelocityResidual(
             space.ndx(), nu_, model_handler_.getModel(), Motion::Zero(), model_handler_.getFootId(name),
@@ -187,7 +187,7 @@ namespace simple_mpc
             space.ndx(), model_handler_.getModel(), actuation_matrix_, cms, prox_settings_, name, settings_.mu);
           stm.addConstraint(friction_residual, NegativeOrthant());
         }
-        if (land_constraint.at(name))
+        if (settings_.land_cstr and land_constraint.at(name))
         {
           std::vector<int> vel_id = {0, 1, 2};
           FrameVelocityResidual velocity_residual = FrameVelocityResidual(

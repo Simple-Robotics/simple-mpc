@@ -47,6 +47,7 @@ namespace simple_mpc
     // Constraint
     bool kinematics_limits;
     bool force_cone;
+    bool land_cstr;
   };
 
   class KinodynamicsOCP : public OCPHandler

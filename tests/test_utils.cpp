@@ -140,6 +140,7 @@ FullDynamicsSettings getFullDynamicsSettings(RobotModelHandler model_handler)
   settings.torque_limits = true;
   settings.kinematics_limits = true;
   settings.force_cone = true;
+  settings.land_cstr = false;
 
   return settings;
 }
@@ -186,6 +187,7 @@ KinodynamicsSettings getKinodynamicsSettings(RobotModelHandler model_handler)
   settings.Wfoot = 0.075;
   settings.kinematics_limits = true;
   settings.force_cone = true;
+  settings.land_cstr = false;
 
   return settings;
 }

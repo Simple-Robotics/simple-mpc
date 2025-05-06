@@ -39,6 +39,7 @@ namespace simple_mpc::python
     conf.torque_limits = bp::extract<bool>(settings["torque_limits"]);
     conf.kinematics_limits = bp::extract<bool>(settings["kinematics_limits"]);
     conf.force_cone = bp::extract<bool>(settings["force_cone"]);
+    conf.land_cstr = bp::extract<bool>(settings["land_cstr"]);
 
     return new FullDynamicsOCP(conf, model_handler);
   }
@@ -126,6 +127,7 @@ namespace simple_mpc::python
     settings["torque_limits"] = conf.torque_limits;
     settings["kinematics_limits"] = conf.kinematics_limits;
     settings["force_cone"] = conf.force_cone;
+    settings["land_cstr"] = conf.land_cstr;
 
     return settings;
   }

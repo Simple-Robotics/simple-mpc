@@ -49,6 +49,7 @@ namespace simple_mpc
     bool torque_limits;
     bool kinematics_limits;
     bool force_cone;
+    bool land_cstr;
 
     // Control limits
     Eigen::VectorXd umin;
