@@ -1,6 +1,6 @@
 
+#include <aligator/core/manifold-base.hpp>
 #include <boost/test/unit_test.hpp>
-#include <proxsuite-nlp/manifold-base.hpp>
 
 #include "simple-mpc/qp-solvers.hpp"
 #include "simple-mpc/robot-handler.hpp"
