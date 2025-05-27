@@ -6,6 +6,7 @@
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
 #include "simple-mpc/interpolator.hpp"
+#include <algorithm>
 
 namespace simple_mpc
 {
@@ -77,6 +78,20 @@ namespace simple_mpc
     {
       v_interp = vs[step_nb + 1] * step_progress + vs[step_nb] * (1. - step_progress);
     }
+  }
+
+  void Interpolator::interpolateDiscrete(
+    const double delay,
+    const double timestep,
+    const std::vector<Eigen::VectorXd> & vs,
+    Eigen::Ref<Eigen::VectorXd> v_interp)
+  {
+    // Compute the time knot corresponding to the current delay
+    size_t step_nb = static_cast<size_t>(delay / timestep);
+    step_nb = std::clamp(step_nb, 0UL, vs.size()-1);
+
+    // Set the output arg
+    v_interp = vs[step_nb];
   }
 
 } // namespace simple_mpc

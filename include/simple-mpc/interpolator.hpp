@@ -43,6 +43,12 @@ namespace simple_mpc
       const std::vector<Eigen::VectorXd> & vs,
       Eigen::Ref<Eigen::VectorXd> v_interp);
 
+    void interpolateDiscrete(
+      const double delay,
+      const double timestep,
+      const std::vector<Eigen::VectorXd> & vs,
+      Eigen::Ref<Eigen::VectorXd> v_interp);
+
     // Pinocchio model
     Model model_;
   };
