@@ -88,7 +88,7 @@ namespace simple_mpc
   {
     // Compute the time knot corresponding to the current delay
     size_t step_nb = static_cast<size_t>(delay / timestep);
-    step_nb = std::clamp(step_nb, 0UL, vs.size()-1);
+    step_nb = std::clamp(step_nb, 0UL, vs.size() - 1);
 
     // Set the output arg
     v_interp = vs[step_nb];
