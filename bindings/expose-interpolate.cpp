@@ -9,7 +9,7 @@
 #include <eigenpy/deprecation-policy.hpp>
 #include <eigenpy/std-vector.hpp>
 
-#include "simple-mpc/interpolator.hpp"
+#include "simple-mpc/interpolator.hxx"
 
 namespace simple_mpc
 {
