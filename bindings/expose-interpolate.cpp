@@ -44,12 +44,22 @@ namespace simple_mpc
       return v_interp;
     }
 
+    std::vector<bool> interpolateContactsProxy(
+      Interpolator & self, const double delay, const double timestep, const std::vector<std::vector<bool>> & cs)
+    {
+      std::vector<bool> c_interp(cs[0].size());
+      self.interpolateContacts(delay, timestep, cs, c_interp);
+
+      return c_interp;
+    }
+
     void exposeInterpolator()
     {
       bp::class_<Interpolator>("Interpolator", bp::init<const Model &>(bp::args("self", "model")))
         .def("interpolateConfiguration", &interpolateConfigurationProxy)
         .def("interpolateState", &interpolateStateProxy)
-        .def("interpolateLinear", &interpolateLinearProxy);
+        .def("interpolateLinear", &interpolateLinearProxy)
+        .def("interpolateContacts", &interpolateContactsProxy);
     }
   } // namespace python
 } // namespace simple_mpc

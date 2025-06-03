@@ -1,5 +1,6 @@
 
 #include <boost/test/unit_test.hpp>
+#include <vector>
 
 #include "simple-mpc/interpolator.hxx"
 #include "test_utils.cpp"
@@ -137,46 +138,48 @@ BOOST_AUTO_TEST_CASE(interpolate)
     BOOST_CHECK(vs2[0].isApprox(v_interp));
   }
 
-  // Test discrete interpolation method
+  // Test contacts interpolation method
   {
-    std::vector<Eigen::VectorXd> vs;
-    for (std::size_t i = 0; i < 4; i++)
+    const size_t n_contacts = 4;
+
+    std::vector<std::vector<bool>> cs;
+    for (std::size_t i = 0; i < n_contacts; i++)
     {
-      Eigen::VectorXd v0(model.nv);
-      v0.setRandom();
-      vs.push_back(v0);
+      std::vector<bool> c(n_contacts, false);
+      c[i] = true;
+      cs.push_back(c);
     }
-    Eigen::VectorXd v_interp(model.nv);
+    std::vector<bool> c_interp(n_contacts);
 
     // First element
-    interpolator.interpolateDiscrete(-0.001, 0.1, vs, v_interp);
-    BOOST_CHECK(vs[0].isApprox(v_interp));
+    interpolator.interpolateContacts(-0.001, 0.1, cs, c_interp);
+    BOOST_CHECK(std::equal(c_interp.begin(), c_interp.end(), cs[0].begin()));
 
-    interpolator.interpolateDiscrete(0, 0.1, vs, v_interp);
-    BOOST_CHECK(vs[0].isApprox(v_interp));
+    interpolator.interpolateContacts(0, 0.1, cs, c_interp);
+    BOOST_CHECK(std::equal(c_interp.begin(), c_interp.end(), cs[0].begin()));
 
-    interpolator.interpolateDiscrete(0.001, 0.1, vs, v_interp);
-    BOOST_CHECK(vs[0].isApprox(v_interp));
+    interpolator.interpolateContacts(0.001, 0.1, cs, c_interp);
+    BOOST_CHECK(std::equal(c_interp.begin(), c_interp.end(), cs[0].begin()));
 
     // Middle element
-    interpolator.interpolateDiscrete(0.1, 0.1, vs, v_interp);
-    BOOST_CHECK(vs[1].isApprox(v_interp));
+    interpolator.interpolateContacts(0.1, 0.1, cs, c_interp);
+    BOOST_CHECK(std::equal(c_interp.begin(), c_interp.end(), cs[1].begin()));
 
-    interpolator.interpolateDiscrete(0.15, 0.1, vs, v_interp);
-    BOOST_CHECK(vs[1].isApprox(v_interp));
+    interpolator.interpolateContacts(0.15, 0.1, cs, c_interp);
+    BOOST_CHECK(std::equal(c_interp.begin(), c_interp.end(), cs[1].begin()));
 
-    interpolator.interpolateDiscrete(0.2, 0.1, vs, v_interp);
-    BOOST_CHECK(vs[2].isApprox(v_interp));
+    interpolator.interpolateContacts(0.2, 0.1, cs, c_interp);
+    BOOST_CHECK(std::equal(c_interp.begin(), c_interp.end(), cs[2].begin()));
 
     // Last element
-    interpolator.interpolateDiscrete(0.39, 0.1, vs, v_interp);
-    BOOST_CHECK(vs[3].isApprox(v_interp));
+    interpolator.interpolateContacts(0.39, 0.1, cs, c_interp);
+    BOOST_CHECK(std::equal(c_interp.begin(), c_interp.end(), cs[3].begin()));
 
-    interpolator.interpolateDiscrete(0.4, 0.1, vs, v_interp);
-    BOOST_CHECK(vs[3].isApprox(v_interp));
+    interpolator.interpolateContacts(0.4, 0.1, cs, c_interp);
+    BOOST_CHECK(std::equal(c_interp.begin(), c_interp.end(), cs[3].begin()));
 
-    interpolator.interpolateDiscrete(0.5, 0.1, vs, v_interp);
-    BOOST_CHECK(vs[3].isApprox(v_interp));
+    interpolator.interpolateContacts(0.5, 0.1, cs, c_interp);
+    BOOST_CHECK(std::equal(c_interp.begin(), c_interp.end(), cs[3].begin()));
   }
 }
 

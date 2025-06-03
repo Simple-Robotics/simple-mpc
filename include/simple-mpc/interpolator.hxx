@@ -25,8 +25,11 @@ namespace simple_mpc
     explicit Interpolator(const Model & model)
     : model_(model) {};
 
-    template<typename T>
-    void interpolateConfiguration(const double delay, const double timestep, const std::vector<T> & qs, T & q_interp)
+    void interpolateConfiguration(
+      const double delay,
+      const double timestep,
+      const std::vector<Eigen::VectorXd> & qs,
+      Eigen::Ref<Eigen::VectorXd> q_interp)
     {
       assert(("Configuration is not of the right size", qs[0].size() == model_.nq));
 
@@ -43,8 +46,11 @@ namespace simple_mpc
       }
     }
 
-    template<typename T>
-    void interpolateState(const double delay, const double timestep, const std::vector<T> & xs, T & x_interp)
+    void interpolateState(
+      const double delay,
+      const double timestep,
+      const std::vector<Eigen::VectorXd> & xs,
+      Eigen::Ref<Eigen::VectorXd> x_interp)
     {
       assert(("State is not of the right size", xs[0].size() == model_.nq + model_.nv));
 
@@ -64,8 +70,11 @@ namespace simple_mpc
       }
     }
 
-    template<typename T>
-    void interpolateLinear(const double delay, const double timestep, const std::vector<T> & vs, T & v_interp)
+    void interpolateLinear(
+      const double delay,
+      const double timestep,
+      const std::vector<Eigen::VectorXd> & vs,
+      Eigen::Ref<Eigen::VectorXd> v_interp)
     {
       // Compute the time knot corresponding to the current delay
       size_t step_nb = static_cast<size_t>(delay / timestep);
@@ -80,15 +89,18 @@ namespace simple_mpc
       }
     }
 
-    template<typename T>
-    void interpolateDiscrete(const double delay, const double timestep, const std::vector<T> & vs, T & v_interp)
+    void interpolateContacts(
+      const double delay,
+      const double timestep,
+      const std::vector<std::vector<bool>> & cs,
+      std::vector<bool> & c_interp)
     {
       // Compute the time knot corresponding to the current delay
       size_t step_nb = static_cast<size_t>(delay / timestep);
-      step_nb = std::clamp(step_nb, 0UL, vs.size() - 1);
+      step_nb = std::clamp(step_nb, 0UL, cs.size() - 1);
 
       // Set the output arg
-      v_interp = vs[step_nb];
+      c_interp = cs[step_nb];
     }
 
     // Pinocchio model
