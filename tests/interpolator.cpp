@@ -1,8 +1,7 @@
 
 #include <boost/test/unit_test.hpp>
-#include <vector>
 
-#include "simple-mpc/interpolator.hxx"
+#include "simple-mpc/interpolator.hpp"
 #include "test_utils.cpp"
 
 BOOST_AUTO_TEST_SUITE(interpolator)
