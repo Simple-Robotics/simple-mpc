@@ -10,8 +10,7 @@
  * @brief Interpolation class for practical control of the robot
  */
 
-#ifndef SIMPLE_MPC_INTERPOLATOR_HPP_
-#define SIMPLE_MPC_INTERPOLATOR_HPP_
+#pragma once
 
 #include <pinocchio/algorithm/joint-configuration.hpp>
 
@@ -23,7 +22,8 @@ namespace simple_mpc
   class Interpolator
   {
   public:
-    explicit Interpolator(const Model & model);
+    explicit Interpolator(const Model & model)
+    : model_(model) {};
 
     void interpolateConfiguration(
       const double delay,
@@ -43,14 +43,14 @@ namespace simple_mpc
       const std::vector<Eigen::VectorXd> & vs,
       Eigen::Ref<Eigen::VectorXd> v_interp);
 
+    void interpolateContacts(
+      const double delay,
+      const double timestep,
+      const std::vector<std::vector<bool>> & cs,
+      std::vector<bool> & c_interp);
+
     // Pinocchio model
     Model model_;
   };
 
 } // namespace simple_mpc
-
-/* --- Details -------------------------------------------------------------- */
-/* --- Details -------------------------------------------------------------- */
-/* --- Details -------------------------------------------------------------- */
-
-#endif // SIMPLE_MPC_INTERPOLATOR_HPP_

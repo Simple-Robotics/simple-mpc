@@ -30,3 +30,4 @@ repos:
     rev: 0.19.3
     hooks:
       - id: gersemi
+        args: ["--print-config=verbose"]

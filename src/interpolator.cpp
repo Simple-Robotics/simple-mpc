@@ -1,20 +1,7 @@
-///////////////////////////////////////////////////////////////////////////////
-// BSD 2-Clause License
-//
-// Copyright (C) 2025, INRIA
-// Copyright note valid unless otherwise stated in individual files.
-// All rights reserved.
-///////////////////////////////////////////////////////////////////////////////
 #include "simple-mpc/interpolator.hpp"
 
 namespace simple_mpc
 {
-
-  Interpolator::Interpolator(const Model & model)
-  {
-    model_ = model;
-  }
-
   void Interpolator::interpolateConfiguration(
     const double delay,
     const double timestep,
@@ -79,4 +66,14 @@ namespace simple_mpc
     }
   }
 
+  void Interpolator::interpolateContacts(
+    const double delay, const double timestep, const std::vector<std::vector<bool>> & cs, std::vector<bool> & c_interp)
+  {
+    // Compute the time knot corresponding to the current delay
+    size_t step_nb = static_cast<size_t>(delay / timestep);
+    step_nb = std::clamp(step_nb, 0UL, cs.size() - 1);
+
+    // Set the output arg
+    c_interp = cs[step_nb];
+  }
 } // namespace simple_mpc
