@@ -11,11 +11,12 @@
 #include "simple-mpc/robot-handler.hpp"
 
 #include <aligator/core/traj-opt-problem.hpp>
+#include <aligator/modelling/constraints/box-constraint.hpp>
+#include <aligator/modelling/constraints/equality-constraint.hpp>
+#include <aligator/modelling/constraints/negative-orthant.hpp>
 #include <aligator/modelling/costs/quad-state-cost.hpp>
 #include <aligator/modelling/costs/sum-of-costs.hpp>
 #include <aligator/modelling/function-xpr-slice.hpp>
-#include <proxsuite-nlp/modelling/constraints/box-constraint.hpp>
-#include <proxsuite-nlp/modelling/constraints/negative-orthant.hpp>
 
 namespace simple_mpc
 {
@@ -26,9 +27,9 @@ namespace simple_mpc
   using QuadraticStateCost = QuadraticStateCostTpl<double>;
   using QuadraticResidualCost = QuadraticResidualCostTpl<double>;
   using StateErrorResidual = StateErrorResidualTpl<double>;
-  using BoxConstraint = proxsuite::nlp::BoxConstraintTpl<double>;
-  using NegativeOrthant = proxsuite::nlp::NegativeOrthantTpl<double>;
-  using EqualityConstraint = proxsuite::nlp::EqualityConstraintTpl<double>;
+  using BoxConstraint = BoxConstraintTpl<double>;
+  using NegativeOrthant = NegativeOrthantTpl<double>;
+  using EqualityConstraint = EqualityConstraintTpl<double>;
   using FunctionSliceXpr = FunctionSliceXprTpl<double>;
 
 #define SIMPLE_MPC_DEFINE_DEFAULT_MOVE_CTORS(Type)                                                                     \
