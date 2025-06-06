@@ -3,7 +3,6 @@
 
 #include "aligator/modelling/dynamics/multibody-constraint-fwd.hpp"
 #include <aligator/modelling/dynamics/integrator-semi-euler.hpp>
-#include <aligator/modelling/multibody/center-of-mass-translation.hpp>
 #include <aligator/modelling/multibody/centroidal-momentum.hpp>
 #include <aligator/modelling/multibody/contact-force.hpp>
 #include <aligator/modelling/multibody/dcm-position.hpp>
@@ -26,7 +25,6 @@ namespace simple_mpc
   using FrameTranslationResidual = FrameTranslationResidualTpl<double>;
   using FrameVelocityResidual = FrameVelocityResidualTpl<double>;
   using DCMPositionResidual = DCMPositionResidualTpl<double>;
-  using CenterOfMassTranslationResidual = CenterOfMassTranslationResidualTpl<double>;
   using IntegratorSemiImplEuler = dynamics::IntegratorSemiImplEulerTpl<double>;
 
   FullDynamicsOCP::FullDynamicsOCP(const FullDynamicsSettings & settings, const RobotModelHandler & model_handler)
@@ -423,9 +421,9 @@ namespace simple_mpc
 
     term_cost.addCost(
       "state_cost", QuadraticStateCost(ter_space, nu_, model_handler_.getReferenceState(), settings_.w_x));
-    /* term_cost.addCost(
+    term_cost.addCost(
         "centroidal_cost",
-        QuadraticResidualCost(ter_space, cent_mom, settings_.w_cent)); */
+        QuadraticResidualCost(ter_space, cent_mom, settings_.w_cent * 10)); 
 
     return term_cost;
   }
@@ -436,29 +434,11 @@ namespace simple_mpc
     {
       throw std::runtime_error("Create problem first!");
     }
-    CenterOfMassTranslationResidual com_cstr =
-      CenterOfMassTranslationResidual(ndx_, nu_, model_handler_.getModel(), com_ref);
-
+    
     double tau = sqrt(com_ref[2] / 9.81);
     DCMPositionResidual dcm_cstr = DCMPositionResidual(ndx_, nu_, model_handler_.getModel(), com_ref, tau);
 
     problem_->addTerminalConstraint(dcm_cstr, EqualityConstraint());
-
-    Motion v_ref = Motion::Zero();
-    for (auto const & name : model_handler_.getFeetNames())
-    {
-      FrameVelocityResidual frame_vel = FrameVelocityResidual(
-        ndx_, nu_, model_handler_.getModel(), v_ref, model_handler_.getFootId(name), pinocchio::LOCAL_WORLD_ALIGNED);
-      if (settings_.force_size == 6)
-        problem_->addTerminalConstraint(frame_vel, EqualityConstraint());
-      else
-      {
-        std::vector<int> vel_id = {0, 1, 2};
-
-        FunctionSliceXpr vel_slice = FunctionSliceXpr(frame_vel, vel_id);
-        problem_->addTerminalConstraint(vel_slice, EqualityConstraint());
-      }
-    }
 
     terminal_constraint_ = true;
   }
