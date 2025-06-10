@@ -421,9 +421,7 @@ namespace simple_mpc
 
     term_cost.addCost(
       "state_cost", QuadraticStateCost(ter_space, nu_, model_handler_.getReferenceState(), settings_.w_x));
-    term_cost.addCost(
-        "centroidal_cost",
-        QuadraticResidualCost(ter_space, cent_mom, settings_.w_cent * 10)); 
+    term_cost.addCost("centroidal_cost", QuadraticResidualCost(ter_space, cent_mom, settings_.w_cent * 10));
 
     return term_cost;
   }
@@ -434,7 +432,7 @@ namespace simple_mpc
     {
       throw std::runtime_error("Create problem first!");
     }
-    
+
     double tau = sqrt(com_ref[2] / 9.81);
     DCMPositionResidual dcm_cstr = DCMPositionResidual(ndx_, nu_, model_handler_.getModel(), com_ref, tau);
 

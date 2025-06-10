@@ -6,10 +6,10 @@
 #include <aligator/modelling/dynamics/kinodynamics-fwd.hpp>
 #include <aligator/modelling/multibody/centroidal-momentum-derivative.hpp>
 #include <aligator/modelling/multibody/centroidal-momentum.hpp>
+#include <aligator/modelling/multibody/dcm-position.hpp>
 #include <aligator/modelling/multibody/frame-placement.hpp>
 #include <aligator/modelling/multibody/frame-translation.hpp>
 #include <aligator/modelling/multibody/frame-velocity.hpp>
-#include <aligator/modelling/multibody/dcm-position.hpp>
 
 namespace simple_mpc
 {
@@ -378,8 +378,7 @@ namespace simple_mpc
   {
     if (terminal_constraint_)
     {
-      DCMPositionResidual * DCMres =
-        problem_->term_cstrs_.getConstraint<DCMPositionResidual>(0);
+      DCMPositionResidual * DCMres = problem_->term_cstrs_.getConstraint<DCMPositionResidual>(0);
 
       DCMres->setReference(com_ref);
     }
