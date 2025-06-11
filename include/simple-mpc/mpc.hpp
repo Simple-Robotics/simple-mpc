@@ -185,6 +185,8 @@ namespace simple_mpc
 
     void switchToStand();
 
+    void switchToJump();
+
     // Footstep timings for each end effector
     std::map<std::string, std::vector<int>> foot_takeoff_times_, foot_land_times_;
     std::size_t one_horizon_iterator_;

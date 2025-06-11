@@ -275,7 +275,7 @@ namespace simple_mpc
 
   void MPC::recedeWithCycle()
   {
-    if (now_ == MOTION)
+    if (now_ == MOTION or one_horizon_iterator_ > 0)
     {
       ocp_handler_->getProblem().replaceStageCircular(*one_horizon_[0]);
       solver_->cycleProblem(ocp_handler_->getProblem(), one_horizon_data_[0]);
@@ -290,7 +290,9 @@ namespace simple_mpc
         now_ = STANDING;
       }
     }
-    if (now_ == WALKING or ocp_handler_->getContactSupport(ocp_handler_->getSize() - 1) < ee_names_.size())
+    if (
+      now_ == WALKING
+      or (now_ == STANDING and ocp_handler_->getContactSupport(ocp_handler_->getSize() - 1) < ee_names_.size()))
     {
 
       ocp_handler_->getProblem().replaceStageCircular(*cycle_horizon_[0]);
@@ -459,6 +461,12 @@ namespace simple_mpc
   void MPC::switchToStand()
   {
     now_ = STANDING;
+    velocity_base_.setZero();
+  }
+
+  void MPC::switchToJump()
+  {
+    now_ = MOTION;
     velocity_base_.setZero();
   }
 
