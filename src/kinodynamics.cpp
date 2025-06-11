@@ -4,9 +4,9 @@
 #include <aligator/modelling/centroidal/centroidal-wrench-cone.hpp>
 #include <aligator/modelling/dynamics/integrator-semi-euler.hpp>
 #include <aligator/modelling/dynamics/kinodynamics-fwd.hpp>
-#include <aligator/modelling/multibody/center-of-mass-translation.hpp>
 #include <aligator/modelling/multibody/centroidal-momentum-derivative.hpp>
 #include <aligator/modelling/multibody/centroidal-momentum.hpp>
+#include <aligator/modelling/multibody/dcm-position.hpp>
 #include <aligator/modelling/multibody/frame-placement.hpp>
 #include <aligator/modelling/multibody/frame-translation.hpp>
 #include <aligator/modelling/multibody/frame-velocity.hpp>
@@ -23,8 +23,8 @@ namespace simple_mpc
   using FramePlacementResidual = FramePlacementResidualTpl<double>;
   using FrameTranslationResidual = FrameTranslationResidualTpl<double>;
   using FrameVelocityResidual = FrameVelocityResidualTpl<double>;
-  using CenterOfMassTranslationResidual = CenterOfMassTranslationResidualTpl<double>;
   using IntegratorSemiImplEuler = dynamics::IntegratorSemiImplEulerTpl<double>;
+  using DCMPositionResidual = DCMPositionResidualTpl<double>;
 
   KinodynamicsOCP::KinodynamicsOCP(const KinodynamicsSettings & settings, const RobotModelHandler & model_handler)
   : Base(model_handler)
@@ -367,10 +367,10 @@ namespace simple_mpc
     {
       throw std::runtime_error("Create problem first!");
     }
-    CenterOfMassTranslationResidual com_cstr =
-      CenterOfMassTranslationResidual(ndx_, nu_, model_handler_.getModel(), com_ref);
+    double tau = sqrt(com_ref[2] / 9.81);
+    DCMPositionResidual dcm_cstr = DCMPositionResidual(ndx_, nu_, model_handler_.getModel(), com_ref, tau);
 
-    problem_->addTerminalConstraint(com_cstr, EqualityConstraint());
+    problem_->addTerminalConstraint(dcm_cstr, EqualityConstraint());
     terminal_constraint_ = true;
   }
 
@@ -378,10 +378,9 @@ namespace simple_mpc
   {
     if (terminal_constraint_)
     {
-      CenterOfMassTranslationResidual * CoMres =
-        problem_->term_cstrs_.getConstraint<CenterOfMassTranslationResidual>(0);
+      DCMPositionResidual * DCMres = problem_->term_cstrs_.getConstraint<DCMPositionResidual>(0);
 
-      CoMres->setReference(com_ref);
+      DCMres->setReference(com_ref);
     }
   }
 
