@@ -68,6 +68,7 @@ namespace simple_mpc
     std::vector<std::shared_ptr<StageData>> cycle_horizon_data_;
     std::vector<std::shared_ptr<StageModel>> one_horizon_;
     std::vector<std::shared_ptr<StageData>> one_horizon_data_;
+    std::vector<std::map<std::string, bool>> one_contact_states_;
     std::vector<std::shared_ptr<StageModel>> standing_horizon_;
     std::vector<std::shared_ptr<StageData>> standing_horizon_data_;
     FootTrajectory foot_trajectories_;
@@ -98,6 +99,9 @@ namespace simple_mpc
     // Generate the cycle walking problem along which we will iterate
     // the receding horizon
     void generateCycleHorizon(const std::vector<std::map<std::string, bool>> & contact_states);
+
+    // Generate a motion horizon problem for unique motion
+    void generateOneHorizon(const std::vector<std::map<std::string, bool>> & contact_states);
 
     // Perform one iteration of MPC
     void iterate(const ConstVectorRef & x);
@@ -183,6 +187,7 @@ namespace simple_mpc
 
     // Footstep timings for each end effector
     std::map<std::string, std::vector<int>> foot_takeoff_times_, foot_land_times_;
+    std::size_t one_horizon_iterator_;
 
     // Solution vectors for state and control
     std::vector<VectorXd> xs_;

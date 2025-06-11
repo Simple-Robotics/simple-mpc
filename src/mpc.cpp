@@ -90,6 +90,7 @@ namespace simple_mpc
 
     com0_ = data_handler_->getData().com[0];
     now_ = WALKING;
+    one_horizon_iterator_ = 0;
 
     velocity_base_.setZero();
     next_pose_.setZero();
@@ -182,6 +183,65 @@ namespace simple_mpc
     }
   }
 
+  void MPC::generateOneHorizon(const std::vector<std::map<std::string, bool>> & contact_states)
+  {
+    one_contact_states_ = contact_states;
+
+    // Generate contact switch timings
+    std::map<std::string, bool> previous_contacts;
+    for (auto const & name : ee_names_)
+    {
+      previous_contacts.insert({name, true});
+    }
+
+    // Generate the model stages for one horizon
+    for (auto const & state : one_contact_states_)
+    {
+      int active_contacts = 0;
+      for (auto const & contact : state)
+      {
+        if (contact.second)
+          active_contacts += 1;
+      }
+
+      Eigen::VectorXd force_ref(ocp_handler_->getReferenceForce(0, ocp_handler_->getModelHandler().getFootName(0)));
+      Eigen::VectorXd force_zero(ocp_handler_->getReferenceForce(0, ocp_handler_->getModelHandler().getFootName(0)));
+      force_ref.setZero();
+      force_zero.setZero();
+      force_ref[2] = settings_.support_force / active_contacts;
+
+      std::map<std::string, pinocchio::SE3> contact_poses;
+      std::map<std::string, Eigen::VectorXd> force_map;
+
+      for (auto const & name : ee_names_)
+      {
+        contact_poses.insert({name, data_handler_->getFootPose(name)});
+        if (state.at(name))
+          force_map.insert({name, force_ref});
+        else
+          force_map.insert({name, force_zero});
+      }
+      std::map<std::string, bool> land_contacts;
+      for (auto const & name : ee_names_)
+      {
+        if (!previous_contacts.at(name) and state.at(name))
+        {
+          land_contacts.insert({name, true});
+        }
+        else
+        {
+          land_contacts.insert({name, false});
+        }
+      }
+
+      std::shared_ptr<StageModel> sm =
+        std::make_shared<StageModel>(ocp_handler_->createStage(state, contact_poses, force_map, land_contacts));
+      one_horizon_.push_back(sm);
+      one_horizon_data_.push_back(sm->createData());
+      previous_contacts = state;
+    }
+  }
+
   void MPC::iterate(const ConstVectorRef & x)
   {
 
@@ -215,6 +275,21 @@ namespace simple_mpc
 
   void MPC::recedeWithCycle()
   {
+    if (now_ == MOTION)
+    {
+      ocp_handler_->getProblem().replaceStageCircular(*one_horizon_[0]);
+      solver_->cycleProblem(ocp_handler_->getProblem(), one_horizon_data_[0]);
+
+      rotate_vec_left(one_horizon_);
+      rotate_vec_left(one_horizon_data_);
+
+      one_horizon_iterator_ += 1;
+      if (one_horizon_iterator_ == one_horizon_.size())
+      {
+        one_horizon_iterator_ = 0;
+        now_ = STANDING;
+      }
+    }
     if (now_ == WALKING or ocp_handler_->getContactSupport(ocp_handler_->getSize() - 1) < ee_names_.size())
     {
 
