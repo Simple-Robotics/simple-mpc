@@ -26,6 +26,5 @@ dependencies:
 - qhull[version='>=2020.2,<2020.3.0a0']
 - qhull-static
 - scipy
-- tracy
 - urdfdom
 - vcstool

@@ -68,7 +68,7 @@ problem_conf = dict(
     umax=model_handler.getModel().effortLimit[6:],
     qmin=model_handler.getModel().lowerPositionLimit[7:],
     qmax=model_handler.getModel().upperPositionLimit[7:],
-    Kp_correction=np.array([0, 0, 20]),
+    Kp_correction=np.array([0, 0, 10]),
     Kd_correction=np.array([100, 100, 100]),
     mu=0.8,
     Lfoot=0.01,
@@ -83,8 +83,8 @@ T = 50
 dynproblem = FullDynamicsOCP(problem_conf, model_handler)
 dynproblem.createProblem(model_handler.getReferenceState(), T, force_size, gravity[2], False)
 
-T_ds = 30
-T_lift = 10
+T_ds = 50
+T_lift = 15
 T_land = 2
 T_ss = 30
 N_simu = int(0.01 / 0.001)
@@ -134,16 +134,36 @@ contact_phase_lift_Front = {
     "RL_foot": True,
     "RR_foot": True,
 }
+
+contact_phase_BR = {
+    "FL_foot": False,
+    "FR_foot": False,
+    "RL_foot": False,
+    "RR_foot": True,
+}
+
+contact_phase_BL = {
+    "FL_foot": False,
+    "FR_foot": False,
+    "RL_foot": True,
+    "RR_foot": False,
+}
+
+
+T_BR = 10
+T_BL = 10
+T_lift = 40
+
 # contact_phases = [contact_phase_quadru] * T_ds
 # contact_phases += [contact_phase_lift_FL] * T_ss
 # contact_phases += [contact_phase_quadru] * T_ds
 # contact_phases += [contact_phase_lift_FR] * T_ss
 
-contact_phases = [contact_phase_quadru] * int(T_ds / 2)
+# aint that simple
+contact_phases = [contact_phase_lift_Front] * T_lift
+contact_phases += [contact_phase_BR] * T_BR
 contact_phases += [contact_phase_lift_Front] * T_lift
-contact_phases += [contact_phase_lift] * T_ss
-contact_phases += [contact_phase_lift_Front] * T_land
-contact_phases += [contact_phase_quadru] * int(T_ds / 2)
+contact_phases += [contact_phase_BL] * T_BL
 
 mpc.generateCycleHorizon(contact_phases)
 
@@ -219,11 +239,11 @@ torques_before_qp = []
 
 # vitesse du robot
 v = np.zeros(6)
-v[0] = 0
+v[1] = 0
 mpc.velocity_base = v
 
 # number of simulation steps
-n_steps = 200
+n_steps = 100
 
 for t in range(n_steps):
     print("Time " + str(t))
@@ -273,14 +293,14 @@ for t in range(n_steps):
     xss = [mpc.xs[0], mpc.xs[1]]
     uss = [mpc.us[0], mpc.us[1]]
 
-    FL_measured.append(mpc.getDataHandler().getFootPose("FL_foot").translation)
-    FR_measured.append(mpc.getDataHandler().getFootPose("FR_foot").translation)
-    RL_measured.append(mpc.getDataHandler().getFootPose("RL_foot").translation)
-    RR_measured.append(mpc.getDataHandler().getFootPose("RR_foot").translation)
-    FL_references.append(mpc.getReferencePose(0, "FL_foot").translation)
-    FR_references.append(mpc.getReferencePose(0, "FR_foot").translation)
-    RL_references.append(mpc.getReferencePose(0, "RL_foot").translation)
-    RR_references.append(mpc.getReferencePose(0, "RR_foot").translation)
+    FL_measured.append(mpc.getDataHandler().getFootPose("FL_foot").translation.copy())
+    FR_measured.append(mpc.getDataHandler().getFootPose("FR_foot").translation.copy())
+    RL_measured.append(mpc.getDataHandler().getFootPose("RL_foot").translation.copy())
+    RR_measured.append(mpc.getDataHandler().getFootPose("RR_foot").translation.copy())
+    FL_references.append(mpc.getReferencePose(0, "FL_foot").translation.copy())
+    FR_references.append(mpc.getReferencePose(0, "FR_foot").translation.copy())
+    RL_references.append(mpc.getReferencePose(0, "RL_foot").translation.copy())
+    RR_references.append(mpc.getReferencePose(0, "RR_foot").translation.copy())
     com_measured.append(mpc.getDataHandler().getData().com[0].copy())
     L_measured.append(mpc.getDataHandler().getData().hg.angular.copy())
 
@@ -315,14 +335,12 @@ for t in range(n_steps):
 
         torques_before_qp.append(current_torque)
 
-        # actually useless
         qp_torque = qp.solved_torque.copy()
 
         torques.append(qp_torque)
-
-        # not needed, just need some right Ricatti gains
-        friction_torque = fcompensation.computeFriction(x_interp[nq + 6:], qp_torque)
-        device.execute(friction_torque)
+    
+        # friction_torque = fcompensation.computeFriction(x_interp[nq + 6:], current_torque)
+        device.execute(current_torque)
 
         u_multibody.append(copy.deepcopy(current_torque))
         x_multibody.append(x_measured)
@@ -345,7 +363,7 @@ L_measured = np.array(L_measured)
 
 torques = np.array(torques)
 
-def plot_forces_with_bounds( force_limit=100):
+def plot_forces_with_bounds():
     time = np.arange(force_FL.shape[0])
     fig, axs = plt.subplots(4, 1, figsize=(12, 10), sharex=True)
     feet = ['FL', 'FR', 'RL', 'RR']
@@ -354,8 +372,6 @@ def plot_forces_with_bounds( force_limit=100):
         ax.plot(time, f[:, 0], label=f'{name} Fx')
         ax.plot(time, f[:, 1], label=f'{name} Fy')
         ax.plot(time, f[:, 2], label=f'{name} Fz')
-        ax.axhline(force_limit, color='r', linestyle='--', label='Force limit')
-        ax.axhline(-force_limit, color='r', linestyle='--')
         ax.set_ylabel(f'{name} Force [N]')
         ax.legend()
         ax.grid(True)
@@ -371,9 +387,15 @@ n_legs = 4
 torques = np.array(torques)
 torques_limits = np.array(model_handler.getModel().effortLimit[6:])
 
-with open("examples/qptorques.npy", "wb") as f:
+with open("examples/qptorques_easy.npy", "wb") as f:
     np.save(f, torques)
     np.save(f, torques_limits)
+    np.save(f, np.array(torques_before_qp))
+
+with open("examples/com.npy", 'wb') as f:
+    np.save(f, com_measured)
+    np.save(f, RR_measured)
+    np.save(f, RL_measured)
 
 time = np.arange(torques.shape[0])
 tau1 = np.array([t[0] for t in torques])
@@ -384,7 +406,7 @@ plt.plot(time,tau2-tau1, label="abs(diff)")
 plt.grid(True)
 plt.legend()
 plt.title("différence des torques avant et après QP")
-plt.savefig("examples/diff_tau.png")
+plt.savefig("examples/results/diff_tau.png")
 plt.show()
 
 fig, axs = plt.subplots(2,1,figsize=(12,10), sharex=True)
@@ -397,7 +419,7 @@ axs[1].axhline(limite, linestyle="--")
 axs[1].axhline(-limite, linestyle="--")
 axs[-1].set_xlabel('Time step')
 plt.tight_layout()
-plt.savefig("examples/tau1_tau2.png")
+plt.savefig("examples/results/tau1_tau2.png")
 plt.show()
 
 # plot_torques_with_bounds()

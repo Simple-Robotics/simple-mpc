@@ -195,7 +195,7 @@ namespace simple_mpc
             pinocchio::LOCAL_WORLD_ALIGNED);
           FunctionSliceXpr vel_slice = FunctionSliceXpr(velocity_residual, vel_id);
           stm.addConstraint(vel_slice, EqualityConstraint());
-
+          // if landing constraint, add velocity of landing feet = 0
           std::vector<int> frame_id = {2};
 
           FrameTranslationResidual frame_residual = FrameTranslationResidual(

@@ -69,7 +69,7 @@ problem_conf = dict(
     qmin=model_handler.getModel().lowerPositionLimit[7:],
     qmax=model_handler.getModel().upperPositionLimit[7:],
     Kp_correction=np.array([0, 0, 20]),
-    Kd_correction=np.array([100, 100, 100]),
+    Kd_correction=np.array([100, 100, 100]),    # good gains
     mu=0.8,
     Lfoot=0.01,
     Wfoot=0.01,
@@ -83,10 +83,12 @@ T = 50
 dynproblem = FullDynamicsOCP(problem_conf, model_handler)
 dynproblem.createProblem(model_handler.getReferenceState(), T, force_size, gravity[2], False)
 
+#good settings
 T_ds = 30
 T_lift = 10
 T_land = 2
 T_ss = 30
+
 N_simu = int(0.01 / 0.001)
 mpc_conf = dict(
     support_force=-model_handler.getMass() * gravity[2],
@@ -139,6 +141,7 @@ contact_phase_lift_Front = {
 # contact_phases += [contact_phase_quadru] * T_ds
 # contact_phases += [contact_phase_lift_FR] * T_ss
 
+# good sequence
 contact_phases = [contact_phase_quadru] * int(T_ds / 2)
 contact_phases += [contact_phase_lift_Front] * T_lift
 contact_phases += [contact_phase_lift] * T_ss
@@ -322,7 +325,7 @@ for t in range(n_steps):
 
         # not needed, just need some right Ricatti gains
         friction_torque = fcompensation.computeFriction(x_interp[nq + 6:], qp_torque)
-        device.execute(friction_torque)
+        device.execute(current_torque)
 
         u_multibody.append(copy.deepcopy(current_torque))
         x_multibody.append(x_measured)
