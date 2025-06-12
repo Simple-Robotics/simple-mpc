@@ -31,15 +31,10 @@ def plot_com_xy():
     plt.savefig("examples/results/com_position.png")
     plt.show()
 
-plot_com_xy()
-
 # 3D plot of com position
 def plot_com_3d():
     fig = plt.figure(figsize=(10, 10))
     ax = fig.add_subplot(111, projection='3d')
-    
-    # simulation step of 1 ms
-    time = np.arange(com.shape[0])
     
     # plot com position in 3D
     ax.plot(com[:, 0], com[:, 1], com[:, 2], ls='dashdot', label='COM Position', color='blue')
@@ -55,6 +50,12 @@ def plot_com_3d():
     ax.scatter(RR[-1, 0], RR[-1, 1], RR[-1, 2], color='red', s=80, marker='x', label='RR End')
     ax.scatter(RL[0, 0], RL[0, 1], RL[0, 2], color='purple', s=80, marker='o', label='RL Start')
     ax.scatter(RL[-1, 0], RL[-1, 1], RL[-1, 2], color='magenta', s=80, marker='x', label='RL End')
+
+    # add points every 10 steps
+    for i in range(0, com.shape[0], 10):
+        ax.scatter(com[i, 0], com[i, 1], com[i, 2], color='blue', s=20, marker='o')
+        ax.scatter(RR[i, 0], RR[i, 1], RR[i, 2], color='red', s=20, marker='o')
+        ax.scatter(RL[i, 0], RL[i, 1], RL[i, 2], color='purple', s=20, marker='o')
     
     # add grid and labels
     ax.grid(True)

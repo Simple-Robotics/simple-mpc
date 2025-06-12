@@ -93,6 +93,14 @@ namespace simple_mpc
     auto cent_mom = CentroidalMomentumResidual(space.ndx(), nu_, model_handler_.getModel(), Eigen::VectorXd::Zero(6));
     rcost.addCost("centroidal_cost", QuadraticResidualCost(space, cent_mom, settings_.w_cent));
 
+    // add a cost for the center of mass
+    Eigen::VectorXd com_ref(3);
+    com_ref(0) = -0.25;
+    com_ref(1) = 0;
+    com_ref(2) = 0.5;
+    auto com = CenterOfMassTranslationResidual(space.ndx(), nu_, model_handler_.getModel(), com_ref);
+    rcost.addCost("com_cost", QuadraticResidualCost(space, com, settings_.w_com));
+    
     pinocchio::context::RigidConstraintModelVector cms;
 
     size_t c_id = 0;
@@ -158,7 +166,6 @@ namespace simple_mpc
       FunctionSliceXpr state_slice = FunctionSliceXpr(state_fn, state_id);
       stm.addConstraint(state_slice, BoxConstraint(settings_.qmin, settings_.qmax));
     }
-
     for (auto const & name : model_handler_.getFeetNames())
     {
       if (settings_.force_size == 6 and contact_phase.at(name))

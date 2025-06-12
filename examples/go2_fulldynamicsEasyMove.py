@@ -64,6 +64,7 @@ problem_conf = dict(
     force_size=3,
     w_forces=np.diag(w_forces_lin),
     w_frame=w_frame,
+    w_com = np.eye(3) * 1e3,
     umin=-model_handler.getModel().effortLimit[6:],
     umax=model_handler.getModel().effortLimit[6:],
     qmin=model_handler.getModel().lowerPositionLimit[7:],
@@ -161,9 +162,9 @@ T_lift = 40
 
 # aint that simple
 contact_phases = [contact_phase_lift_Front] * T_lift
-contact_phases += [contact_phase_BR] * T_BR
-contact_phases += [contact_phase_lift_Front] * T_lift
-contact_phases += [contact_phase_BL] * T_BL
+# contact_phases += [contact_phase_BR] * T_BR
+# contact_phases += [contact_phase_lift_Front] * T_lift
+# contact_phases += [contact_phase_BL] * T_BL
 
 mpc.generateCycleHorizon(contact_phases)
 

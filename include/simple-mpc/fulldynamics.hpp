@@ -37,6 +37,7 @@ namespace simple_mpc
     Eigen::MatrixXd w_cent;   // Centroidal momentum
     Eigen::MatrixXd w_forces; // Contact forces
     Eigen::MatrixXd w_frame;  // End effector placement
+    Eigen::MatrixXd w_com; // Contact forces
 
     // Physics parameters
     Eigen::Vector3d gravity;

@@ -64,6 +64,7 @@ problem_conf = dict(
     force_size=3,
     w_forces=np.diag(w_forces_lin),
     w_frame=w_frame,
+    w_com = np.eye(3) * 1e3,
     umin=-model_handler.getModel().effortLimit[6:],
     umax=model_handler.getModel().effortLimit[6:],
     qmin=model_handler.getModel().lowerPositionLimit[7:],
