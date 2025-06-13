@@ -23,7 +23,3 @@ repositories:
     type: git
     url: git@github.com:stack-of-tasks/pinocchio.git
     version: devel
-  proxsuite-nlp:
-    type: git
-    url: git@github.com:simple-robotics/proxsuite-nlp.git
-    version: main

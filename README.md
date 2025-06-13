@@ -72,7 +72,6 @@ source install/setup.bash
 
 #### Dependencies
 
-* [proxsuite-nlp](https://github.com/Simple-Robotics/proxsuite-nlp.git)
 * [proxsuite](https://github.com/Simple-Robotics/proxsuite.git)
 * [Eigen3](https://eigen.tuxfamily.org) >= 3.3.7
 * [Boost](https://www.boost.org) >= 1.71.0
