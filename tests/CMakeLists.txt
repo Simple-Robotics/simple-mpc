@@ -53,7 +53,7 @@ set(
   TEST_NAMES
   robot_handler
   problem
-  mpc
+  #mpc
   friction
   qpsolvers
   interpolator

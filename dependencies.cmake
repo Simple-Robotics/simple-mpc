@@ -2,7 +2,7 @@ find_package(example-robot-data 4.0.9 REQUIRED)
 ADD_PROJECT_DEPENDENCY(OpenMP REQUIRED)
 ADD_PROJECT_DEPENDENCY(proxsuite REQUIRED)
 ADD_PROJECT_DEPENDENCY(pinocchio REQUIRED)
-ADD_PROJECT_DEPENDENCY(aligator 0.13.0 REQUIRED)
+ADD_PROJECT_DEPENDENCY(aligator 0.15.0 REQUIRED)
 
 function(get_ndcurves)
   find_package(ndcurves QUIET)

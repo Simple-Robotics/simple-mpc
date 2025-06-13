@@ -2,7 +2,7 @@ repositories:
   aligator:
     type: git
     url: git@github.com:edantec/aligator.git
-    version: devel
+    version: temporary_fix
   eigenpy:
     type: git
     url: git@github.com:stack-of-tasks/eigenpy.git
@@ -23,7 +23,3 @@ repositories:
     type: git
     url: git@github.com:stack-of-tasks/pinocchio.git
     version: devel
-  proxsuite-nlp:
-    type: git
-    url: git@github.com:simple-robotics/proxsuite-nlp.git
-    version: main

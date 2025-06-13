@@ -13,7 +13,7 @@
 namespace simple_mpc
 {
   using namespace aligator;
-  using VectorSpace = proxsuite::nlp::VectorSpaceTpl<double>;
+  using VectorSpace = aligator::VectorSpaceTpl<double>;
   using CentroidalFwdDynamics = dynamics::CentroidalFwdDynamicsTpl<double>;
   using CentroidalAccelerationResidual = CentroidalAccelerationResidualTpl<double>;
   using AngularAccelerationResidual = AngularAccelerationResidualTpl<double>;
