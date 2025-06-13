@@ -79,7 +79,7 @@ source install/setup.bash
 * OpenMP
 * [hpp-fcl](https://github.com/humanoid-path-planner/hpp-fcl)
 * [Pinocchio](https://github.com/stack-of-tasks/pinocchio) | [conda](https://anaconda.org/conda-forge/pinocchio)
-* [Aligator](https://github.com/Simple-Robotics/aligator.git) devel branch
+* [Aligator](https://github.com/edantec/aligator) temporary_fix branch
 * [example-robot-data](https://github.com/Gepetto/example-robot-data)
 * [ndcurves](https://github.com/loco-3d/ndcurves)
 * (optional) [eigenpy](https://github.com/stack-of-tasks/eigenpy)>=3.9.0 (Python bindings)
