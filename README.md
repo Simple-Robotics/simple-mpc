@@ -72,14 +72,13 @@ source install/setup.bash
 
 #### Dependencies
 
-* [proxsuite-nlp](https://github.com/Simple-Robotics/proxsuite-nlp.git)
 * [proxsuite](https://github.com/Simple-Robotics/proxsuite.git)
 * [Eigen3](https://eigen.tuxfamily.org) >= 3.3.7
 * [Boost](https://www.boost.org) >= 1.71.0
 * OpenMP
 * [hpp-fcl](https://github.com/humanoid-path-planner/hpp-fcl)
 * [Pinocchio](https://github.com/stack-of-tasks/pinocchio) | [conda](https://anaconda.org/conda-forge/pinocchio)
-* [Aligator](https://github.com/Simple-Robotics/aligator.git) devel branch
+* [Aligator](https://github.com/edantec/aligator) temporary_fix branch
 * [example-robot-data](https://github.com/Gepetto/example-robot-data)
 * [ndcurves](https://github.com/loco-3d/ndcurves)
 * (optional) [eigenpy](https://github.com/stack-of-tasks/eigenpy)>=3.9.0 (Python bindings)

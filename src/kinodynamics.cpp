@@ -14,7 +14,7 @@
 namespace simple_mpc
 {
   using namespace aligator;
-  using MultibodyPhaseSpace = proxsuite::nlp::MultibodyPhaseSpace<double>;
+  using MultibodyPhaseSpace = MultibodyPhaseSpace<double>;
   using KinodynamicsFwdDynamics = dynamics::KinodynamicsFwdDynamicsTpl<double>;
   using CentroidalMomentumDerivativeResidual = CentroidalMomentumDerivativeResidualTpl<double>;
   using CentroidalMomentumResidual = CentroidalMomentumResidualTpl<double>;

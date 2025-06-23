@@ -17,8 +17,8 @@ namespace simple_mpc
   using namespace aligator;
   using ContactForceResidual = ContactForceResidualTpl<double>;
   using CentroidalMomentumResidual = CentroidalMomentumResidualTpl<double>;
-  using MultibodyPhaseSpace = proxsuite::nlp::MultibodyPhaseSpace<double>;
-  using MultibodyWrenchConeResidual = aligator::MultibodyWrenchConeResidualTpl<double>;
+  using MultibodyPhaseSpace = MultibodyPhaseSpace<double>;
+  using MultibodyWrenchConeResidual = MultibodyWrenchConeResidualTpl<double>;
   using MultibodyFrictionConeResidual = MultibodyFrictionConeResidualTpl<double>;
   using MultibodyConstraintFwdDynamics = dynamics::MultibodyConstraintFwdDynamicsTpl<double>;
   using FramePlacementResidual = FramePlacementResidualTpl<double>;

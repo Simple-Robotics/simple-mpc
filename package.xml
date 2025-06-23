@@ -13,7 +13,6 @@
   <build_depend>doxygen</build_depend>
   <depend>boost</depend>
   <depend>pinocchio</depend>
-  <depend>proxsuite-nlp</depend>
   <depend>proxsuite</depend>
   <depend>aligator</depend>
   <depend>std_msgs</depend>
