@@ -80,13 +80,20 @@ namespace simple_mpc
      * @brief
      *
      * @param foot_name Frame name that will be used a a foot
-     * @param placement_reference_frame_name Frame to which the foot reference
+     * @param reference_frame_name Frame to which the foot reference
      * frame will be attached.
-     * @param placement Transformation from `base_ref_frame_name` to foot
-     * reference frame
+     *
+     * @note The foot placement will be set by default using the reference configuration of the RobotModelHandler
      */
-    FrameIndex
-    addFoot(const std::string & foot_name, const std::string & placement_reference_frame_name, const SE3 & placement);
+    FrameIndex addFoot(const std::string & foot_name, const std::string & reference_frame_name);
+
+    /**
+     * @brief Update the reference placement of the foot wrt to the frame it is attached to
+     *
+     * @param foot_name Foot frame name
+     * @param refMfoot Placement in the local frame
+     */
+    void setFootReferencePlacement(const std::string & foot_name, const SE3 & refMfoot);
 
     /**
      * @brief Perform a finite difference on the sates.

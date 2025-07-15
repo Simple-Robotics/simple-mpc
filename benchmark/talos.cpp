@@ -72,10 +72,13 @@ int main()
   RobotModelHandler model_handler(model, "half_sitting", base_joint);
 
   // Add feet
-  model_handler.addFoot(
-    "left_sole_link", base_joint, pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., 0.1, 0.)));
-  model_handler.addFoot(
-    "right_sole_link", base_joint, pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., -0.1, 0.)));
+  model_handler.addFoot("left_sole_link", base_joint);
+  model_handler.addFoot("right_sole_link", base_joint);
+
+  model_handler.setFootReferencePlacement(
+    "left_sole_link", pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., 0.1, 0.)));
+  model_handler.setFootReferencePlacement(
+    "right_sole_link", pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., -0.1, 0.)));
 
   RobotDataHandler data_handler(model_handler);
 

@@ -24,23 +24,37 @@ namespace simple_mpc
     mass_ = pinocchio::computeTotalMass(model_);
   }
 
-  FrameIndex RobotModelHandler::addFoot(
-    const std::string & foot_name, const std::string & placement_reference_frame_name, const SE3 & placement)
+  FrameIndex RobotModelHandler::addFoot(const std::string & foot_name, const std::string & reference_frame_name)
   {
     feet_names_.push_back(foot_name);
     feet_ids_.push_back(model_.getFrameId(foot_name));
 
     // Create reference frame
-    FrameIndex placement_reference_frame_id = model_.getFrameId(placement_reference_frame_name);
-    JointIndex parent_joint = model_.frames[placement_reference_frame_id].parentJoint;
+    FrameIndex reference_frame_id = model_.getFrameId(reference_frame_name);
+    JointIndex parent_joint = model_.frames[reference_frame_id].parentJoint;
 
-    auto new_frame =
-      pinocchio::Frame(foot_name + "_ref", parent_joint, placement_reference_frame_id, placement, pinocchio::OP_FRAME);
+    auto new_frame = pinocchio::Frame(
+      foot_name + "_ref", parent_joint, reference_frame_id, pinocchio::SE3::Identity(), pinocchio::OP_FRAME);
     auto frame_id = model_.addFrame(new_frame);
 
+    // Save foot id
     ref_feet_ids_.push_back(frame_id);
 
+    // Set placement to default value
+    pinocchio::Data data(model_);
+    pinocchio::forwardKinematics(model_, data, getReferenceState().head(model_.nq));
+    pinocchio::updateFramePlacements(model_, data);
+
+    const pinocchio::SE3 default_placement = data.oMf[reference_frame_id].actInv(data.oMf[frame_id]);
+
+    setFootReferencePlacement(foot_name, default_placement);
+
     return frame_id;
+  }
+
+  void RobotModelHandler::setFootReferencePlacement(const std::string & foot_name, const SE3 & refMfoot)
+  {
+    model_.frames[model_.getFrameId(foot_name + "_ref", pinocchio::OP_FRAME)].placement = refMfoot;
   }
 
   Eigen::VectorXd RobotModelHandler::difference(const ConstVectorRef & x1, const ConstVectorRef & x2) const

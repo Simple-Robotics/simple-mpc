@@ -48,7 +48,8 @@ BOOST_AUTO_TEST_CASE(model_handler)
   // Add feet
   for (size_t i = 0; i < feet_names.size(); i++)
   {
-    model_handler.addFoot(feet_names.at(i), base_frame, feet_refs.at(i));
+    model_handler.addFoot(feet_names.at(i), base_frame);
+    model_handler.setFootReferencePlacement(feet_names.at(i), feet_refs.at(i));
   }
 
   /*********/
