@@ -48,7 +48,8 @@ BOOST_AUTO_TEST_CASE(model_handler)
   // Add feet
   for (size_t i = 0; i < feet_names.size(); i++)
   {
-    model_handler.addFoot(feet_names.at(i), base_frame, feet_refs.at(i));
+    model_handler.addFoot(feet_names.at(i), base_frame);
+    model_handler.setFootReferencePlacement(feet_names.at(i), feet_refs.at(i));
   }
 
   /*********/
@@ -148,6 +149,20 @@ BOOST_AUTO_TEST_CASE(model_handler)
     Data data(model);
     pinocchio::computeTotalMass(model, data);
     BOOST_CHECK_EQUAL(model_handler.getMass(), data.mass[0]);
+  }
+
+  // Check that the default foot pose actually match the reference configuration
+  {
+    const std::string foot_name = "FR_calf";
+    model_handler.addFoot(foot_name, base_frame);
+    // Do not set foot reference placement to check the default one
+
+    RobotDataHandler data_handler(model_handler);
+
+    data_handler.updateInternalData(model_handler.getReferenceState(), false);
+
+    // Foot and ref should be coincident with reference configuration
+    data_handler.getFootPose(foot_name).isApprox(data_handler.getRefFootPose(foot_name));
   }
 }
 
