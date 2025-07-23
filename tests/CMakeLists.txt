@@ -55,7 +55,6 @@ set(
   problem
   #mpc
   friction
-  qpsolvers
   interpolator
 )
 
