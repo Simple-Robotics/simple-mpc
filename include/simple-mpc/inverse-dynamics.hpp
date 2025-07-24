@@ -82,7 +82,7 @@ namespace simple_mpc
       baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
       baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
       baseTask_->setReference(pose_base_);
-      // formulation_.addMotionTask(*baseTask_, settings_.w_base, 0);
+      formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
 
       sampleBase_ = tsid::trajectories::TrajectorySample(12, 6);
 
