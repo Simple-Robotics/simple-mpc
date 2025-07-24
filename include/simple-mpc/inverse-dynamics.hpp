@@ -155,7 +155,6 @@ namespace simple_mpc
             formulation_.addRigidContact(tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 0);
           }
           tsid_contacts[i].setForceReference(f_target.segment(i * 3, 3));
-          tsid_contacts[i].setReference(data_handler_.getFootPose(i));
           active_tsid_contacts_[i] = true;
         }
         else
@@ -173,6 +172,16 @@ namespace simple_mpc
     void
     solve(const double t, const Eigen::VectorXd & q_meas, const Eigen::VectorXd & v_meas, Eigen::VectorXd & tau_res)
     {
+      // Update contact position based on the real robot foot placement
+      data_handler_.updateInternalData(q_meas, v_meas, false);
+      for (std::size_t i = 0; i < active_tsid_contacts_.size(); i++)
+      {
+        if (active_tsid_contacts_[i])
+        {
+          tsid_contacts[i].setReference(data_handler_.getFootPose(i));
+        }
+      }
+
       const tsid::solvers::HQPData & solver_data_ = formulation_.computeProblemData(t, q_meas, v_meas);
       last_solution_ = solver_->solve(solver_data_);
       tau_res = formulation_.getActuatorForces(last_solution_);
