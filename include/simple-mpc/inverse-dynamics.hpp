@@ -66,8 +66,6 @@ namespace simple_mpc
       const size_t nv = model.nv;
       const size_t nu = nv - 6;
 
-      formulation_.computeProblemData(0, model_handler.getReferenceState().head(nq), Eigen::VectorXd::Zero(nv));
-
       // Prepare contact point task
       const size_t n_contacts = model_handler_.getFeetNames().size();
       const Eigen::Vector3d normal{0, 0, 1};
@@ -101,7 +99,6 @@ namespace simple_mpc
         std::make_shared<tsid::tasks::TaskSE3Equality>("task-base", robot_, model_handler_.getBaseFrameName());
       baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
       baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
-      baseTask_->setReference(pose_base_);
       formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
 
       sampleBase_ = tsid::trajectories::TrajectorySample(12, 6);
@@ -111,8 +108,17 @@ namespace simple_mpc
       solver_->resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
 
       // Dry run to initialize solver data & output
-      const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(
-        0, model_handler.getReferenceState().head(nq), model_handler.getReferenceState().tail(nv));
+      const Eigen::VectorXd q_ref = model_handler.getReferenceState().head(nq);
+      const Eigen::VectorXd v_ref = model_handler.getReferenceState().tail(nv);
+      std::vector<bool> c_ref(n_contacts);
+      Eigen::VectorXd f_ref = Eigen::VectorXd::Zero(3 * n_contacts);
+      for (int i = 0; i < n_contacts; i++)
+      {
+        c_ref[i] = true;
+        f_ref[2 + 3 * i] = weight / n_contacts;
+      }
+      setTarget(q_ref, v_ref, v_ref, c_ref, f_ref);
+      const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(0, q_ref, v_ref);
       last_solution_ = solver_->solve(solver_data);
     }
 
