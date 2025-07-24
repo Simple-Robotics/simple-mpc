@@ -81,9 +81,10 @@ namespace simple_mpc
       solver_ = tsid::solvers::SolverHQPFactory::createNewSolver(tsid::solvers::SOLVER_HQP_PROXQP, "solver-proxqp");
       solver_->resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
 
-      HQPData_ = formulation_.computeProblemData(
+      // Dry run to initialize solver data & output
+      const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(
         0, model_handler.getReferenceState().head(nq), model_handler.getReferenceState().tail(nv));
-      sol_ = solver_->solve(HQPData_);
+      const tsid::solvers::HQPOutput & solver_output = solver_->solve(solver_data);
     }
 
     void setTarget(
@@ -139,9 +140,9 @@ namespace simple_mpc
     void
     solve(const double t, const Eigen::VectorXd & q_meas, const Eigen::VectorXd & v_meas, Eigen::VectorXd & tau_res)
     {
-      HQPData_ = formulation_.computeProblemData(t, q_meas, v_meas);
-      sol_ = solver_->solve(HQPData_);
-      tau_res = formulation_.getActuatorForces(sol_);
+      const tsid::solvers::HQPData & solver_data_ = formulation_.computeProblemData(t, q_meas, v_meas);
+      const tsid::solvers::HQPOutput & solver_output = solver_->solve(solver_data_);
+      tau_res = formulation_.getActuatorForces(solver_output);
     }
 
     // Order matters to be instanciated in the right order
@@ -155,8 +156,6 @@ namespace simple_mpc
     std::shared_ptr<tsid::tasks::TaskJointPosture> postureTask_;
     std::shared_ptr<tsid::tasks::TaskSE3Equality> baseTask_;
     tsid::solvers::SolverHQPBase * solver_;
-    tsid::solvers::HQPData HQPData_;
-    tsid::solvers::HQPOutput sol_;
     tsid::trajectories::TrajectorySample samplePosture_; // TODO: no need to store it
     tsid::trajectories::TrajectorySample sampleBase_;    // TODO: no need to store it
     pinocchio::SE3 pose_base_;
