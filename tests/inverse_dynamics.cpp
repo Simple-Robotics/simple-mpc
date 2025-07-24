@@ -61,12 +61,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
   RobotModelHandler model_handler = getSoloHandler();
   RobotDataHandler data_handler(model_handler);
 
-  KinodynamicsID solver(
-    model_handler, KinodynamicsID::Settings::Default()
-                     .set_w_base(10.0)
-                     .set_w_posture(1.0)
-                     .set_w_contact_force(1.0)
-                     .set_w_contact_motion(1e-1));
+  KinodynamicsID solver(model_handler);
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
   Eigen::VectorXd f_target = Eigen::VectorXd::Zero(4 * 3);
