@@ -16,8 +16,26 @@ namespace simple_mpc
   class KinodynamicsID
   {
   public:
-    KinodynamicsID(const simple_mpc::RobotModelHandler & model_handler)
-    : model_handler_(model_handler)
+    struct Settings
+    {
+      double kp_posture = 1.0;
+      double kp_base = 0.0;
+      double kp_contact = 0.0;
+
+      double w_posture = 1e2;
+      double w_base = 0.;
+      double w_constact_force_ = 0.;
+      double w_contact_motion_ = 0.;
+
+      static Settings Default()
+      {
+        return {};
+      } // Work-around c++ bug to have a default constructor
+    };
+
+    KinodynamicsID(const simple_mpc::RobotModelHandler & model_handler, const Settings settings = Settings::Default())
+    : settings_(settings)
+    , model_handler_(model_handler)
     , data_handler_(model_handler_)
     , robot_(model_handler_.getModel())
     , formulation_("tsid", robot_)
@@ -29,42 +47,33 @@ namespace simple_mpc
 
       formulation_.computeProblemData(0, model_handler.getReferenceState().head(nq), Eigen::VectorXd::Zero(nv));
 
-      const double kp_contact = 0.0;
-      const double kp_posture = 1.0;
-      const double kp_base = 0.0;
-
-      const double w_base = 0.;
-      const double w_posture = 1e2;
-      const double w_forceRef_ = 0.;
-      const double w_motionRef_ = 0.;
-
       // Prepare contact point task
       // const Eigen::Vector3d normal {0, 0, 1};
       // for (std::string foot_name : model_handler_.getFeetNames()) {
       //   std::shared_ptr<tsid::contacts::ContactPoint> cp =
       //     std::make_shared<tsid::contacts::ContactPoint>(foot_name, robot_, foot_name, normal, 0.3, 1.0, 100.);
-      //   cp->Kp(kp_contact * Eigen::VectorXd::Ones(3));
+      //   cp->Kp(settings_.kp_contact * Eigen::VectorXd::Ones(3));
       //   cp->Kd(2.0 * cp->Kp().cwiseSqrt());
       //   cp->setReference(data_handler_.getFootPose(foot_name));
       //   cp->useLocalFrame(false);
-      //   formulation_.addRigidContact(*cp, w_forceRef_, w_motionRef_, 0);
+      //   formulation_.addRigidContact(*cp, settings_.w_constact_force_, settings_.w_contact_motion_, 0);
       //   contactPoints_.push_back(cp);
       // }
 
       // Add the posture task
       postureTask_ = std::make_shared<tsid::tasks::TaskJointPosture>("task-posture", robot_);
-      postureTask_->Kp(kp_posture * Eigen::VectorXd::Ones(nu));
+      postureTask_->Kp(settings_.kp_posture * Eigen::VectorXd::Ones(nu));
       postureTask_->Kd(2.0 * postureTask_->Kp().cwiseSqrt());
-      formulation_.addMotionTask(*postureTask_, w_posture, 1);
+      formulation_.addMotionTask(*postureTask_, settings_.w_posture, 1);
 
       samplePosture_ = tsid::trajectories::TrajectorySample(robot_.nq_actuated(), robot_.na());
 
       // Add the base task
       baseTask_ = std::make_shared<tsid::tasks::TaskSE3Equality>("task-base", robot_, "root_joint");
-      baseTask_->Kp(kp_base * Eigen::VectorXd::Ones(6));
+      baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
       baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
       baseTask_->setReference(pose_base_);
-      // formulation_.addMotionTask(*baseTask_, w_base, 0);
+      // formulation_.addMotionTask(*baseTask_, settings_.w_base, 0);
 
       sampleBase_ = tsid::trajectories::TrajectorySample(12, 6);
 
@@ -100,7 +109,7 @@ namespace simple_mpc
       //   std::string name = model_handler_.getFeetNames()[i];
       //   if (contact_state[i]) {
       //     if(!check_contact(name)) {
-      //       // formulation_.addRigidContact(*contactPoints_[i], w_forceRef_, w_motionRef_, 0);
+      //       // formulation_.addRigidContact(*contactPoints_[i], w_constact_force_, w_contact_motion_, 0);
       //     }
       //     else {
       //       contactPoints_[i]->setForceReference(forces.segment(i * 3, 3));
@@ -135,11 +144,13 @@ namespace simple_mpc
       tau_res = formulation_.getActuatorForces(sol_);
     }
 
+    // Order matters to be instanciated in the right order
+    const Settings settings_;
     const simple_mpc::RobotModelHandler & model_handler_;
     simple_mpc::RobotDataHandler data_handler_;
-
     tsid::robots::RobotWrapper robot_;
     tsid::InverseDynamicsFormulationAccForce formulation_;
+
     std::vector<std::shared_ptr<tsid::contacts::ContactPoint>> contactPoints_;
     std::shared_ptr<tsid::tasks::TaskJointPosture> postureTask_;
     std::shared_ptr<tsid::tasks::TaskSE3Equality> baseTask_;
