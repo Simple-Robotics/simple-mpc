@@ -90,7 +90,8 @@ namespace simple_mpc
       postureTask_ = std::make_shared<tsid::tasks::TaskJointPosture>("task-posture", robot_);
       postureTask_->Kp(settings_.kp_posture * Eigen::VectorXd::Ones(nu));
       postureTask_->Kd(2.0 * postureTask_->Kp().cwiseSqrt());
-      formulation_.addMotionTask(*postureTask_, settings_.w_posture, 1);
+      if (settings_.w_posture > 0.)
+        formulation_.addMotionTask(*postureTask_, settings_.w_posture, 1);
 
       samplePosture_ = tsid::trajectories::TrajectorySample(robot_.nq_actuated(), robot_.na());
 
@@ -99,7 +100,8 @@ namespace simple_mpc
         std::make_shared<tsid::tasks::TaskSE3Equality>("task-base", robot_, model_handler_.getBaseFrameName());
       baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
       baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
-      formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
+      if (settings_.w_base > 0.)
+        formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
 
       sampleBase_ = tsid::trajectories::TrajectorySample(12, 6);
 
