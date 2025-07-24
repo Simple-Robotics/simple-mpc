@@ -77,6 +77,7 @@ namespace simple_mpc
   RobotDataHandler::RobotDataHandler(const RobotModelHandler & model_handler)
   : model_handler_(model_handler)
   , data_(model_handler.getModel())
+  , x_(model_handler.getReferenceState().size())
   {
     updateInternalData(model_handler.getReferenceState(), true);
   }
@@ -85,7 +86,14 @@ namespace simple_mpc
   {
     const Eigen::Block q = x.head(model_handler_.getModel().nq);
     const Eigen::Block v = x.tail(model_handler_.getModel().nv);
-    x_ = x;
+
+    updateInternalData(q, v, updateJacobians);
+  }
+
+  void
+  RobotDataHandler::updateInternalData(const ConstVectorRef & q, const ConstVectorRef & v, const bool updateJacobians)
+  {
+    x_ << q, v;
 
     forwardKinematics(model_handler_.getModel(), data_, q);
     updateFramePlacements(model_handler_.getModel(), data_);
@@ -93,7 +101,7 @@ namespace simple_mpc
 
     if (updateJacobians)
     {
-      updateJacobiansMassMatrix(x);
+      updateJacobiansMassMatrix(x_);
     }
   }
 

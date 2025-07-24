@@ -175,17 +175,26 @@ namespace simple_mpc
     RobotDataHandler(const RobotModelHandler & model_handler);
 
     // Set new robot state
+    void updateInternalData(const ConstVectorRef & q, const ConstVectorRef & v, const bool updateJacobians);
     void updateInternalData(const ConstVectorRef & x, const bool updateJacobians);
     void updateJacobiansMassMatrix(const ConstVectorRef & x);
 
     // Const getters
     const SE3 & getRefFootPose(const std::string & foot_name) const
     {
-      return data_.oMf[model_handler_.getRefFootId(foot_name)];
+      return getRefFootPose(model_handler_.getRefFootId(foot_name));
+    };
+    const SE3 & getRefFootPose(size_t foot_id) const
+    {
+      return data_.oMf[foot_id];
     };
     const SE3 & getFootPose(const std::string & foot_name) const
     {
-      return data_.oMf[model_handler_.getFootId(foot_name)];
+      return getFootPose(model_handler_.getFootId(foot_name));
+    };
+    const SE3 & getFootPose(size_t foot_id) const
+    {
+      return data_.oMf[foot_id];
     };
     const SE3 & getBaseFramePose() const
     {

@@ -41,10 +41,10 @@ namespace simple_mpc
 
       bp::class_<RobotDataHandler>(
         "RobotDataHandler", bp::init<const RobotModelHandler &>(bp::args("self", "model_handler")))
-        .def("updateInternalData", &RobotDataHandler::updateInternalData)
+        // .def("updateInternalData", &RobotDataHandler::updateInternalData)
         .def("updateJacobiansMassMatrix", &RobotDataHandler::updateJacobiansMassMatrix)
-        .def("getRefFootPose", &RobotDataHandler::getRefFootPose, bp::return_internal_reference<>())
-        .def("getFootPose", &RobotDataHandler::getFootPose, bp::return_internal_reference<>())
+        // .def("getRefFootPose", &RobotDataHandler::getRefFootPose, bp::return_internal_reference<>())
+        // .def("getFootPose", &RobotDataHandler::getFootPose, bp::return_internal_reference<>())
         .def("getBaseFramePose", &RobotDataHandler::getBaseFramePose, bp::return_internal_reference<>())
         .def("getModelHandler", &RobotDataHandler::getModelHandler, bp::return_internal_reference<>())
         .def("getData", &RobotDataHandler::getData, bp::return_internal_reference<>())

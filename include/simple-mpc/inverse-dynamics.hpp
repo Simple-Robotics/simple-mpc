@@ -26,10 +26,23 @@ namespace simple_mpc
     return *this;                                                                                                      \
   }
 
+      // Physical quantities
+      DEFINE_FIELD(double, friction_coefficient, 0.3)
+      DEFINE_FIELD(
+        double,
+        contact_weight_ratio_max,
+        2.0) // Max force for one foot contact (express as a multiple of the robot weight)
+      DEFINE_FIELD(
+        double,
+        contact_weight_ratio_min,
+        0.01) // Min force for one foot contact (express as a multiple of the robot weight)
+
+      // Tasks gains
       DEFINE_FIELD(double, kp_posture, 1.0)
       DEFINE_FIELD(double, kp_base, 0.0)
       DEFINE_FIELD(double, kp_contact, 0.0)
 
+      // Tasks weights
       DEFINE_FIELD(double, w_posture, 1e2)
       DEFINE_FIELD(double, w_base, 0.)
       DEFINE_FIELD(double, w_contact_force, 0.)
@@ -56,17 +69,24 @@ namespace simple_mpc
       formulation_.computeProblemData(0, model_handler.getReferenceState().head(nq), Eigen::VectorXd::Zero(nv));
 
       // Prepare contact point task
-      // const Eigen::Vector3d normal {0, 0, 1};
-      // for (std::string foot_name : model_handler_.getFeetNames()) {
-      //   std::shared_ptr<tsid::contacts::ContactPoint> cp =
-      //     std::make_shared<tsid::contacts::ContactPoint>(foot_name, robot_, foot_name, normal, 0.3, 1.0, 100.);
-      //   cp->Kp(settings_.kp_contact * Eigen::VectorXd::Ones(3));
-      //   cp->Kd(2.0 * cp->Kp().cwiseSqrt());
-      //   cp->setReference(data_handler_.getFootPose(foot_name));
-      //   cp->useLocalFrame(false);
-      //   formulation_.addRigidContact(*cp, settings_.w_constact_force_, settings_.w_contact_motion_, 0);
-      //   contactPoints_.push_back(cp);
-      // }
+      const size_t n_contacts = model_handler_.getFeetNames().size();
+      const Eigen::Vector3d normal{0, 0, 1};
+      const double weight = model_handler_.getMass() * 9.81;
+      const double max_f = settings_.contact_weight_ratio_max * weight;
+      const double min_f = settings_.contact_weight_ratio_min * weight;
+      for (int i = 0; i < n_contacts; i++)
+      {
+        const std::string frame_name = model_handler.getFootName(i);
+        // Create contact point
+        tsid::contacts::ContactPoint & contact_point = tsid_contacts.emplace_back(
+          frame_name, robot_, frame_name, normal, settings_.friction_coefficient, min_f, max_f);
+        // Set contact parameters
+        contact_point.Kp(settings_.kp_contact * Eigen::VectorXd::Ones(3));
+        contact_point.Kd(2.0 * contact_point.Kp().cwiseSqrt());
+        contact_point.useLocalFrame(false);
+        // By default contact is not active (will be by setTarget)
+        active_tsid_contacts_.push_back(false);
+      }
 
       // Add the posture task
       postureTask_ = std::make_shared<tsid::tasks::TaskJointPosture>("task-posture", robot_);
@@ -100,14 +120,16 @@ namespace simple_mpc
       const Eigen::VectorXd & q_target,
       const Eigen::VectorXd & v_target,
       const Eigen::VectorXd & a_target,
-      const std::vector<bool> & contact_state,
+      const std::vector<bool> & contact_state_target,
       const Eigen::VectorXd & f_target)
     {
+      // Posture task
       samplePosture_.setValue(q_target.tail(robot_.nq_actuated()));
       samplePosture_.setDerivative(v_target.tail(robot_.na()));
       samplePosture_.setSecondDerivative(a_target.tail(robot_.na()));
       postureTask_->setReference(samplePosture_);
 
+      // Base task
       pose_base_.rotation() = pinocchio::SE3::Quaternion(q_target[3], q_target[4], q_target[5], q_target[6]).matrix();
       pose_base_.translation() = q_target.head(3);
       tsid::math::SE3ToVector(pose_base_, sampleBase_.pos);
@@ -115,23 +137,30 @@ namespace simple_mpc
       sampleBase_.setSecondDerivative(a_target.head(6));
       baseTask_->setReference(sampleBase_);
 
-      // for (std::size_t i = 0; i < model_handler_.getFeetNames().size(); i ++) {
-      //   std::string name = model_handler_.getFeetNames()[i];
-      //   if (contact_state[i]) {
-      //     if(!check_contact(name)) {
-      //       // formulation_.addRigidContact(*contactPoints_[i], w_constact_force_, w_contact_motion_, 0);
-      //     }
-      //     else {
-      //       contactPoints_[i]->setForceReference(forces.segment(i * 3, 3));
-      //       contactPoints_[i]->setReference(robot_->framePosition(data, robot_->model().getFrameId(name)));
-      //     }
-      //   }
-      //   else {
-      //     if (check_contact(name)) {
-      //       // formulation_.removeRigidContact(name, 0);
-      //     }
-      //   }
-      // }
+      // Foot contacts
+      data_handler_.updateInternalData(q_target, v_target, false);
+      for (std::size_t i = 0; i < model_handler_.getFeetNames().size(); i++)
+      {
+        std::string name = model_handler_.getFeetNames()[i];
+        if (contact_state_target[i])
+        {
+          if (!active_tsid_contacts_[i])
+          {
+            formulation_.addRigidContact(tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 1);
+          }
+          tsid_contacts[i].setForceReference(f_target.segment(i * 3, 3));
+          tsid_contacts[i].setReference(data_handler_.getFootPose(i));
+          active_tsid_contacts_[i] = true;
+        }
+        else
+        {
+          if (active_tsid_contacts_[i])
+          {
+            formulation_.removeRigidContact(name, 0);
+            active_tsid_contacts_[i] = false;
+          }
+        }
+      }
     }
 
     bool check_contact(std::string & name)
@@ -167,7 +196,8 @@ namespace simple_mpc
     tsid::robots::RobotWrapper robot_;
     tsid::InverseDynamicsFormulationAccForce formulation_;
 
-    std::vector<std::shared_ptr<tsid::contacts::ContactPoint>> contactPoints_;
+    std::vector<bool> active_tsid_contacts_;
+    std::vector<tsid::contacts::ContactPoint> tsid_contacts;
     std::shared_ptr<tsid::tasks::TaskJointPosture> postureTask_;
     std::shared_ptr<tsid::tasks::TaskSE3Equality> baseTask_;
     tsid::solvers::SolverHQPBase * solver_;
