@@ -38,15 +38,15 @@ namespace simple_mpc
         0.01) // Min force for one foot contact (express as a multiple of the robot weight)
 
       // Tasks gains
-      DEFINE_FIELD(double, kp_posture, 1.0)
-      DEFINE_FIELD(double, kp_base, 0.0)
-      DEFINE_FIELD(double, kp_contact, 0.0)
+      DEFINE_FIELD(double, kp_posture, 10.0)
+      DEFINE_FIELD(double, kp_base, 10.0)
+      DEFINE_FIELD(double, kp_contact, 10.0)
 
       // Tasks weights
-      DEFINE_FIELD(double, w_posture, 1e2)
-      DEFINE_FIELD(double, w_base, 0.)
-      DEFINE_FIELD(double, w_contact_force, 0.)
-      DEFINE_FIELD(double, w_contact_motion, 0.)
+      DEFINE_FIELD(double, w_posture, 10)
+      DEFINE_FIELD(double, w_base, 10)
+      DEFINE_FIELD(double, w_contact_force, 10)
+      DEFINE_FIELD(double, w_contact_motion, 10)
 
       static Settings Default()
       {
