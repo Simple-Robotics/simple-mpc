@@ -135,6 +135,11 @@ namespace simple_mpc
       return base_id_;
     }
 
+    std::string getBaseFrameName() const
+    {
+      return model_.frames[base_id_].name;
+    }
+
     FrameIndex getFootId(const std::string & foot_name) const
     {
       return feet_ids_.at(getFootNb(foot_name));

@@ -30,7 +30,7 @@ namespace simple_mpc
       static Settings Default()
       {
         return {};
-      } // Work-around c++ bug to have a default constructor
+      } // Work-around c++ bug to have a default constructor of nested class
     };
 
     KinodynamicsID(const simple_mpc::RobotModelHandler & model_handler, const Settings settings = Settings::Default())
@@ -69,7 +69,8 @@ namespace simple_mpc
       samplePosture_ = tsid::trajectories::TrajectorySample(robot_.nq_actuated(), robot_.na());
 
       // Add the base task
-      baseTask_ = std::make_shared<tsid::tasks::TaskSE3Equality>("task-base", robot_, "root_joint");
+      baseTask_ =
+        std::make_shared<tsid::tasks::TaskSE3Equality>("task-base", robot_, model_handler_.getBaseFrameName());
       baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
       baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
       baseTask_->setReference(pose_base_);
