@@ -147,12 +147,12 @@ namespace simple_mpc
       data_handler_.updateInternalData(q_target, v_target, false);
       for (std::size_t i = 0; i < model_handler_.getFeetNames().size(); i++)
       {
-        std::string name = model_handler_.getFeetNames()[i];
+        const std::string name = model_handler_.getFeetNames()[i];
         if (contact_state_target[i])
         {
           if (!active_tsid_contacts_[i])
           {
-            formulation_.addRigidContact(tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 1);
+            formulation_.addRigidContact(tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 0);
           }
           tsid_contacts[i].setForceReference(f_target.segment(i * 3, 3));
           tsid_contacts[i].setReference(data_handler_.getFootPose(i));
@@ -167,18 +167,7 @@ namespace simple_mpc
           }
         }
       }
-    }
-
-    bool check_contact(std::string & name)
-    {
-      for (auto & it : formulation_.m_contacts)
-      {
-        if (it->contact.name() == name)
-        {
-          return true;
-        }
-      }
-      return false;
+      solver_->resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
     }
 
     void
