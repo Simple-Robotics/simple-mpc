@@ -18,14 +18,22 @@ namespace simple_mpc
   public:
     struct Settings
     {
-      double kp_posture = 1.0;
-      double kp_base = 0.0;
-      double kp_contact = 0.0;
+#define DEFINE_FIELD(type, name, value)                                                                                \
+  type name = value;                                                                                                   \
+  Settings & set_##name(type v)                                                                                        \
+  {                                                                                                                    \
+    name = v;                                                                                                          \
+    return *this;                                                                                                      \
+  }
 
-      double w_posture = 1e2;
-      double w_base = 0.;
-      double w_constact_force_ = 0.;
-      double w_contact_motion_ = 0.;
+      DEFINE_FIELD(double, kp_posture, 1.0)
+      DEFINE_FIELD(double, kp_base, 0.0)
+      DEFINE_FIELD(double, kp_contact, 0.0)
+
+      DEFINE_FIELD(double, w_posture, 1e2)
+      DEFINE_FIELD(double, w_base, 0.)
+      DEFINE_FIELD(double, w_contact_force, 0.)
+      DEFINE_FIELD(double, w_contact_motion, 0.)
 
       static Settings Default()
       {

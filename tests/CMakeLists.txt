@@ -54,6 +54,7 @@ set(
   robot_handler
   problem
   #mpc
+  inverse_dynamics
   friction
   interpolator
 )
