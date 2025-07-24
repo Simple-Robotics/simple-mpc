@@ -154,7 +154,7 @@ namespace simple_mpc
         {
           if (!active_tsid_contacts_[i])
           {
-            formulation_.addRigidContact(tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 0);
+            formulation_.addRigidContact(tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 1);
           }
           tsid_contacts[i].setForceReference(f_target.segment(i * 3, 3));
           active_tsid_contacts_[i] = true;
