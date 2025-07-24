@@ -56,6 +56,70 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
   }
 }
 
+BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
+{
+  RobotModelHandler model_handler = getSoloHandler();
+  RobotDataHandler data_handler(model_handler);
+
+  KinodynamicsID solver(
+    model_handler, KinodynamicsID::Settings::Default()
+                     .set_w_base(10.0)
+                     .set_w_posture(1e-2)
+                     .set_w_contact_motion(1e-5)
+                     .set_w_contact_force(1.0));
+
+  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
+  Eigen::VectorXd f_target = Eigen::VectorXd::Zero(4 * 3);
+  f_target[2] = model_handler.getMass() * 9.81 / 4;
+  f_target[5] = model_handler.getMass() * 9.81 / 4;
+  f_target[8] = model_handler.getMass() * 9.81 / 4;
+  f_target[11] = model_handler.getMass() * 9.81 / 4;
+
+  solver.setTarget(
+    q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),
+    {true, true, true, true}, f_target);
+
+  double t = 0;
+  double dt = 1e-3;
+  Eigen::VectorXd q = pinocchio::randomConfiguration(model_handler.getModel());
+  q.head(7) = q_target.head(7);
+  Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
+  Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
+  Eigen::VectorXd tau = Eigen::VectorXd::Zero(model_handler.getModel().nv - 6);
+
+  // Let the robot stabilize
+  const int N_STEP_ON_GROUND = 10000;
+  const int N_STEP_FREE_FALL = 1000;
+  for (int i = 0; i < N_STEP_ON_GROUND + N_STEP_FREE_FALL; i++)
+  {
+    // Solve and get solution
+    solver.solve(t, q, v, tau);
+    a = solver.getAccelerations();
+
+    // Integrate
+    t += dt;
+    q = pinocchio::integrate(model_handler.getModel(), q, (v + a / 2. * dt) * dt);
+    v += a * dt;
+
+    if (i == N_STEP_ON_GROUND)
+    {
+      // Robot had time to reach permanent regime, is it stable on ground ?
+      BOOST_CHECK_SMALL(a.head(3).norm(), 1e-8);
+      BOOST_CHECK_SMALL(v.head(3).norm(), 1e-8);
+
+      // Remove contacts
+      solver.setTarget(
+        q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv),
+        Eigen::VectorXd::Zero(model_handler.getModel().nv), {false, false, false, false}, f_target);
+    }
+    if (i == N_STEP_ON_GROUND + N_STEP_FREE_FALL - 1)
+    {
+      // Robot had time to reach permanent regime, is it robot free falling ?
+      BOOST_CHECK_SMALL((a.head(3) - model_handler.getModel().gravity.linear()).norm(), 0.1);
+    }
+  }
+}
+
 BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 {
   RobotModelHandler model_handler = getSoloHandler();
