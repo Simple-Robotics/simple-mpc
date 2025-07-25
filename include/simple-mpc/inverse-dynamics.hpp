@@ -5,6 +5,7 @@
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
 #include <tsid/solvers/solver-HQP-factory.hxx>
 #include <tsid/solvers/utils.hpp>
+#include <tsid/tasks/task-actuation-bounds.hpp>
 #include <tsid/tasks/task-joint-bounds.hpp>
 #include <tsid/tasks/task-joint-posVelAcc-bounds.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
@@ -114,6 +115,12 @@ namespace simple_mpc
         true, true, true, false); // For now do not impose acceleration bound as it is not provided in URDF
       formulation_.addMotionTask(*boundsTask_, 1.0, 0); // No weight needed as it is set as constraint
 
+      // Add actuation limit task
+      actuationTask_ = std::make_shared<tsid::tasks::TaskActuationBounds>("actuation-limits", robot_);
+      actuationTask_->setBounds(
+        model_handler_.getModel().lowerEffortLimit.tail(nu), model_handler_.getModel().upperEffortLimit.tail(nu));
+      formulation_.addActuationTask(*actuationTask_, 1.0, 0); // No weight needed as it is set as constraint
+
       // Create an HQP solver
       solver_ = tsid::solvers::SolverHQPFactory::createNewSolver(tsid::solvers::SOLVER_HQP_PROXQP, "solver-proxqp");
       solver_->resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
@@ -216,6 +223,7 @@ namespace simple_mpc
     std::shared_ptr<tsid::tasks::TaskJointPosture> postureTask_;
     std::shared_ptr<tsid::tasks::TaskSE3Equality> baseTask_;
     std::shared_ptr<tsid::tasks::TaskJointPosVelAccBounds> boundsTask_;
+    std::shared_ptr<tsid::tasks::TaskActuationBounds> actuationTask_;
     tsid::solvers::SolverHQPBase * solver_;
     tsid::solvers::HQPOutput last_solution_;
     tsid::trajectories::TrajectorySample samplePosture_; // TODO: no need to store it
