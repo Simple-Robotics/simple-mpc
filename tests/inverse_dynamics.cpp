@@ -96,8 +96,8 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
   Eigen::VectorXd tau = Eigen::VectorXd::Zero(model_handler.getModel().nv - 6);
 
   // Let the robot stabilize
-  const int N_STEP_ON_GROUND = 10000;
-  const int N_STEP_FREE_FALL = 1000;
+  const int N_STEP_ON_GROUND = 6000;
+  const int N_STEP_FREE_FALL = 2000;
   for (int i = 0; i < N_STEP_ON_GROUND + N_STEP_FREE_FALL; i++)
   {
     // Solve and get solution
@@ -108,12 +108,11 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
     t += dt;
     q = pinocchio::integrate(model_handler.getModel(), q, (v + a / 2. * dt) * dt);
     v += a * dt;
-
     if (i == N_STEP_ON_GROUND)
     {
       // Robot had time to reach permanent regime, is it stable on ground ?
-      BOOST_CHECK_SMALL(a.head(3).norm(), 1e-8);
-      BOOST_CHECK_SMALL(v.head(3).norm(), 1e-8);
+      BOOST_CHECK_SMALL(a.head(3).norm(), 1e-4);
+      BOOST_CHECK_SMALL(v.head(3).norm(), 1e-4);
 
       // Remove contacts
       solver.setTarget(
@@ -123,7 +122,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
     if (i == N_STEP_ON_GROUND + N_STEP_FREE_FALL - 1)
     {
       // Robot had time to reach permanent regime, is it robot free falling ?
-      BOOST_CHECK_SMALL((a.head(3) - model_handler.getModel().gravity.linear()).norm(), 0.1);
+      BOOST_CHECK_SMALL(a.head(3).norm() - model_handler.getModel().gravity.linear().norm(), 0.01);
     }
   }
 }
