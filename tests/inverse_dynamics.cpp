@@ -10,6 +10,21 @@ BOOST_AUTO_TEST_SUITE(inverse_dynamics)
 
 using namespace simple_mpc;
 
+Eigen::VectorXd solo_q_start(const RobotModelHandler & model_handler)
+{
+  Eigen::VectorXd q_start = model_handler.getReferenceState().head(model_handler.getModel().nq);
+  for (int l = 0; l < 4; l++)
+  {
+    q_start[7 + 3 * l + 1] = 0.9;
+    q_start[7 + 3 * l + 2] = -1.8;
+  }
+  q_start[0] = 0.01;
+  q_start[1] = 0.01;
+  q_start[2] = 0.21;
+
+  return q_start;
+}
+
 BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
 {
   RobotModelHandler model_handler = getSoloHandler();
@@ -26,8 +41,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
 
   double t = 0;
   double dt = 1e-3;
-  Eigen::VectorXd q = pinocchio::randomConfiguration(model_handler.getModel());
-  q.head(7) = q_target.head(7);
+  Eigen::VectorXd q = solo_q_start(model_handler);
   Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
   Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
   Eigen::VectorXd tau = Eigen::VectorXd::Zero(model_handler.getModel().nv - 6);
@@ -76,8 +90,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
 
   double t = 0;
   double dt = 1e-3;
-  Eigen::VectorXd q = pinocchio::randomConfiguration(model_handler.getModel());
-  q.head(7) = q_target.head(7);
+  Eigen::VectorXd q = solo_q_start(model_handler);
   Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
   Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
   Eigen::VectorXd tau = Eigen::VectorXd::Zero(model_handler.getModel().nv - 6);
@@ -135,8 +148,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 
   double t = 0;
   double dt = 1e-3;
-  Eigen::VectorXd q = pinocchio::randomConfiguration(model_handler.getModel());
-  q.head(7) = q_target.head(7);
+  Eigen::VectorXd q = solo_q_start(model_handler);
   Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
   Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
   Eigen::VectorXd tau = Eigen::VectorXd::Zero(model_handler.getModel().nv - 6);
