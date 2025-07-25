@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 
   Eigen::VectorXd error = 1e12 * Eigen::VectorXd::Ones(model_handler.getModel().nv);
 
-  for (int i = 0; i < 1000; i++)
+  for (int i = 0; i < 10000; i++)
   {
     // Solve and get solution
     solver.solve(t, q, v, tau);
@@ -167,8 +167,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 
     // Check error is decreasing
     Eigen::VectorXd new_error = pinocchio::difference(model_handler.getModel(), q, q_target);
-    if (i > 1) // Skip first point
-      BOOST_CHECK_LE(new_error.norm(), error.norm());
+    BOOST_CHECK_LE(new_error.norm(), error.norm());
     error = new_error;
   }
 }
