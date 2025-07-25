@@ -138,7 +138,7 @@ namespace simple_mpc
       postureTask_->setReference(samplePosture_);
 
       // Base task
-      pose_base_.rotation() = pinocchio::SE3::Quaternion(q_target[3], q_target[4], q_target[5], q_target[6]).matrix();
+      pose_base_.rotation() = pinocchio::SE3::Quaternion(q_target[6], q_target[3], q_target[4], q_target[5]).matrix();
       pose_base_.translation() = q_target.head(3);
       tsid::math::SE3ToVector(pose_base_, sampleBase_.pos);
       sampleBase_.setDerivative(v_target.head(6));
