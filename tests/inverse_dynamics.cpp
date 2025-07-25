@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
   RobotDataHandler data_handler(model_handler);
 
   KinodynamicsID solver(
-    model_handler, KinodynamicsID::Settings::Default().set_w_base(0.).set_w_contact_force(0.).set_w_contact_motion(0.));
+    model_handler, KinodynamicsID::Settings().set_kp_posture(10.).set_w_posture(1.)); // only a posture task
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
 
@@ -75,7 +75,15 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
   RobotModelHandler model_handler = getSoloHandler();
   RobotDataHandler data_handler(model_handler);
 
-  KinodynamicsID solver(model_handler);
+  KinodynamicsID solver(
+    model_handler, KinodynamicsID::Settings()
+                     .set_kp_base(10.)
+                     .set_kp_posture(10.0)
+                     .set_kp_contact(10.0)
+                     .set_w_base(10.)
+                     .set_w_posture(1.0)
+                     .set_w_contact_motion(1.0)
+                     .set_w_contact_force(1.0));
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
   Eigen::VectorXd f_target = Eigen::VectorXd::Zero(4 * 3);
@@ -132,7 +140,15 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
   RobotModelHandler model_handler = getSoloHandler();
   RobotDataHandler data_handler(model_handler);
 
-  KinodynamicsID solver(model_handler);
+  KinodynamicsID solver(
+    model_handler, KinodynamicsID::Settings()
+                     .set_kp_base(7.)
+                     .set_kp_posture(10.)
+                     .set_kp_contact(10.0)
+                     .set_w_base(100.0)
+                     .set_w_posture(1.0)
+                     .set_w_contact_force(1.0)
+                     .set_w_contact_motion(1.0));
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
   Eigen::VectorXd f_target = Eigen::VectorXd::Zero(4 * 3);
@@ -154,7 +170,8 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 
   Eigen::VectorXd error = 1e12 * Eigen::VectorXd::Ones(model_handler.getModel().nv);
 
-  for (int i = 0; i < 10000; i++)
+  const int N_STEP = 10000;
+  for (int i = 0; i < N_STEP; i++)
   {
     // Solve and get solution
     solver.solve(t, q, v, tau);

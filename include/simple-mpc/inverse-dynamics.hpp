@@ -10,6 +10,15 @@
 #include <tsid/tasks/task-se3-equality.hpp>
 #include <tsid/trajectories/trajectory-euclidian.hpp>
 
+// Allow to define a field, it's default value and its convenient chainable setter in one keyword.
+#define DEFINE_FIELD(type, name, value)                                                                                \
+  type name = value;                                                                                                   \
+  Settings & set_##name(type v)                                                                                        \
+  {                                                                                                                    \
+    name = v;                                                                                                          \
+    return *this;                                                                                                      \
+  }
+
 namespace simple_mpc
 {
 
@@ -18,13 +27,6 @@ namespace simple_mpc
   public:
     struct Settings
     {
-#define DEFINE_FIELD(type, name, value)                                                                                \
-  type name = value;                                                                                                   \
-  Settings & set_##name(type v)                                                                                        \
-  {                                                                                                                    \
-    name = v;                                                                                                          \
-    return *this;                                                                                                      \
-  }
 
       // Physical quantities
       DEFINE_FIELD(double, friction_coefficient, 0.3)
@@ -38,23 +40,18 @@ namespace simple_mpc
         0.01) // Min force for one foot contact (express as a multiple of the robot weight)
 
       // Tasks gains
-      DEFINE_FIELD(double, kp_base, 10)
-      DEFINE_FIELD(double, kp_posture, 10)
-      DEFINE_FIELD(double, kp_contact, 10)
+      DEFINE_FIELD(double, kp_base, 0.)
+      DEFINE_FIELD(double, kp_posture, 0.)
+      DEFINE_FIELD(double, kp_contact, 0.)
 
       // Tasks weights
-      DEFINE_FIELD(double, w_base, 10.)
-      DEFINE_FIELD(double, w_posture, 1.0)
-      DEFINE_FIELD(double, w_contact_motion, 1.0)
-      DEFINE_FIELD(double, w_contact_force, 1.0)
-
-      static Settings Default()
-      {
-        return {};
-      } // Work-around c++ bug to have a default constructor of nested class
+      DEFINE_FIELD(double, w_base, -1.)           // Disabled by default
+      DEFINE_FIELD(double, w_posture, -1.)        // Disabled by default
+      DEFINE_FIELD(double, w_contact_motion, -1.) // Disabled by default
+      DEFINE_FIELD(double, w_contact_force, -1.)  // Disabled by default
     };
 
-    KinodynamicsID(const simple_mpc::RobotModelHandler & model_handler, const Settings settings = Settings::Default())
+    KinodynamicsID(const simple_mpc::RobotModelHandler & model_handler, const Settings settings)
     : settings_(settings)
     , model_handler_(model_handler)
     , data_handler_(model_handler_)
