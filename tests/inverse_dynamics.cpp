@@ -29,9 +29,10 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
 {
   RobotModelHandler model_handler = getSoloHandler();
   RobotDataHandler data_handler(model_handler);
+  const double dt = 1e-3;
 
   KinodynamicsID solver(
-    model_handler, KinodynamicsID::Settings().set_kp_posture(10.).set_w_posture(1.)); // only a posture task
+    model_handler, dt, KinodynamicsID::Settings().set_kp_posture(10.).set_w_posture(1.)); // only a posture task
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
 
@@ -40,7 +41,6 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
     {false, false, false, false}, Eigen::VectorXd::Zero(4 * 3));
 
   double t = 0;
-  double dt = 1e-3;
   Eigen::VectorXd q = solo_q_start(model_handler);
   Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
   Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
@@ -74,16 +74,18 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
 {
   RobotModelHandler model_handler = getSoloHandler();
   RobotDataHandler data_handler(model_handler);
+  const double dt = 1e-3;
 
   KinodynamicsID solver(
-    model_handler, KinodynamicsID::Settings()
-                     .set_kp_base(10.)
-                     .set_kp_posture(10.0)
-                     .set_kp_contact(10.0)
-                     .set_w_base(10.)
-                     .set_w_posture(1.0)
-                     .set_w_contact_motion(1.0)
-                     .set_w_contact_force(1.0));
+    model_handler, dt,
+    KinodynamicsID::Settings()
+      .set_kp_base(10.)
+      .set_kp_posture(10.0)
+      .set_kp_contact(10.0)
+      .set_w_base(10.)
+      .set_w_posture(1.0)
+      .set_w_contact_motion(1.0)
+      .set_w_contact_force(1.0));
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
   Eigen::VectorXd f_target = Eigen::VectorXd::Zero(4 * 3);
@@ -97,7 +99,6 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
     {true, true, true, true}, f_target);
 
   double t = 0;
-  double dt = 1e-3;
   Eigen::VectorXd q = solo_q_start(model_handler);
   Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
   Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
@@ -139,20 +140,21 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
 {
   RobotModelHandler model_handler = getSoloHandler();
   RobotDataHandler data_handler(model_handler);
+  const double dt = 1e-3;
 
   KinodynamicsID solver(
-    model_handler, KinodynamicsID::Settings()
-                     .set_kp_base(7.)
-                     .set_kp_contact(10.0)
-                     .set_w_base(100.0)
-                     .set_w_contact_force(1.0)
-                     .set_w_contact_motion(1.0));
+    model_handler, dt,
+    KinodynamicsID::Settings()
+      .set_kp_base(7.)
+      .set_kp_contact(10.0)
+      .set_w_base(100.0)
+      .set_w_contact_force(1.0)
+      .set_w_contact_motion(1.0));
 
   // No need to set target as KinodynamicsID sets it by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
 
   double t = 0;
-  double dt = 1e-3;
   Eigen::VectorXd q = solo_q_start(model_handler);
   Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
   Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
@@ -187,16 +189,18 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 {
   RobotModelHandler model_handler = getSoloHandler();
   RobotDataHandler data_handler(model_handler);
+  const double dt = 1e-3;
 
   KinodynamicsID solver(
-    model_handler, KinodynamicsID::Settings()
-                     .set_kp_base(7.)
-                     .set_kp_posture(10.)
-                     .set_kp_contact(10.0)
-                     .set_w_base(100.0)
-                     .set_w_posture(1.0)
-                     .set_w_contact_force(1.0)
-                     .set_w_contact_motion(1.0));
+    model_handler, dt,
+    KinodynamicsID::Settings()
+      .set_kp_base(7.)
+      .set_kp_posture(10.)
+      .set_kp_contact(10.0)
+      .set_w_base(100.0)
+      .set_w_posture(1.0)
+      .set_w_contact_force(1.0)
+      .set_w_contact_motion(1.0));
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
   Eigen::VectorXd f_target = Eigen::VectorXd::Zero(4 * 3);
@@ -210,7 +214,6 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
     {true, true, true, true}, f_target);
 
   double t = 0;
-  double dt = 1e-3;
   Eigen::VectorXd q = solo_q_start(model_handler);
   Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
   Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);

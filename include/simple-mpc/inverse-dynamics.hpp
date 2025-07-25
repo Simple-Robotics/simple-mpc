@@ -6,6 +6,7 @@
 #include <tsid/solvers/solver-HQP-factory.hxx>
 #include <tsid/solvers/utils.hpp>
 #include <tsid/tasks/task-joint-bounds.hpp>
+#include <tsid/tasks/task-joint-posVelAcc-bounds.hpp>
 #include <tsid/tasks/task-joint-posture.hpp>
 #include <tsid/tasks/task-se3-equality.hpp>
 #include <tsid/trajectories/trajectory-euclidian.hpp>
@@ -51,7 +52,7 @@ namespace simple_mpc
       DEFINE_FIELD(double, w_contact_force, -1.)  // Disabled by default
     };
 
-    KinodynamicsID(const simple_mpc::RobotModelHandler & model_handler, const Settings settings)
+    KinodynamicsID(const simple_mpc::RobotModelHandler & model_handler, double control_dt, const Settings settings)
     : settings_(settings)
     , model_handler_(model_handler)
     , data_handler_(model_handler_)
@@ -60,6 +61,7 @@ namespace simple_mpc
     {
       const pinocchio::Model & model = model_handler.getModel();
       const size_t nq = model.nq;
+      const size_t nq_actuated = robot_.nq_actuated();
       const size_t nv = model.nv;
       const size_t nu = nv - 6;
 
@@ -90,7 +92,7 @@ namespace simple_mpc
       if (settings_.w_posture > 0.)
         formulation_.addMotionTask(*postureTask_, settings_.w_posture, 1);
 
-      samplePosture_ = tsid::trajectories::TrajectorySample(robot_.nq_actuated(), robot_.na());
+      samplePosture_ = tsid::trajectories::TrajectorySample(nq_actuated, nu);
 
       // Add the base task
       baseTask_ =
@@ -101,6 +103,16 @@ namespace simple_mpc
         formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
 
       sampleBase_ = tsid::trajectories::TrajectorySample(12, 6);
+
+      // Add joint limit task
+      boundsTask_ = std::make_shared<tsid::tasks::TaskJointPosVelAccBounds>("task-joint-limits", robot_, control_dt);
+      boundsTask_->setPositionBounds(
+        model_handler_.getModel().lowerPositionLimit.tail(nq_actuated),
+        model_handler_.getModel().upperPositionLimit.tail(nq_actuated));
+      boundsTask_->setVelocityBounds(model_handler_.getModel().upperVelocityLimit.tail(nu));
+      boundsTask_->setImposeBounds(
+        true, true, true, false); // For now do not impose acceleration bound as it is not provided in URDF
+      formulation_.addMotionTask(*boundsTask_, 1.0, 0); // No weight needed as it is set as constraint
 
       // Create an HQP solver
       solver_ = tsid::solvers::SolverHQPFactory::createNewSolver(tsid::solvers::SOLVER_HQP_PROXQP, "solver-proxqp");
@@ -203,6 +215,7 @@ namespace simple_mpc
     std::vector<tsid::contacts::ContactPoint> tsid_contacts;
     std::shared_ptr<tsid::tasks::TaskJointPosture> postureTask_;
     std::shared_ptr<tsid::tasks::TaskSE3Equality> baseTask_;
+    std::shared_ptr<tsid::tasks::TaskJointPosVelAccBounds> boundsTask_;
     tsid::solvers::SolverHQPBase * solver_;
     tsid::solvers::HQPOutput last_solution_;
     tsid::trajectories::TrajectorySample samplePosture_; // TODO: no need to store it
