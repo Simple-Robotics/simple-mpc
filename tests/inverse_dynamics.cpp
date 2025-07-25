@@ -135,6 +135,54 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
   }
 }
 
+BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
+{
+  RobotModelHandler model_handler = getSoloHandler();
+  RobotDataHandler data_handler(model_handler);
+
+  KinodynamicsID solver(
+    model_handler, KinodynamicsID::Settings()
+                     .set_kp_base(7.)
+                     .set_kp_contact(10.0)
+                     .set_w_base(100.0)
+                     .set_w_contact_force(1.0)
+                     .set_w_contact_motion(1.0));
+
+  // No need to set target as KinodynamicsID sets it by default to reference state
+  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
+
+  double t = 0;
+  double dt = 1e-3;
+  Eigen::VectorXd q = solo_q_start(model_handler);
+  Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
+  Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
+  Eigen::VectorXd tau = Eigen::VectorXd::Zero(model_handler.getModel().nv - 6);
+
+  Eigen::VectorXd error = 1e12 * Eigen::VectorXd::Ones(6);
+  const int N_STEP = 10000;
+  for (int i = 0; i < N_STEP; i++)
+  {
+    // Solve and get solution
+    solver.solve(t, q, v, tau);
+    a = solver.getAccelerations();
+
+    // Integrate
+    t += dt;
+    q = pinocchio::integrate(model_handler.getModel(), q, (v + a / 2. * dt) * dt);
+    v += a * dt;
+
+    // Check error is decreasing
+    Eigen::VectorXd new_error = pinocchio::difference(model_handler.getModel(), q, q_target).head(6);
+    if (i > N_STEP / 10) // Weird transitional phenomenon at first ...
+      BOOST_CHECK(
+        new_error.norm() < error.norm() || new_error.norm() < 2e-2); // Either strictly decreasing or close to target
+    if (i > 9 * N_STEP / 10)
+      BOOST_CHECK(new_error.norm() < 2e-2); // Should have converged by now
+
+    error = new_error;
+  }
+}
+
 BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 {
   RobotModelHandler model_handler = getSoloHandler();
