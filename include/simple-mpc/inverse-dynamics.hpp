@@ -154,9 +154,9 @@ namespace simple_mpc
       postureTask_->setReference(samplePosture_);
 
       // Base task
-      pose_base_.rotation() = pinocchio::SE3::Quaternion(q_target[6], q_target[3], q_target[4], q_target[5]).matrix();
-      pose_base_.translation() = q_target.head(3);
-      tsid::math::SE3ToVector(pose_base_, sampleBase_.pos);
+      const pinocchio::SE3 base_pose(
+        pinocchio::SE3::Quaternion(q_target[6], q_target[3], q_target[4], q_target[5]), q_target.head<3>());
+      tsid::math::SE3ToVector(base_pose, sampleBase_.pos);
       sampleBase_.setDerivative(v_target.head(6));
       sampleBase_.setSecondDerivative(a_target.head(6));
       baseTask_->setReference(sampleBase_);
@@ -229,7 +229,6 @@ namespace simple_mpc
     tsid::solvers::HQPOutput last_solution_;
     tsid::trajectories::TrajectorySample samplePosture_; // TODO: no need to store it
     tsid::trajectories::TrajectorySample sampleBase_;    // TODO: no need to store it
-    pinocchio::SE3 pose_base_;
   };
 
 } // namespace simple_mpc
