@@ -36,7 +36,9 @@ void check_joint_limits(
     BOOST_CHECK_LE(q[7 + i], model_handler.getModel().upperPositionLimit[7 + i]);
     BOOST_CHECK_GE(q[7 + i], model_handler.getModel().lowerPositionLimit[7 + i]);
     BOOST_CHECK_LE(v[6 + i], model_handler.getModel().upperVelocityLimit[6 + i]);
-    BOOST_CHECK_GE(v[6 + i], -model_handler.getModel().upperVelocityLimit[6 + i]);
+    BOOST_CHECK_GE(
+      v[6 + i],
+      -model_handler.getModel().upperVelocityLimit[6 + i]); // Do not use lower velocity bound as TSID cannot handle it
     BOOST_CHECK_LE(tau[6 + i], model_handler.getModel().upperEffortLimit[6 + i]);
     BOOST_CHECK_GE(tau[6 + i], model_handler.getModel().lowerEffortLimit[6 + i]);
   }
