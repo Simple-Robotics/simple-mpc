@@ -132,7 +132,7 @@ namespace simple_mpc
 
     if (terminal_constraint)
     {
-      createTerminalConstraint(x0.head(3));
+      createTerminalConstraint(x0.head<3>());
     }
   }
 } // namespace simple_mpc

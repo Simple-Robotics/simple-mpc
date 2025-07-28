@@ -121,9 +121,9 @@ namespace simple_mpc
   RobotDataHandler::CentroidalStateVector RobotDataHandler::getCentroidalState() const
   {
     RobotDataHandler::CentroidalStateVector x_centroidal;
-    x_centroidal.head(3) = data_.com[0];
-    x_centroidal.segment(3, 3) = data_.hg.linear();
-    x_centroidal.tail(3) = data_.hg.angular();
+    x_centroidal.head<3>() = data_.com[0];
+    x_centroidal.segment<3>(3) = data_.hg.linear();
+    x_centroidal.tail<3>() = data_.hg.angular();
     return x_centroidal;
   }
 

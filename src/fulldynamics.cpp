@@ -343,7 +343,7 @@ namespace simple_mpc
   {
     CostStack * cs = getCostStack(t);
     QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
-    return qc->getTarget().head(7);
+    return qc->getTarget().head<7>();
   };
 
   void FullDynamicsOCP::setPoseBase(const std::size_t t, const ConstVectorRef & pose_base)
@@ -355,7 +355,7 @@ namespace simple_mpc
     CostStack * cs = getCostStack(t);
     QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
     x0_ = getReferenceState(t);
-    x0_.head(7) = pose_base;
+    x0_.head<7>() = pose_base;
     qc->setTarget(x0_);
   }
 

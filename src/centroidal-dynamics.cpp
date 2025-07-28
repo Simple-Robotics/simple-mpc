@@ -219,8 +219,8 @@ namespace simple_mpc
     QuadraticResidualCost * qca = cs->getComponent<QuadraticResidualCost>("angular_mom_cost");
     AngularMomentumResidual * cfa = qca->getResidual<AngularMomentumResidual>();
 
-    v.head(3) = cfm->getReference() / model_handler_.getMass();
-    v.tail(3) = cfa->getReference() / model_handler_.getMass();
+    v.head<3>() = cfm->getReference() / model_handler_.getMass();
+    v.tail<3>() = cfa->getReference() / model_handler_.getMass();
     return v;
   }
 
@@ -234,8 +234,8 @@ namespace simple_mpc
     QuadraticResidualCost * qca = cs->getComponent<QuadraticResidualCost>("angular_mom_cost");
     AngularMomentumResidual * cfa = qca->getResidual<AngularMomentumResidual>();
 
-    cfm->setReference(velocity_base.head(3) * model_handler_.getMass());
-    cfa->setReference(velocity_base.tail(3) * model_handler_.getMass());
+    cfm->setReference(velocity_base.head<3>() * model_handler_.getMass());
+    cfa->setReference(velocity_base.tail<3>() * model_handler_.getMass());
   }
 
   const Eigen::VectorXd CentroidalOCP::getPoseBase(const std::size_t t)
@@ -252,7 +252,7 @@ namespace simple_mpc
     CostStack * cs = getCostStack(t);
     QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("com_cost");
     CentroidalCoMResidual * cfr = qrc->getResidual<CentroidalCoMResidual>();
-    com_ref_ = pose_base.head(3);
+    com_ref_ = pose_base.head<3>();
     cfr->setReference(com_ref_);
   }
 
@@ -292,14 +292,14 @@ namespace simple_mpc
   void CentroidalOCP::setReferenceState(const std::size_t t, const ConstVectorRef & x_ref)
   {
     assert(x_ref.size() == 9 && "x_ref not of the right size");
-    setPoseBase(t, x_ref.head(3));
-    setVelocityBase(t, x_ref.tail(6));
+    setPoseBase(t, x_ref.head<3>());
+    setVelocityBase(t, x_ref.tail<6>());
   }
 
   const ConstVectorRef CentroidalOCP::getReferenceState(const std::size_t t)
   {
-    x0_.head(3) = getPoseBase(t);
-    x0_.tail(6) = getVelocityBase(t);
+    x0_.head<3>() = getPoseBase(t);
+    x0_.tail<6>() = getVelocityBase(t);
     return x0_;
   }
 

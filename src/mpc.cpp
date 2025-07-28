@@ -288,9 +288,9 @@ namespace simple_mpc
         -(data_handler_->getRefFootPose(name).translation()[1] - data_handler_->getBaseFramePose().translation()[1]);
       twist_vect_[1] =
         data_handler_->getRefFootPose(name).translation()[0] - data_handler_->getBaseFramePose().translation()[0];
-      next_pose_.head(2) = data_handler_->getRefFootPose(name).translation().head(2);
-      next_pose_.head(2) += (velocity_base_.head(2) + velocity_base_[5] * twist_vect_)
-                            * (settings_.T_fly + settings_.T_contact) * settings_.timestep;
+      next_pose_.head<2>() = data_handler_->getRefFootPose(name).translation().head<2>();
+      next_pose_.head<2>() += (velocity_base_.head<2>() + velocity_base_[5] * twist_vect_)
+                              * (settings_.T_fly + settings_.T_contact) * settings_.timestep;
       next_pose_[2] = data_handler_->getFootPose(name).translation()[2];
 
       foot_trajectories_.updateTrajectory(
