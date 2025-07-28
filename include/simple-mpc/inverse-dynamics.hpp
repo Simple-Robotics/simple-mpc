@@ -200,8 +200,9 @@ namespace simple_mpc
         }
       }
 
-      const tsid::solvers::HQPData & solver_data_ = formulation_.computeProblemData(t, q_meas, v_meas);
-      last_solution_ = solver_->solve(solver_data_);
+      const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(t, q_meas, v_meas);
+      last_solution_ = solver_->solve(solver_data);
+      assert(last_solution_.status == tsid::solvers::HQPStatus::HQP_STATUS_OPTIMAL);
       tau_res = formulation_.getActuatorForces(last_solution_);
     }
 
