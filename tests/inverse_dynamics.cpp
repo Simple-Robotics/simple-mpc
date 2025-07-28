@@ -25,6 +25,23 @@ Eigen::VectorXd solo_q_start(const RobotModelHandler & model_handler)
   return q_start;
 }
 
+void check_joint_limits(
+  const RobotModelHandler & model_handler,
+  const Eigen::VectorXd & q,
+  const Eigen::VectorXd & v,
+  const Eigen::VectorXd & tau)
+{
+  for (int i = 0; i < model_handler.getModel().nv - 6; i++)
+  {
+    BOOST_CHECK_LE(q[7 + i], model_handler.getModel().upperPositionLimit[7 + i]);
+    BOOST_CHECK_GE(q[7 + i], model_handler.getModel().lowerPositionLimit[7 + i]);
+    BOOST_CHECK_LE(v[6 + i], model_handler.getModel().upperVelocityLimit[6 + i]);
+    BOOST_CHECK_GE(v[6 + i], -model_handler.getModel().upperVelocityLimit[6 + i]);
+    BOOST_CHECK_LE(tau[6 + i], model_handler.getModel().upperEffortLimit[6 + i]);
+    BOOST_CHECK_GE(tau[6 + i], model_handler.getModel().lowerEffortLimit[6 + i]);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
 {
   RobotModelHandler model_handler = getSoloHandler();
@@ -32,7 +49,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
   const double dt = 1e-3;
 
   KinodynamicsID solver(
-    model_handler, dt, KinodynamicsID::Settings().set_kp_posture(10.).set_w_posture(1.)); // only a posture task
+    model_handler, dt, KinodynamicsID::Settings().set_kp_posture(20.).set_w_posture(1.)); // only a posture task
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
 
@@ -67,6 +84,9 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
     Eigen::VectorXd new_error = pinocchio::difference(model_handler.getModel(), q, q_target);
     BOOST_CHECK_LE(new_error.norm(), error.norm());
     error = new_error;
+
+    // Check joints limits
+    check_joint_limits(model_handler, q, v, tau);
   }
 }
 
@@ -133,6 +153,9 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
       // Robot had time to reach permanent regime, is it robot free falling ?
       BOOST_CHECK_SMALL(a.head(3).norm() - model_handler.getModel().gravity.linear().norm(), 0.01);
     }
+
+    // Check joints limits
+    check_joint_limits(model_handler, q, v, tau);
   }
 }
 
@@ -182,6 +205,8 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
       BOOST_CHECK(new_error.norm() < 2e-2); // Should have converged by now
 
     error = new_error;
+    // Check joints limits
+    check_joint_limits(model_handler, q, v, tau);
   }
 }
 
@@ -237,6 +262,9 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
     Eigen::VectorXd new_error = pinocchio::difference(model_handler.getModel(), q, q_target);
     BOOST_CHECK_LE(new_error.norm(), error.norm());
     error = new_error;
+
+    // Check joints limits
+    check_joint_limits(model_handler, q, v, tau);
   }
 }
 
