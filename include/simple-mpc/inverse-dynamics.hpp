@@ -147,6 +147,8 @@ namespace simple_mpc
       const std::vector<bool> & contact_state_target,
       const Eigen::VectorXd & f_target)
     {
+      data_handler_.updateInternalData(q_target, v_target, false);
+
       // Posture task
       samplePosture_.setValue(q_target.tail(robot_.nq_actuated()));
       samplePosture_.setDerivative(v_target.tail(robot_.na()));
@@ -154,15 +156,12 @@ namespace simple_mpc
       postureTask_->setReference(samplePosture_);
 
       // Base task
-      const pinocchio::SE3 base_pose(
-        pinocchio::SE3::Quaternion(q_target[6], q_target[3], q_target[4], q_target[5]), q_target.head<3>());
-      tsid::math::SE3ToVector(base_pose, sampleBase_.pos);
+      tsid::math::SE3ToVector(data_handler_.getBaseFramePose(), sampleBase_.pos);
       sampleBase_.setDerivative(v_target.head<6>());
       sampleBase_.setSecondDerivative(a_target.head<6>());
       baseTask_->setReference(sampleBase_);
 
       // Foot contacts
-      data_handler_.updateInternalData(q_target, v_target, false);
       for (std::size_t i = 0; i < model_handler_.getFeetNames().size(); i++)
       {
         const std::string name = model_handler_.getFeetNames()[i];
