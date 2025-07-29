@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
 
   solver.setTarget(
     q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),
-    {false, false, false, false}, Eigen::VectorXd::Zero(4 * 3));
+    {false, false, false, false}, Eigen::MatrixXd::Zero(4, 3));
 
   double t = 0;
   Eigen::VectorXd q = solo_q_start(model_handler);
@@ -110,11 +110,11 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
       .set_w_contact_force(1.0));
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
-  Eigen::VectorXd f_target = Eigen::VectorXd::Zero(4 * 3);
-  f_target[2] = model_handler.getMass() * 9.81 / 4;
-  f_target[5] = model_handler.getMass() * 9.81 / 4;
-  f_target[8] = model_handler.getMass() * 9.81 / 4;
-  f_target[11] = model_handler.getMass() * 9.81 / 4;
+  Eigen::MatrixXd f_target = Eigen::MatrixXd::Zero(4, 3);
+  f_target(0, 2) = model_handler.getMass() * 9.81 / 4;
+  f_target(1, 2) = model_handler.getMass() * 9.81 / 4;
+  f_target(2, 2) = model_handler.getMass() * 9.81 / 4;
+  f_target(3, 2) = model_handler.getMass() * 9.81 / 4;
 
   solver.setTarget(
     q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),
@@ -230,11 +230,11 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
       .set_w_contact_motion(1.0));
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
-  Eigen::VectorXd f_target = Eigen::VectorXd::Zero(4 * 3);
-  f_target[2] = model_handler.getMass() * 9.81 / 4;
-  f_target[5] = model_handler.getMass() * 9.81 / 4;
-  f_target[8] = model_handler.getMass() * 9.81 / 4;
-  f_target[11] = model_handler.getMass() * 9.81 / 4;
+  Eigen::MatrixXd f_target = Eigen::MatrixXd::Zero(4, 3);
+  f_target(0, 2) = model_handler.getMass() * 9.81 / 4;
+  f_target(1, 2) = model_handler.getMass() * 9.81 / 4;
+  f_target(2, 2) = model_handler.getMass() * 9.81 / 4;
+  f_target(3, 2) = model_handler.getMass() * 9.81 / 4;
 
   solver.setTarget(
     q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),

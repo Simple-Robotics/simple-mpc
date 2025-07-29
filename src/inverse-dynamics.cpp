@@ -77,11 +77,11 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   const Eigen::VectorXd q_ref = model_handler.getReferenceState().head(nq);
   const Eigen::VectorXd v_ref = model_handler.getReferenceState().tail(nv);
   std::vector<bool> c_ref(n_contacts);
-  Eigen::VectorXd f_ref = Eigen::VectorXd::Zero(3 * n_contacts);
+  MatrixN3d f_ref = MatrixN3d::Zero(n_contacts, 3);
   for (int i = 0; i < n_contacts; i++)
   {
     c_ref[i] = true;
-    f_ref[2 + 3 * i] = weight / n_contacts;
+    f_ref(i, 2) = weight / n_contacts;
   }
   setTarget(q_ref, v_ref, v_ref, c_ref, f_ref);
   const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(0, q_ref, v_ref);
@@ -93,7 +93,7 @@ void KinodynamicsID::setTarget(
   const Eigen::Ref<const Eigen::VectorXd> & v_target,
   const Eigen::Ref<const Eigen::VectorXd> & a_target,
   const std::vector<bool> & contact_state_target,
-  const Eigen::Ref<const Eigen::VectorXd> & f_target)
+  const Eigen::Ref<const MatrixN3d> & f_target)
 {
   data_handler_.updateInternalData(q_target, v_target, false);
 
@@ -119,7 +119,7 @@ void KinodynamicsID::setTarget(
       {
         formulation_.addRigidContact(tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 1);
       }
-      tsid_contacts[i].setForceReference(f_target.segment(i * 3, 3));
+      tsid_contacts[i].setForceReference(f_target.row(i));
       active_tsid_contacts_[i] = true;
     }
     else

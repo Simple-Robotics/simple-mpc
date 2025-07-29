@@ -26,6 +26,8 @@ namespace simple_mpc
   class KinodynamicsID
   {
   public:
+    typedef Eigen::Matrix<double, Eigen::Dynamic, 3> MatrixN3d;
+
     struct Settings
     {
 
@@ -59,7 +61,7 @@ namespace simple_mpc
       const Eigen::Ref<const Eigen::VectorXd> & v_target,
       const Eigen::Ref<const Eigen::VectorXd> & a_target,
       const std::vector<bool> & contact_state_target,
-      const Eigen::Ref<const Eigen::VectorXd> & f_target);
+      const Eigen::Ref<const MatrixN3d> & f_target);
 
     void solve(
       const double t,
