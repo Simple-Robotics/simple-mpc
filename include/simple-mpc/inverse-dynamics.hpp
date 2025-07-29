@@ -141,11 +141,11 @@ namespace simple_mpc
     }
 
     void setTarget(
-      const Eigen::VectorXd & q_target,
-      const Eigen::VectorXd & v_target,
-      const Eigen::VectorXd & a_target,
+      const Eigen::Ref<const Eigen::VectorXd> & q_target,
+      const Eigen::Ref<const Eigen::VectorXd> & v_target,
+      const Eigen::Ref<const Eigen::VectorXd> & a_target,
       const std::vector<bool> & contact_state_target,
-      const Eigen::VectorXd & f_target)
+      const Eigen::Ref<const Eigen::VectorXd> & f_target)
     {
       data_handler_.updateInternalData(q_target, v_target, false);
 
@@ -186,8 +186,11 @@ namespace simple_mpc
       solver_->resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
     }
 
-    void
-    solve(const double t, const Eigen::VectorXd & q_meas, const Eigen::VectorXd & v_meas, Eigen::VectorXd & tau_res)
+    void solve(
+      const double t,
+      const Eigen::Ref<const Eigen::VectorXd> & q_meas,
+      const Eigen::Ref<const Eigen::VectorXd> & v_meas,
+      Eigen::Ref<Eigen::VectorXd> tau_res)
     {
       // Update contact position based on the real robot foot placement
       data_handler_.updateInternalData(q_meas, v_meas, false);
