@@ -1,0 +1,162 @@
+#include <simple-mpc/inverse-dynamics.hpp>
+
+using namespace simple_mpc;
+
+KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double control_dt, const Settings settings)
+: settings_(settings)
+, model_handler_(model_handler)
+, data_handler_(model_handler_)
+, robot_(model_handler_.getModel())
+, formulation_("tsid", robot_)
+{
+  const pinocchio::Model & model = model_handler.getModel();
+  const size_t nq = model.nq;
+  const size_t nq_actuated = robot_.nq_actuated();
+  const size_t nv = model.nv;
+  const size_t nu = nv - 6;
+
+  // Prepare contact point task
+  const size_t n_contacts = model_handler_.getFeetNames().size();
+  const Eigen::Vector3d normal{0, 0, 1};
+  const double weight = model_handler_.getMass() * 9.81;
+  const double max_f = settings_.contact_weight_ratio_max * weight;
+  const double min_f = settings_.contact_weight_ratio_min * weight;
+  for (int i = 0; i < n_contacts; i++)
+  {
+    const std::string frame_name = model_handler.getFootName(i);
+    // Create contact point
+    tsid::contacts::ContactPoint & contact_point =
+      tsid_contacts.emplace_back(frame_name, robot_, frame_name, normal, settings_.friction_coefficient, min_f, max_f);
+    // Set contact parameters
+    contact_point.Kp(settings_.kp_contact * Eigen::VectorXd::Ones(3));
+    contact_point.Kd(2.0 * contact_point.Kp().cwiseSqrt());
+    contact_point.useLocalFrame(false);
+    // By default contact is not active (will be by setTarget)
+    active_tsid_contacts_.push_back(false);
+  }
+
+  // Add the posture task
+  postureTask_ = std::make_shared<tsid::tasks::TaskJointPosture>("task-posture", robot_);
+  postureTask_->Kp(settings_.kp_posture * Eigen::VectorXd::Ones(nu));
+  postureTask_->Kd(2.0 * postureTask_->Kp().cwiseSqrt());
+  if (settings_.w_posture > 0.)
+    formulation_.addMotionTask(*postureTask_, settings_.w_posture, 1);
+
+  samplePosture_ = tsid::trajectories::TrajectorySample(nq_actuated, nu);
+
+  // Add the base task
+  baseTask_ = std::make_shared<tsid::tasks::TaskSE3Equality>("task-base", robot_, model_handler_.getBaseFrameName());
+  baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
+  baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
+  if (settings_.w_base > 0.)
+    formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
+
+  sampleBase_ = tsid::trajectories::TrajectorySample(12, 6);
+
+  // Add joint limit task
+  boundsTask_ = std::make_shared<tsid::tasks::TaskJointPosVelAccBounds>("task-joint-limits", robot_, control_dt);
+  boundsTask_->setPositionBounds(
+    model_handler_.getModel().lowerPositionLimit.tail(nq_actuated),
+    model_handler_.getModel().upperPositionLimit.tail(nq_actuated));
+  boundsTask_->setVelocityBounds(model_handler_.getModel().upperVelocityLimit.tail(nu));
+  boundsTask_->setImposeBounds(
+    true, true, true, false); // For now do not impose acceleration bound as it is not provided in URDF
+  formulation_.addMotionTask(*boundsTask_, 1.0, 0); // No weight needed as it is set as constraint
+
+  // Add actuation limit task
+  actuationTask_ = std::make_shared<tsid::tasks::TaskActuationBounds>("actuation-limits", robot_);
+  actuationTask_->setBounds(
+    model_handler_.getModel().lowerEffortLimit.tail(nu), model_handler_.getModel().upperEffortLimit.tail(nu));
+  formulation_.addActuationTask(*actuationTask_, 1.0, 0); // No weight needed as it is set as constraint
+
+  // Create an HQP solver
+  solver_ = tsid::solvers::SolverHQPFactory::createNewSolver(tsid::solvers::SOLVER_HQP_PROXQP, "solver-proxqp");
+  solver_->resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
+
+  // Dry run to initialize solver data & output
+  const Eigen::VectorXd q_ref = model_handler.getReferenceState().head(nq);
+  const Eigen::VectorXd v_ref = model_handler.getReferenceState().tail(nv);
+  std::vector<bool> c_ref(n_contacts);
+  Eigen::VectorXd f_ref = Eigen::VectorXd::Zero(3 * n_contacts);
+  for (int i = 0; i < n_contacts; i++)
+  {
+    c_ref[i] = true;
+    f_ref[2 + 3 * i] = weight / n_contacts;
+  }
+  setTarget(q_ref, v_ref, v_ref, c_ref, f_ref);
+  const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(0, q_ref, v_ref);
+  last_solution_ = solver_->solve(solver_data);
+}
+
+void KinodynamicsID::setTarget(
+  const Eigen::Ref<const Eigen::VectorXd> & q_target,
+  const Eigen::Ref<const Eigen::VectorXd> & v_target,
+  const Eigen::Ref<const Eigen::VectorXd> & a_target,
+  const std::vector<bool> & contact_state_target,
+  const Eigen::Ref<const Eigen::VectorXd> & f_target)
+{
+  data_handler_.updateInternalData(q_target, v_target, false);
+
+  // Posture task
+  samplePosture_.setValue(q_target.tail(robot_.nq_actuated()));
+  samplePosture_.setDerivative(v_target.tail(robot_.na()));
+  samplePosture_.setSecondDerivative(a_target.tail(robot_.na()));
+  postureTask_->setReference(samplePosture_);
+
+  // Base task
+  tsid::math::SE3ToVector(data_handler_.getBaseFramePose(), sampleBase_.pos);
+  sampleBase_.setDerivative(v_target.head<6>());
+  sampleBase_.setSecondDerivative(a_target.head<6>());
+  baseTask_->setReference(sampleBase_);
+
+  // Foot contacts
+  for (std::size_t i = 0; i < model_handler_.getFeetNames().size(); i++)
+  {
+    const std::string name = model_handler_.getFeetNames()[i];
+    if (contact_state_target[i])
+    {
+      if (!active_tsid_contacts_[i])
+      {
+        formulation_.addRigidContact(tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 1);
+      }
+      tsid_contacts[i].setForceReference(f_target.segment(i * 3, 3));
+      active_tsid_contacts_[i] = true;
+    }
+    else
+    {
+      if (active_tsid_contacts_[i])
+      {
+        formulation_.removeRigidContact(name, 0);
+        active_tsid_contacts_[i] = false;
+      }
+    }
+  }
+  solver_->resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
+}
+
+void KinodynamicsID::solve(
+  const double t,
+  const Eigen::Ref<const Eigen::VectorXd> & q_meas,
+  const Eigen::Ref<const Eigen::VectorXd> & v_meas,
+  Eigen::Ref<Eigen::VectorXd> tau_res)
+{
+  // Update contact position based on the real robot foot placement
+  data_handler_.updateInternalData(q_meas, v_meas, false);
+  for (std::size_t i = 0; i < active_tsid_contacts_.size(); i++)
+  {
+    if (active_tsid_contacts_[i])
+    {
+      tsid_contacts[i].setReference(data_handler_.getFootPose(i));
+    }
+  }
+
+  const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(t, q_meas, v_meas);
+  last_solution_ = solver_->solve(solver_data);
+  assert(last_solution_.status == tsid::solvers::HQPStatus::HQP_STATUS_OPTIMAL);
+  tau_res = formulation_.getActuatorForces(last_solution_);
+}
+
+const Eigen::VectorXd & KinodynamicsID::getAccelerations()
+{
+  return formulation_.getAccelerations(last_solution_);
+}
