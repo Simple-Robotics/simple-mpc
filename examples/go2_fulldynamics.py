@@ -248,12 +248,12 @@ for t in range(500):
     forces_vec1 = mpc.getContactForces(1)
     contact_states = mpc.ocp_handler.getContactState(0)
 
-    force_FL.append(forces_vec0[:3])
-    force_FR.append(forces_vec0[3:6])
-    force_RL.append(forces_vec0[6:9])
-    force_RR.append(forces_vec0[9:12])
+    force_FL.append(forces_vec0[0,:])
+    force_FR.append(forces_vec0[1,:])
+    force_RL.append(forces_vec0[2,:])
+    force_RR.append(forces_vec0[3,:])
 
-    forces = [forces_vec0, forces_vec1]
+    forces = [forces_vec0.flatten(), forces_vec1.flatten()] # Flattening for interpolation
     ddqs = [a0, a1]
     xss = [mpc.xs[0], mpc.xs[1]]
     uss = [mpc.us[0], mpc.us[1]]
@@ -277,7 +277,7 @@ for t in range(500):
         x_interp = interpolator.interpolateState(delay, dt, xss)
         u_interp = interpolator.interpolateLinear(delay, dt, uss)
         acc_interp = interpolator.interpolateLinear(delay, dt, ddqs)
-        force_interp = interpolator.interpolateLinear(delay, dt, forces)
+        force_interp = interpolator.interpolateLinear(delay, dt, forces).reshape(4,3)
 
         q_meas, v_meas = device.measureState()
         x_measured = np.concatenate([q_meas, v_meas])
