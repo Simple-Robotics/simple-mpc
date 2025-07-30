@@ -71,7 +71,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
   {
     // Solve and get solution
     solver.solve(t, q, v, tau);
-    a = solver.getAccelerations();
+    solver.getAccelerations(a);
 
     // Integrate
     t += dt;
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
   {
     // Solve and get solution
     solver.solve(t, q, v, tau);
-    a = solver.getAccelerations();
+    solver.getAccelerations(a);
 
     // Integrate
     t += dt;
@@ -191,7 +191,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
   {
     // Solve and get solution
     solver.solve(t, q, v, tau);
-    a = solver.getAccelerations();
+    solver.getAccelerations(a);
 
     // Integrate
     t += dt;
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
   {
     // Solve and get solution
     solver.solve(t, q, v, tau);
-    a = solver.getAccelerations();
+    solver.getAccelerations(a);
 
     // Integrate
     t += dt;

@@ -69,12 +69,15 @@ namespace simple_mpc
       const Eigen::Ref<const Eigen::VectorXd> & v_meas,
       Eigen::Ref<Eigen::VectorXd> tau_res);
 
-    const Eigen::VectorXd & getAccelerations();
+    void getAccelerations(Eigen::Ref<Eigen::VectorXd> a);
 
-  private:
-    // Order matters to be instanciated in the right order
+  public:
+    // Order matters to be instantiated in the right order
     const Settings settings_;
     const simple_mpc::RobotModelHandler & model_handler_;
+
+  private:
+    // Order still matter here
     simple_mpc::RobotDataHandler data_handler_;
     tsid::robots::RobotWrapper robot_;
     tsid::InverseDynamicsFormulationAccForce formulation_;

@@ -14,9 +14,16 @@ namespace simple_mpc
       const Eigen::Ref<const Eigen::VectorXd> & q_meas,
       const Eigen::Ref<const Eigen::VectorXd> & v_meas)
     {
-      Eigen::VectorXd tau_res(v_meas.size());
+      Eigen::VectorXd tau_res(self.model_handler_.getModel().nv - 6);
       self.solve(t, q_meas, v_meas, tau_res);
       return tau_res;
+    }
+
+    Eigen::VectorXd getAccelerationsProxy(KinodynamicsID & self)
+    {
+      Eigen::VectorXd a(self.model_handler_.getModel().nv - 6);
+      self.getAccelerations(a);
+      return a;
     }
 
     void exposeInverseDynamics()
@@ -37,7 +44,8 @@ namespace simple_mpc
         "KinodynamicsID", bp::init<const simple_mpc::RobotModelHandler &, double, const KinodynamicsID::Settings>(
                             bp::args("self", "model_handler", "control_dt", "settings")))
         .def("setTarget", &KinodynamicsID::setTarget)
-        .def("solve", &solveProxy);
+        .def("solve", &solveProxy)
+        .def("getAccelerations", &getAccelerationsProxy);
     }
   } // namespace python
 } // namespace simple_mpc

@@ -156,7 +156,7 @@ void KinodynamicsID::solve(
   tau_res = formulation_.getActuatorForces(last_solution_);
 }
 
-const Eigen::VectorXd & KinodynamicsID::getAccelerations()
+void KinodynamicsID::getAccelerations(Eigen::Ref<Eigen::VectorXd> ddq)
 {
-  return formulation_.getAccelerations(last_solution_);
+  ddq = formulation_.getAccelerations(last_solution_);
 }
