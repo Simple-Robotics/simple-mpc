@@ -174,8 +174,8 @@ nk = 2
 force_size = 6
 
 device.showTargetToTrack(
-    mpc.getDataHandler().getFootPose("left_sole_link"),
-    mpc.getDataHandler().getFootPose("right_sole_link"),
+    mpc.getDataHandler().getFootPoseByName("left_sole_link"),
+    mpc.getDataHandler().getFootPoseByName("right_sole_link"),
 )
 
 v = np.zeros(6)

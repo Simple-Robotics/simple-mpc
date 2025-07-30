@@ -152,8 +152,8 @@ land_RF = -1
 takeoff_LF = -1
 takeoff_RF = -1
 device.showTargetToTrack(
-    mpc.getDataHandler().getFootPose("left_sole_link"),
-    mpc.getDataHandler().getFootPose("right_sole_link"),
+    mpc.getDataHandler().getFootPoseByName("left_sole_link"),
+    mpc.getDataHandler().getFootPoseByName("right_sole_link"),
 )
 
 v = np.zeros(6)

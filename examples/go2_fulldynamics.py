@@ -183,7 +183,7 @@ q_meas, v_meas = device.measureState()
 x_measured  = np.concatenate([q_meas, v_meas])
 mpc.getDataHandler().updateInternalData(x_measured, False)
 
-ref_foot_pose = [mpc.getDataHandler().getRefFootPose(mpc.getModelHandler().getFeetNames()[i]) for i in range(4)]
+ref_foot_pose = [mpc.getDataHandler().getRefFootPose(i) for i in range(4)]
 for pose in ref_foot_pose:
     pose.translation[2] = 0
 device.showQuadrupedFeet(*ref_foot_pose)
@@ -258,10 +258,10 @@ for t in range(500):
     xss = [mpc.xs[0], mpc.xs[1]]
     uss = [mpc.us[0], mpc.us[1]]
 
-    FL_measured.append(mpc.getDataHandler().getFootPose("FL_foot").translation)
-    FR_measured.append(mpc.getDataHandler().getFootPose("FR_foot").translation)
-    RL_measured.append(mpc.getDataHandler().getFootPose("RL_foot").translation)
-    RR_measured.append(mpc.getDataHandler().getFootPose("RR_foot").translation)
+    FL_measured.append(mpc.getDataHandler().getFootPoseByName("FL_foot").translation)
+    FR_measured.append(mpc.getDataHandler().getFootPoseByName("FR_foot").translation)
+    RL_measured.append(mpc.getDataHandler().getFootPoseByName("RL_foot").translation)
+    RR_measured.append(mpc.getDataHandler().getFootPoseByName("RR_foot").translation)
     FL_references.append(mpc.getReferencePose(0, "FL_foot").translation)
     FR_references.append(mpc.getReferencePose(0, "FR_foot").translation)
     RL_references.append(mpc.getReferencePose(0, "RL_foot").translation)
