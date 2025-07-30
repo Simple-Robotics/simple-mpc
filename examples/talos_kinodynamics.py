@@ -4,7 +4,7 @@ import pinocchio as pin
 from bullet_robot import BulletRobot
 import time
 from utils import loadTalos
-from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC, IDSolver
+from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC
 
 # RobotWrapper
 URDF_SUBPATH = "/talos_data/robots/talos_reduced.urdf"
@@ -136,24 +136,6 @@ contact_phases += [contact_phase_right] * T_ss
 
 mpc.generateCycleHorizon(contact_phases)
 
-""" Initialize whole-body inverse dynamics QP"""
-contact_ids = model_handler.getFeetIds()
-id_conf = dict(
-    contact_ids=contact_ids,
-    x0=model_handler.getReferenceState(),
-    mu=0.8,
-    Lfoot=0.1,
-    Wfoot=0.075,
-    force_size=6,
-    kd=0,
-    w_force=100,
-    w_acc=1,
-    w_tau=0,
-    verbose=False,
-)
-
-qp = IDSolver(id_conf, model_handler.getModel())
-
 """ Initialize simulation"""
 device = BulletRobot(
     model_handler.getModel().names,
@@ -225,14 +207,6 @@ for t in range(600):
         a_interp = (10 - j) / 10 * a0 + j / 10 * a1
         f_interp = (10 - j) / 10 * forces0 + j / 10 * forces1
 
-        qp.solveQP(
-            mpc.getDataHandler().getData(),
-            contact_states,
-            x_measured[nq:],
-            a_interp,
-            np.zeros(nu),
-            f_interp,
-            mpc.getDataHandler().getData().M,
-        )
+        # TODO: use TSID to compute inverse dynamics and get tau_cmd
 
-        device.execute(qp.solved_torque)
+        #device.execute(tau_cmd)

@@ -1,6 +1,6 @@
 import numpy as np
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC, IDSolver, Interpolator
+from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC, Interpolator
 import example_robot_data as erd
 import pinocchio as pin
 import time
@@ -134,24 +134,6 @@ contact_phases += [contact_phase_quadru] * T_ds
 contact_phases += [contact_phase_lift_FR] * T_ss
 mpc.generateCycleHorizon(contact_phases)
 
-""" Initialize whole-body inverse dynamics QP"""
-contact_ids = model_handler.getFeetIds()
-id_conf = dict(
-    contact_ids=contact_ids,
-    x0=model_handler.getReferenceState(),
-    mu=0.8,
-    Lfoot=0.01,
-    Wfoot=0.01,
-    force_size=3,
-    kd=0,
-    w_force=100,
-    w_acc=1,
-    w_tau=0,
-    verbose=False,
-)
-
-qp = IDSolver(id_conf, model_handler.getModel())
-
 """ Interpolation """
 interpolator = Interpolator(model_handler.getModel())
 
@@ -266,19 +248,11 @@ for t in range(300):
 
         mpc.getDataHandler().updateInternalData(x_measured, True)
 
-        qp.solveQP(
-            mpc.getDataHandler().getData(),
-            contact_states,
-            x_measured[nq:],
-            acc_interp,
-            np.zeros(12),
-            force_interp,
-            mpc.getDataHandler().getData().M,
-        )
+        # TODO: use TSID to compute inverse dynamics and get tau_cmd
 
-        device.execute(qp.solved_torque)
-        u_multibody.append(copy.deepcopy(qp.solved_torque))
-        x_multibody.append(x_measured)
+        #device.execute(tau_cmd)
+        #u_multibody.append(copy.deepcopy(tau_cmd))
+        #x_multibody.append(x_measured)
 
 
 force_FL = np.array(force_FL)
@@ -297,6 +271,6 @@ RR_references = np.array(RR_references)
 com_measured = np.array(com_measured)
 L_measured = np.array(L_measured)
 
-save_trajectory(x_multibody, u_multibody, com_measured, force_FL, force_FR, force_RL, force_RR, solve_time,
+""" save_trajectory(x_multibody, u_multibody, com_measured, force_FL, force_FR, force_RL, force_RR, solve_time,
                 FL_measured, FR_measured, RL_measured, RR_measured,
-                FL_references, FR_references, RL_references, RR_references, L_measured, "kinodynamics")
+                FL_references, FR_references, RL_references, RR_references, L_measured, "kinodynamics") """

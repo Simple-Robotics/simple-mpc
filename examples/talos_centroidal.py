@@ -2,7 +2,7 @@ import numpy as np
 import pinocchio as pin
 import example_robot_data as erd
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, CentroidalOCP, MPC, IKIDSolver
+from simple_mpc import RobotModelHandler, RobotDataHandler, CentroidalOCP, MPC
 from utils import loadTalos
 import time
 
@@ -101,42 +101,6 @@ contact_phases += [contact_phase_right] * T_ss
 
 mpc.generateCycleHorizon(contact_phases)
 
-""" Initialize inverse dynamics QP """
-g_basepos = [0, 0, 0, 10, 10, 10]
-g_legpos = [0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-g_torsopos = [1, 1]
-g_armpos = [10, 10, 100, 10]
-
-g_q = np.array(g_basepos + g_legpos * 2 + g_torsopos + g_armpos * 2) * 10
-
-g_p = np.array([2000, 2000, 2000, 2000, 2000, 2000])
-g_b = np.array([10, 10, 10])
-
-Kp_gains = [g_q, g_p, g_b]
-Kd_gains = [2 * np.sqrt(g_q), 2 * np.sqrt(g_p), 2 * np.sqrt(g_b)]
-contact_ids = model_handler.getFeetIds()
-fixed_frame_ids = [model_handler.getBaseFrameId(), model_handler.getModel().getFrameId("torso_2_link")]
-ikid_conf = dict(
-    Kp_gains=Kp_gains,
-    Kd_gains=Kd_gains,
-    contact_ids=contact_ids,
-    fixed_frame_ids=fixed_frame_ids,
-    x0=model_handler.getReferenceState(),
-    dt=0.01,
-    mu=0.8,
-    Lfoot=0.1,
-    Wfoot=0.075,
-    force_size=6,
-    w_qref=500,
-    w_footpose=50000,
-    w_centroidal=10,
-    w_baserot=1000,
-    w_force=100,
-    verbose=False,
-)
-
-qp = IKIDSolver(ikid_conf, model_handler.getModel())
-
 """ Initialize simulation"""
 device = BulletRobot(
     model_handler.getModel().names,
@@ -196,9 +160,6 @@ for t in range(600):
     foot_ref = [mpc.getReferencePose(0, name) for name in model_handler.getFeetNames()]
     foot_ref_next = [mpc.getReferencePose(1, name) for name in model_handler.getFeetNames()]
     dH = mpc.getStateDerivative(0)[3:9]
-    qp.computeDifferences(
-        mpc.getDataHandler().getData(), x_measured, foot_ref, foot_ref_next
-    )
 
     for j in range(10):
         time.sleep(0.001)
@@ -215,14 +176,7 @@ for t in range(600):
         )
 
 
-        qp.solve_qp(
-            mpc.getDataHandler().getData(),
-            contact_states,
-            x_measured[nq:],
-            forces,
-            dH,
-            mpc.getDataHandler().getData().M,
-        )
+        # TODO: use TSID to compute inverse dynamics and get tau_cmd
 
 
-        device.execute(qp.solved_torque)
+        #device.execute(tau_cmd)

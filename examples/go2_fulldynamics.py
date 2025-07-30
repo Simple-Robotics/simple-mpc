@@ -5,7 +5,6 @@ from simple_mpc import (
     RobotDataHandler,
     FullDynamicsOCP,
     MPC,
-    IDSolver,
     Interpolator,
     FrictionCompensation
 )
@@ -48,12 +47,12 @@ fref[2] = -model_handler.getMass() / nk * gravity[2]
 u0 = np.zeros(model_handler.getModel().nv - 6)
 
 w_basepos = [0, 0, 0, 0, 0, 0]
-w_legpos = [10, 10, 10]
+w_legpos = [1, 1, 1]
 
 w_basevel = [10, 10, 10, 10, 10, 10]
 w_legvel = [0.1, 0.1, 0.1]
 w_x = np.array(w_basepos + w_legpos * 4 + w_basevel + w_legvel * 4)
-w_cent_lin = np.array([0.0, 0.0, 0])
+w_cent_lin = np.array([0.04, 0.04, 0])
 w_cent_ang = np.array([0, 0, 0])
 w_forces_lin = np.array([0.0001, 0.0001, 0.0001])
 w_frame = np.diag(np.array([1000, 1000, 1000]))
@@ -139,24 +138,6 @@ contact_phases += [contact_phase_lift] * T_ss
 contact_phases += [contact_phase_quadru] * int(T_ds / 2) """
 
 mpc.generateCycleHorizon(contact_phases)
-
-""" Initialize whole-body inverse dynamics QP"""
-contact_ids = model_handler.getFeetIds()
-id_conf = dict(
-    contact_ids=contact_ids,
-    x0=model_handler.getReferenceState(),
-    mu=0.8,
-    Lfoot=0.01,
-    Wfoot=0.01,
-    force_size=3,
-    kd=0,
-    w_force=0,
-    w_acc=0,
-    w_tau=1,
-    verbose=False,
-)
-
-qp = IDSolver(id_conf, model_handler.getModel())
 
 """ Friction """
 fcompensation = FrictionCompensation(model_handler.getModel(), True)
@@ -288,19 +269,8 @@ for t in range(500):
             x_measured, x_interp
         )
 
-        qp.solveQP(
-            mpc.getDataHandler().getData(),
-            contact_states,
-            x_measured[nq:],
-            acc_interp,
-            current_torque,
-            force_interp,
-            mpc.getDataHandler().getData().M,
-        )
-
-        qp_torque = qp.solved_torque.copy()
-        friction_torque = fcompensation.computeFriction(x_interp[nq + 6:], qp_torque)
-        device.execute(friction_torque)
+        friction_torque = fcompensation.computeFriction(x_interp[nq + 6:], current_torque)
+        device.execute(current_torque)
 
         u_multibody.append(copy.deepcopy(friction_torque))
         x_multibody.append(x_measured)
