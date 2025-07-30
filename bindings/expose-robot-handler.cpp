@@ -42,7 +42,9 @@ namespace simple_mpc
 
       bp::class_<RobotDataHandler>(
         "RobotDataHandler", bp::init<const RobotModelHandler &>(bp::args("self", "model_handler")))
-        // .def("updateInternalData", &RobotDataHandler::updateInternalData)
+        .def(
+          "updateInternalData", static_cast<void (RobotDataHandler::*)(const ConstVectorRef &, const bool)>(
+                                  &RobotDataHandler::updateInternalData))
         .def("updateJacobiansMassMatrix", &RobotDataHandler::updateJacobiansMassMatrix)
         // .def("getRefFootPose", &RobotDataHandler::getRefFootPose, bp::return_internal_reference<>())
         // .def("getFootPose", &RobotDataHandler::getFootPose, bp::return_internal_reference<>())
