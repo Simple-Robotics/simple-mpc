@@ -1,11 +1,10 @@
 import numpy as np
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC, Interpolator
+from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC, Interpolator, KinodynamicsID, KinodynamicsIDSettings
 import example_robot_data as erd
 import pinocchio as pin
 import time
 import copy
-from utils import save_trajectory
 
 # ####### CONFIGURATION  ############
 # Load robot
@@ -137,6 +136,19 @@ mpc.generateCycleHorizon(contact_phases)
 """ Interpolation """
 interpolator = Interpolator(model_handler.getModel())
 
+""" Inverse Dynamics """
+kino_ID_settings = KinodynamicsIDSettings()
+kino_ID_settings.kp_base = 7.
+kino_ID_settings.kp_posture = 10.
+kino_ID_settings.kp_contact = 10.
+kino_ID_settings.w_base = 100.
+kino_ID_settings.w_posture = 1.
+kino_ID_settings.w_contact_force = 1.
+kino_ID_settings.w_contact_motion = 1.
+
+kino_ID = KinodynamicsID(model_handler, dt, kino_ID_settings)
+
+
 """ Initialize simulation"""
 device = BulletRobot(
     model_handler.getModel().names,
@@ -183,8 +195,8 @@ N_simu = 10
 v = np.zeros(6)
 v[0] = 0.2
 mpc.velocity_base = v
-for t in range(300):
-    # print("Time " + str(t))
+for step in range(300):
+    # print("Time " + str(step))
     land_LF = mpc.getFootLandCycle("FL_foot")
     land_RF = mpc.getFootLandCycle("RL_foot")
     takeoff_LF = mpc.getFootTakeoffCycle("FL_foot")
@@ -236,23 +248,28 @@ for t in range(300):
         mpc.getReferencePose(0, "RR_foot").translation,
     )
 
-    for j in range(N_simu):
-        # time.sleep(0.01)
-        delay = j / float(N_simu) * dt
+    for sub_step in range(N_simu):
+        t = (step * N_simu + sub_step) * dt
 
+        delay = sub_step / float(N_simu) * dt
+        xs_interp = interpolator.interpolateLinear(delay, dt, xss)
         acc_interp = interpolator.interpolateLinear(delay, dt, ddqs)
-        force_interp = interpolator.interpolateLinear(delay, dt, forces)
+        force_interp = interpolator.interpolateLinear(delay, dt, forces).reshape((4,3))
+
+        q_interp = xs_interp[:mpc.getModelHandler().getModel().nq]
+        v_interp = xs_interp[mpc.getModelHandler().getModel().nq:]
 
         q_meas, v_meas = device.measureState()
         x_measured  = np.concatenate([q_meas, v_meas])
 
         mpc.getDataHandler().updateInternalData(x_measured, True)
 
-        # TODO: use TSID to compute inverse dynamics and get tau_cmd
+        kino_ID.setTarget(q_interp, v_interp, acc_interp, contact_states, force_interp)
+        tau_cmd = kino_ID.solve(t, q_meas, v_meas)
 
-        #device.execute(tau_cmd)
-        #u_multibody.append(copy.deepcopy(tau_cmd))
-        #x_multibody.append(x_measured)
+        device.execute(tau_cmd)
+        u_multibody.append(copy.deepcopy(tau_cmd))
+        x_multibody.append(x_measured)
 
 
 force_FL = np.array(force_FL)
