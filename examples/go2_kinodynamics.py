@@ -34,7 +34,7 @@ gravity = np.array([0, 0, -9.81])
 fref = np.zeros(force_size)
 fref[2] = -model_handler.getMass() / nk * gravity[2]
 u0 = np.concatenate((fref, fref, fref, fref, np.zeros(model_handler.getModel().nv - 6)))
-dt = 0.01
+dt_mpc = 0.01
 
 w_basepos = [0, 0, 100, 10, 10, 0]
 w_legpos = [1, 1, 1]
@@ -63,7 +63,7 @@ w_centder_ang = np.ones(3) * 0.1
 w_centder = np.diag(np.concatenate((w_centder_lin, w_centder_ang)))
 
 problem_conf = dict(
-    timestep=dt,
+    timestep=dt_mpc,
     w_x=w_x,
     w_u=w_u,
     w_cent=w_cent,
@@ -97,7 +97,7 @@ mpc_conf = dict(
     swing_apex=0.15,
     T_fly=T_ss,
     T_contact=T_ds,
-    timestep=dt,
+    timestep=dt_mpc,
 )
 
 mpc = MPC(mpc_conf, dynproblem)
@@ -134,6 +134,8 @@ contact_phases += [contact_phase_lift_FR] * T_ss
 mpc.generateCycleHorizon(contact_phases)
 
 """ Interpolation """
+N_simu = 10 # Number of substep the simulation does between two MPC computation
+dt_simu = dt_mpc/N_simu
 interpolator = Interpolator(model_handler.getModel())
 
 """ Inverse Dynamics """
@@ -146,7 +148,7 @@ kino_ID_settings.w_posture = 1.
 kino_ID_settings.w_contact_force = 1.
 kino_ID_settings.w_contact_motion = 1.
 
-kino_ID = KinodynamicsID(model_handler, dt, kino_ID_settings)
+kino_ID = KinodynamicsID(model_handler, dt_simu, kino_ID_settings)
 
 
 """ Initialize simulation"""
@@ -154,7 +156,7 @@ device = BulletRobot(
     model_handler.getModel().names,
     erd.getModelPath(URDF_SUBPATH),
     URDF_SUBPATH,
-    1e-3,
+    dt_simu,
     model_handler.getModel(),
     model_handler.getReferenceState()[:3],
 )
@@ -191,7 +193,6 @@ com_measured = []
 solve_time = []
 L_measured = []
 
-N_simu = 10
 v = np.zeros(6)
 v[0] = 0.2
 mpc.velocity_base = v
@@ -249,12 +250,12 @@ for step in range(300):
     )
 
     for sub_step in range(N_simu):
-        t = (step * N_simu + sub_step) * dt
+        t = step * dt_mpc + sub_step * dt_simu
 
-        delay = sub_step / float(N_simu) * dt
-        xs_interp = interpolator.interpolateLinear(delay, dt, xss)
-        acc_interp = interpolator.interpolateLinear(delay, dt, ddqs)
-        force_interp = interpolator.interpolateLinear(delay, dt, forces).reshape((4,3))
+        delay = sub_step / float(N_simu) * dt_mpc
+        xs_interp = interpolator.interpolateLinear(delay, dt_mpc, xss)
+        acc_interp = interpolator.interpolateLinear(delay, dt_mpc, ddqs)
+        force_interp = interpolator.interpolateLinear(delay, dt_mpc, forces).reshape((4,3))
 
         q_interp = xs_interp[:mpc.getModelHandler().getModel().nq]
         v_interp = xs_interp[mpc.getModelHandler().getModel().nq:]
