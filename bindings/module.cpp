@@ -19,6 +19,7 @@ namespace simple_mpc::python
   void exposeIKIDSolver();
   void exposeInterpolator();
   void exposeFrictionCompensation();
+  void exposeInverseDynamics();
 
   /* PYTHON MODULE */
   BOOST_PYTHON_MODULE(simple_mpc_pywrap)
@@ -36,6 +37,7 @@ namespace simple_mpc::python
     exposeKinodynamicsOcp();
     exposeMPC();
     exposeInterpolator();
+    exposeInverseDynamics();
     exposeFrictionCompensation();
   }
 

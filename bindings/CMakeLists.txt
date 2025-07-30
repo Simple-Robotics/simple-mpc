@@ -13,6 +13,7 @@ set(
   expose-centroidal.cpp
   expose-fulldynamics.cpp
   expose-kinodynamics.cpp
+  expose-inverse-dynamics.cpp
   expose-friction-compensation.cpp
 )
 
