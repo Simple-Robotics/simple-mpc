@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(mpc_fulldynamics)
 
   Eigen::VectorXd xdot = mpc.getStateDerivative(0);
 
-  Eigen::VectorXd forces = mpc.getContactForces(0);
+  Eigen::Matrix<double, Eigen::Dynamic, 3> forces = mpc.getContactForces(0);
 }
 
 BOOST_AUTO_TEST_CASE(mpc_kinodynamics)
