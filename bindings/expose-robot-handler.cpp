@@ -26,6 +26,7 @@ namespace simple_mpc
         .def("addFoot", &RobotModelHandler::addFoot)
         .def("setFootReferencePlacement", &RobotModelHandler::setFootReferencePlacement)
         .def("difference", &RobotModelHandler::difference)
+        .def("getBaseFrameName", &RobotModelHandler::getBaseFrameName)
         .def("getBaseFrameId", &RobotModelHandler::getBaseFrameId)
         .def("getReferenceState", &RobotModelHandler::getReferenceState)
         .def("getFootNb", &RobotModelHandler::getFootNb)
