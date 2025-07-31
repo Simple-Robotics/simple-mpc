@@ -27,6 +27,13 @@ namespace simple_mpc
    */
   struct RobotModelHandler
   {
+    enum FootType
+    {
+      POINT,
+      SIX_D
+    };
+    typedef Eigen::Matrix<double, 4, 3> ContactPointsMatrix;
+
   private:
     /**
      * @brief Model to be used by ocp
@@ -48,6 +55,16 @@ namespace simple_mpc
      * @brief Names of the frames to be in contact with the environment
      */
     std::vector<std::string> feet_names_;
+
+    /**
+     * @brief Is the foot a contact point or a 6D contact
+     */
+    std::vector<FootType> feet_types_;
+
+    /**
+     * @brief List of contact points for each 6D feets
+     */
+    std::map<size_t, Eigen::Matrix<double, 4, 3>> feet_contact_points_;
 
     /**
      * @brief Ids of the frames to be in contact with the environment
@@ -77,15 +94,34 @@ namespace simple_mpc
       const Model & model, const std::string & reference_configuration_name, const std::string & base_frame_name);
 
     /**
-     * @brief
+     * @brief Create a point foot, that can apply 3D force to the ground. (in comparison to 6D foot)
      *
      * @param foot_name Frame name that will be used a a foot
      * @param reference_frame_name Frame to which the foot reference
      * frame will be attached.
      *
+     * @return the foot number
+     *
      * @note The foot placement will be set by default using the reference configuration of the RobotModelHandler
      */
-    FrameIndex addFoot(const std::string & foot_name, const std::string & reference_frame_name);
+    size_t addPointFoot(const std::string & foot_name, const std::string & reference_frame_name);
+
+    /**
+     * @brief Create a point foot, that can apply 6D wrench to the ground. (in comparison to point foot)
+     *
+     * @param foot_name Frame name that will be used a a foot
+     * @param reference_frame_name Frame to which the foot reference
+     * frame will be attached.
+     * @param contactPoints 3D positions (in the local frame) of the foot 4 extremum point
+     *
+     * @return the foot number
+     *
+     * @note The foot placement will be set by default using the reference configuration of the RobotModelHandler
+     */
+    size_t add6DFoot(
+      const std::string & foot_name,
+      const std::string & reference_frame_name,
+      const ContactPointsMatrix & contactPoints);
 
     /**
      * @brief Update the reference placement of the foot wrt to the frame it is attached to
@@ -113,6 +149,16 @@ namespace simple_mpc
     size_t getFootNb(const std::string & foot_name) const
     {
       return size_t(std::find(feet_names_.begin(), feet_names_.end(), foot_name) - feet_names_.begin());
+    }
+
+    FootType getFootType(size_t i) const
+    {
+      return feet_types_[i];
+    }
+
+    const ContactPointsMatrix & get6DFootContactPoints(size_t i) const
+    {
+      return feet_contact_points_.at(i);
     }
 
     const std::vector<FrameIndex> & getFeetIds() const
@@ -159,6 +205,16 @@ namespace simple_mpc
     {
       return model_;
     }
+
+  private:
+    /**
+     * @brief Common operation to perform to add a foot (of any type) : Create the reference frame and set it default
+     * pose using the default pose of the robot
+     *
+     * @param foot_name Name of the frame foot
+     * @param reference_frame_name Name of the frame where the reference frame of the foot will be attached
+     */
+    void addFootFrames(const std::string & foot_name, const std::string & reference_frame_name);
   };
 
   class RobotDataHandler

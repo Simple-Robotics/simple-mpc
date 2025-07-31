@@ -48,7 +48,7 @@ BOOST_AUTO_TEST_CASE(model_handler)
   // Add feet
   for (size_t i = 0; i < feet_names.size(); i++)
   {
-    model_handler.addFoot(feet_names.at(i), base_frame);
+    model_handler.addPointFoot(feet_names.at(i), base_frame);
     model_handler.setFootReferencePlacement(feet_names.at(i), feet_refs.at(i));
   }
 
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(model_handler)
   // Check that the default foot pose actually match the reference configuration
   {
     const std::string foot_name = "FR_calf";
-    model_handler.addFoot(foot_name, base_frame);
+    model_handler.addPointFoot(foot_name, base_frame);
     // Do not set foot reference placement to check the default one
 
     RobotDataHandler data_handler(model_handler);

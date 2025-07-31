@@ -83,7 +83,7 @@ namespace simple_mpc
     tsid::InverseDynamicsFormulationAccForce formulation_;
 
     std::vector<bool> active_tsid_contacts_;
-    std::vector<tsid::contacts::ContactPoint> tsid_contacts;
+    std::vector<std::shared_ptr<tsid::contacts::ContactBase>> tsid_contacts;
     std::shared_ptr<tsid::tasks::TaskJointPosture> postureTask_;
     std::shared_ptr<tsid::tasks::TaskSE3Equality> baseTask_;
     std::shared_ptr<tsid::tasks::TaskJointPosVelAccBounds> boundsTask_;

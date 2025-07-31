@@ -24,7 +24,7 @@ namespace simple_mpc
     mass_ = pinocchio::computeTotalMass(model_);
   }
 
-  FrameIndex RobotModelHandler::addFoot(const std::string & foot_name, const std::string & reference_frame_name)
+  void RobotModelHandler::addFootFrames(const std::string & foot_name, const std::string & reference_frame_name)
   {
     feet_names_.push_back(foot_name);
     feet_ids_.push_back(model_.getFrameId(foot_name));
@@ -48,8 +48,24 @@ namespace simple_mpc
     const pinocchio::SE3 default_placement = data.oMf[reference_frame_id].actInv(data.oMf[frame_id]);
 
     setFootReferencePlacement(foot_name, default_placement);
+  }
 
-    return frame_id;
+  size_t RobotModelHandler::addPointFoot(const std::string & foot_name, const std::string & reference_frame_name)
+  {
+    addFootFrames(foot_name, reference_frame_name);
+    feet_types_.push_back(FootType::POINT);
+    const size_t foot_nb = feet_types_.size();
+    return foot_nb;
+  }
+
+  size_t RobotModelHandler::add6DFoot(
+    const std::string & foot_name, const std::string & reference_frame_name, const ContactPointsMatrix & contactPoints)
+  {
+    addFootFrames(foot_name, reference_frame_name);
+    feet_types_.push_back(FootType::SIX_D);
+    const size_t foot_nb = feet_types_.size();
+    feet_contact_points_.insert({foot_nb, contactPoints});
+    return foot_nb;
   }
 
   void RobotModelHandler::setFootReferencePlacement(const std::string & foot_name, const SE3 & refMfoot)

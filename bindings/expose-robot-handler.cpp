@@ -23,7 +23,8 @@ namespace simple_mpc
       bp::class_<RobotModelHandler>(
         "RobotModelHandler", bp::init<const pinocchio::Model &, const std::string &, const std::string &>(
                                bp::args("self", "model", "reference_configuration_name", "base_frame_name")))
-        .def("addFoot", &RobotModelHandler::addFoot)
+        .def("addPointFoot", &RobotModelHandler::addPointFoot)
+        .def("add6DFoot", &RobotModelHandler::add6DFoot)
         .def("setFootReferencePlacement", &RobotModelHandler::setFootReferencePlacement)
         .def("difference", &RobotModelHandler::difference)
         .def("getBaseFrameName", &RobotModelHandler::getBaseFrameName)

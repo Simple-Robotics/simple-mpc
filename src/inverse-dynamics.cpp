@@ -1,4 +1,6 @@
 #include <simple-mpc/inverse-dynamics.hpp>
+#include <tsid/contacts/contact-6d.hpp>
+#include <tsid/contacts/contact-point.hpp>
 
 using namespace simple_mpc;
 
@@ -15,7 +17,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   const size_t nv = model.nv;
   const size_t nu = nv - 6;
 
-  // Prepare contact point task
+  // Prepare foot contact tasks
   const size_t n_contacts = model_handler_.getFeetNames().size();
   const Eigen::Vector3d normal{0, 0, 1};
   const double weight = model_handler_.getMass() * 9.81;
@@ -24,13 +26,30 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   for (int i = 0; i < n_contacts; i++)
   {
     const std::string frame_name = model_handler.getFootName(i);
-    // Create contact point
-    tsid::contacts::ContactPoint & contact_point =
-      tsid_contacts.emplace_back(frame_name, robot_, frame_name, normal, settings_.friction_coefficient, min_f, max_f);
-    // Set contact parameters
-    contact_point.Kp(settings_.kp_contact * Eigen::VectorXd::Ones(3));
-    contact_point.Kd(2.0 * contact_point.Kp().cwiseSqrt());
-    contact_point.useLocalFrame(false);
+    switch (model_handler.getFootType(i))
+    {
+    case RobotModelHandler::FootType::POINT: {
+      auto contact_point = std::make_shared<tsid::contacts::ContactPoint>(
+        frame_name, robot_, frame_name, normal, settings_.friction_coefficient, min_f, max_f);
+      contact_point->Kp(settings_.kp_contact * Eigen::VectorXd::Ones(3));
+      contact_point->Kd(2.0 * contact_point->Kp().cwiseSqrt());
+      contact_point->useLocalFrame(false);
+      tsid_contacts.push_back(contact_point);
+      break;
+    }
+    case RobotModelHandler::FootType::SIX_D: {
+      auto contact_6D = std::make_shared<tsid::contacts::Contact6d>(
+        frame_name, robot_, frame_name, model_handler_.get6DFootContactPoints(i), normal,
+        settings_.friction_coefficient, min_f, max_f);
+      contact_6D->Kp(settings_.kp_contact * Eigen::VectorXd::Ones(3));
+      contact_6D->Kd(2.0 * contact_6D->Kp().cwiseSqrt());
+      tsid_contacts.push_back(contact_6D);
+      break;
+    }
+    default: {
+      assert(false);
+    }
+    }
     // By default contact is not active (will be by setTarget)
     active_tsid_contacts_.push_back(false);
   }
@@ -117,9 +136,23 @@ void KinodynamicsID::setTarget(
     {
       if (!active_tsid_contacts_[i])
       {
-        formulation_.addRigidContact(tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 1);
+        formulation_.addRigidContact(*tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 1);
       }
-      tsid_contacts[i].setForceReference(f_target.row(i));
+      switch (model_handler_.getFootType(i))
+      {
+      case RobotModelHandler::FootType::POINT: {
+        std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[i])->setForceReference(f_target.row(i));
+        break;
+      }
+      case RobotModelHandler::FootType::SIX_D: {
+        std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[i])->setForceReference(f_target.row(i));
+        break;
+      }
+      default: {
+        assert(false);
+      }
+      }
+      tsid_contacts[i];
       active_tsid_contacts_[i] = true;
     }
     else
@@ -146,7 +179,22 @@ void KinodynamicsID::solve(
   {
     if (active_tsid_contacts_[i])
     {
-      tsid_contacts[i].setReference(data_handler_.getFootPose(i));
+      switch (model_handler_.getFootType(i))
+      {
+      case RobotModelHandler::FootType::POINT: {
+        std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[i])
+          ->setReference(data_handler_.getFootPose(i));
+        break;
+      }
+      case RobotModelHandler::FootType::SIX_D: {
+        std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[i])
+          ->setReference(data_handler_.getFootPose(i));
+        break;
+      }
+      default: {
+        assert(false);
+      }
+      }
     }
   }
 
