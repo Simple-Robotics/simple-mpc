@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
 
   solver.setTarget(
     q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),
-    {false, false, false, false}, Eigen::MatrixXd::Zero(4, 3));
+    {false, false, false, false}, {});
 
   double t = 0;
   Eigen::VectorXd q = solo_q_start(model_handler);
@@ -110,12 +110,12 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
       .set_w_contact_force(1.0));
 
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
-  Eigen::MatrixXd f_target = Eigen::MatrixXd::Zero(4, 3);
-  f_target(0, 2) = model_handler.getMass() * 9.81 / 4;
-  f_target(1, 2) = model_handler.getMass() * 9.81 / 4;
-  f_target(2, 2) = model_handler.getMass() * 9.81 / 4;
-  f_target(3, 2) = model_handler.getMass() * 9.81 / 4;
-
+  std::vector<KinodynamicsID::TargetContactForce> f_target;
+  for (int i = 0; i < 4; i++)
+  {
+    f_target.push_back(KinodynamicsID::TargetContactForce::Zero(3));
+    f_target[i][2] = model_handler.getMass() * 9.81 / 4;
+  }
   solver.setTarget(
     q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),
     {true, true, true, true}, f_target);

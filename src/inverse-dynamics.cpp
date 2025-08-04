@@ -122,7 +122,7 @@ void KinodynamicsID::setTarget(
   const Eigen::Ref<const Eigen::VectorXd> & v_target,
   const Eigen::Ref<const Eigen::VectorXd> & a_target,
   const std::vector<bool> & contact_state_target,
-  const Eigen::Ref<const MatrixN3d> & f_target)
+  const std::vector<TargetContactForce> & f_target)
 {
   data_handler_.updateInternalData(q_target, v_target, false);
 
@@ -151,11 +151,11 @@ void KinodynamicsID::setTarget(
       switch (model_handler_.getFootType(i))
       {
       case RobotModelHandler::FootType::POINT: {
-        std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[i])->setForceReference(f_target.row(i));
+        std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[i])->setForceReference(f_target.at(i));
         break;
       }
-      case RobotModelHandler::FootType::SIX_D: {
-        std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[i])->setForceReference(f_target.row(i));
+      case RobotModelHandler::FootType::QUAD: {
+        std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[i])->setForceReference(f_target.at(i));
         break;
       }
       default: {

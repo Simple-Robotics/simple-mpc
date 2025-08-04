@@ -235,6 +235,7 @@ for step in range(600):
         xs_interp = interpolator.interpolateLinear(delay, dt_mpc, xss)
         acc_interp = interpolator.interpolateLinear(delay, dt_mpc, ddqs)
         force_interp = interpolator.interpolateLinear(delay, dt_mpc, forces).reshape((2,6))
+        force_interp = [force_interp[0, :], force_interp[1, :]]
 
         q_interp = xs_interp[:mpc.getModelHandler().getModel().nq]
         v_interp = xs_interp[mpc.getModelHandler().getModel().nq:]
