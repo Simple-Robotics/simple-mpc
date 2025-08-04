@@ -66,12 +66,9 @@ RobotModelHandler getTalosModelHandler()
   RobotModelHandler model_handler(model, "half_sitting", base_joint);
 
   // Add feet
-  model_handler.addPointFoot("left_sole_link", base_joint);
-  model_handler.addPointFoot("right_sole_link", base_joint);
-  model_handler.setFootReferencePlacement(
-    "left_sole_link", SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., 0.1, 0.)));
-  model_handler.setFootReferencePlacement(
-    "right_sole_link", SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., -0.1, 0.)));
+  Eigen::Matrix<double, 4, 3> foot_quad{{0.1, 0.075, 0}, {-0.1, 0.075, 0}, {-0.1, -0.075, 0}, {0.1, -0.075, 0}};
+  model_handler.addQuadFoot("left_sole_link", base_joint, foot_quad);
+  model_handler.addQuadFoot("right_sole_link", base_joint, foot_quad);
 
   return model_handler;
 }

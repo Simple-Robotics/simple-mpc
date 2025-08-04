@@ -54,16 +54,16 @@ namespace simple_mpc
   {
     addFootFrames(foot_name, reference_frame_name);
     feet_types_.push_back(FootType::POINT);
-    const size_t foot_nb = feet_types_.size();
+    const size_t foot_nb = feet_types_.size() - 1;
     return foot_nb;
   }
 
-  size_t RobotModelHandler::add6DFoot(
+  size_t RobotModelHandler::addQuadFoot(
     const std::string & foot_name, const std::string & reference_frame_name, const ContactPointsMatrix & contactPoints)
   {
     addFootFrames(foot_name, reference_frame_name);
-    feet_types_.push_back(FootType::SIX_D);
-    const size_t foot_nb = feet_types_.size();
+    feet_types_.push_back(FootType::QUAD);
+    const size_t foot_nb = feet_types_.size() - 1;
     feet_contact_points_.insert({foot_nb, contactPoints});
     return foot_nb;
   }

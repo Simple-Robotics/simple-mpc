@@ -30,7 +30,7 @@ namespace simple_mpc
     enum FootType
     {
       POINT,
-      SIX_D
+      QUAD
     };
     typedef Eigen::Matrix<double, 4, 3> ContactPointsMatrix;
 
@@ -118,7 +118,7 @@ namespace simple_mpc
      *
      * @note The foot placement will be set by default using the reference configuration of the RobotModelHandler
      */
-    size_t add6DFoot(
+    size_t addQuadFoot(
       const std::string & foot_name,
       const std::string & reference_frame_name,
       const ContactPointsMatrix & contactPoints);

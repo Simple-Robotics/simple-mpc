@@ -15,8 +15,8 @@ rmodelComplete, rmodel, qComplete, q0 = loadTalos()
 
 # Create Model and Data handler
 model_handler = RobotModelHandler(rmodel, reference_configuration_name, base_joint_name)
-model_handler.add6DFoot("left_sole_link",  base_joint_name)
-model_handler.add6DFoot("right_sole_link", base_joint_name)
+model_handler.addQuadFoot("left_sole_link",  base_joint_name)
+model_handler.addQuadFoot("right_sole_link", base_joint_name)
 model_handler.setFootReferencePlacement("left_sole_link", pin.XYZQUATToSE3(np.array([ 0.0, 0.1, 0.0, 0,0,0,1])))
 model_handler.setFootReferencePlacement("right_sole_link", pin.XYZQUATToSE3(np.array([ 0.0,-0.1, 0.0, 0,0,0,1])))
 

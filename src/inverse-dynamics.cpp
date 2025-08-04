@@ -37,11 +37,11 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
       tsid_contacts.push_back(contact_point);
       break;
     }
-    case RobotModelHandler::FootType::SIX_D: {
+    case RobotModelHandler::FootType::QUAD: {
       auto contact_6D = std::make_shared<tsid::contacts::Contact6d>(
         frame_name, robot_, frame_name, model_handler_.get6DFootContactPoints(i), normal,
         settings_.friction_coefficient, min_f, max_f);
-      contact_6D->Kp(settings_.kp_contact * Eigen::VectorXd::Ones(3));
+      contact_6D->Kp(settings_.kp_contact * Eigen::VectorXd::Ones(6));
       contact_6D->Kd(2.0 * contact_6D->Kp().cwiseSqrt());
       tsid_contacts.push_back(contact_6D);
       break;
@@ -92,17 +92,27 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   solver_ = tsid::solvers::SolverHQPFactory::createNewSolver(tsid::solvers::SOLVER_HQP_PROXQP, "solver-proxqp");
   solver_->resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
 
-  // Dry run to initialize solver data & output
+  // By default initialize target in reference state
   const Eigen::VectorXd q_ref = model_handler.getReferenceState().head(nq);
   const Eigen::VectorXd v_ref = model_handler.getReferenceState().tail(nv);
   std::vector<bool> c_ref(n_contacts);
-  MatrixN3d f_ref = MatrixN3d::Zero(n_contacts, 3);
+  std::vector<TargetContactForce> f_ref;
   for (int i = 0; i < n_contacts; i++)
   {
+    // By default initialize all foot in contact with same amount of force
     c_ref[i] = true;
-    f_ref(i, 2) = weight / n_contacts;
+    const RobotModelHandler::FootType foot_type = model_handler.getFootType(i);
+    if (foot_type == RobotModelHandler::POINT)
+      f_ref.push_back(TargetContactForce::Zero(3));
+    else if (foot_type == RobotModelHandler::QUAD)
+      f_ref.push_back(TargetContactForce::Zero(6));
+    else
+      assert(false);
+    f_ref[i][2] = weight / n_contacts; // Weight on Z axis
   }
   setTarget(q_ref, v_ref, v_ref, c_ref, f_ref);
+
+  // Dry run to initialize solver data & output
   const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(0, q_ref, v_ref);
   last_solution_ = solver_->solve(solver_data);
 }
@@ -186,7 +196,7 @@ void KinodynamicsID::solve(
           ->setReference(data_handler_.getFootPose(i));
         break;
       }
-      case RobotModelHandler::FootType::SIX_D: {
+      case RobotModelHandler::FootType::QUAD: {
         std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[i])
           ->setReference(data_handler_.getFootPose(i));
         break;
