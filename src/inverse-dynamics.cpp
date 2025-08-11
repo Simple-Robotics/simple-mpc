@@ -39,7 +39,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
     }
     case RobotModelHandler::FootType::QUAD: {
       auto contact_6D = std::make_shared<tsid::contacts::Contact6d>(
-        frame_name, robot_, frame_name, model_handler_.get6DFootContactPoints(i), normal,
+        frame_name, robot_, frame_name, model_handler_.get6DFootContactPoints(i).transpose(), normal,
         settings_.friction_coefficient, min_f, max_f);
       contact_6D->Kp(settings_.kp_contact * Eigen::VectorXd::Ones(6));
       contact_6D->Kd(2.0 * contact_6D->Kp().cwiseSqrt());
