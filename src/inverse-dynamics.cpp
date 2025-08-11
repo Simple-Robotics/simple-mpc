@@ -146,7 +146,9 @@ void KinodynamicsID::setTarget(
     {
       if (!active_tsid_contacts_[i])
       {
-        formulation_.addRigidContact(*tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion, 1);
+        formulation_.addRigidContact(
+          *tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion,
+          settings_.contact_motion_equality ? 0 : 1);
       }
       switch (model_handler_.getFootType(i))
       {

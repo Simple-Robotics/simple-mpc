@@ -53,6 +53,9 @@ namespace simple_mpc
       DEFINE_FIELD(double, w_posture, -1.)        // Disabled by default
       DEFINE_FIELD(double, w_contact_motion, -1.) // Disabled by default
       DEFINE_FIELD(double, w_contact_force, -1.)  // Disabled by default
+
+      ///< Are the contact motion = 0 handled as a hard contraint (true) or a cost (if false)
+      DEFINE_FIELD(bool, contact_motion_equality, false)
     };
 
     KinodynamicsID(const simple_mpc::RobotModelHandler & model_handler, double control_dt, const Settings settings);
