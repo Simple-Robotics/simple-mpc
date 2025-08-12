@@ -81,5 +81,6 @@ source install/setup.bash
 * [Aligator](https://github.com/edantec/aligator) temporary_fix branch
 * [example-robot-data](https://github.com/Gepetto/example-robot-data)
 * [ndcurves](https://github.com/loco-3d/ndcurves)
+* [tsid](https://github.com/stack-of-tasks/tsid)
 * (optional) [eigenpy](https://github.com/stack-of-tasks/eigenpy)>=3.9.0 (Python bindings)
 * (optional) [bullet](https://github.com/bulletphysics/bullet3) (Simulation examples)
