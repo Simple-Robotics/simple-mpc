@@ -24,7 +24,7 @@ proxsuite = ">=0.7.2"
 benchmark = ">=1.8.0"
 pytest = ">=8.3.0"
 matplotlib = ">=3.9"
-tsid = ">=1.8.0"
+tsid = ">=1.8.0,<2"
 
 [activation]
 scripts = ["build_scripts/pixi/activation.sh"]
