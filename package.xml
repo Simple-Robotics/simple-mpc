@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>simple-mpc</name>
-  <version>0.1</version>
+  <version>0.1.0</version>
   <description>MPC schemes for locomotion</description>
   <maintainer email="ewen.dantec@inria.fr">Ewen Dantec</maintainer>
   <author email="ewen.dantec@inria.fr">Ewen Dantec</author>
