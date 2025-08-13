@@ -111,7 +111,7 @@ namespace simple_mpc
   {
     x_ << q, v;
 
-    forwardKinematics(model_handler_.getModel(), data_, q);
+    forwardKinematics(model_handler_.getModel(), data_, q, v);
     updateFramePlacements(model_handler_.getModel(), data_);
     computeCentroidalMomentum(model_handler_.getModel(), data_, q, v);
 
