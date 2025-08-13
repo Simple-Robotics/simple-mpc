@@ -141,7 +141,7 @@ void KinodynamicsID::setTarget(
   // Foot contacts
   for (std::size_t i = 0; i < model_handler_.getFeetNames().size(); i++)
   {
-    const std::string name = model_handler_.getFeetNames()[i];
+    const std::string & name{model_handler_.getFootName(i)};
     if (contact_state_target[i])
     {
       if (!active_tsid_contacts_[i])
