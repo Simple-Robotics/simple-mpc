@@ -156,7 +156,7 @@ namespace simple_mpc
       return feet_types_[i];
     }
 
-    const ContactPointsMatrix & get6DFootContactPoints(size_t i) const
+    const ContactPointsMatrix & getQuadFootContactPoints(size_t i) const
     {
       return feet_contact_points_.at(i);
     }
