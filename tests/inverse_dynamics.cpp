@@ -56,15 +56,16 @@ public:
     check_joint_limits();
   }
 
-  void check_decreasing_error(std::string name, double error)
+  bool is_error_decreasing(std::string name, double error)
   {
     if (errors.count(name) == 0)
     {
       errors.insert({name, error});
-      return; // no further check
+      return true; // no further check
     }
-    BOOST_CHECK_LE(error, errors.at(name)); // Perform check
-    errors.at(name) = error;                // Update value
+    const bool res{error <= errors.at(name)};
+    errors.at(name) = error; // Update value
+    return res;
   }
 
 protected:
@@ -127,177 +128,133 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
     // Check error is decreasing
     Eigen::VectorXd delta_q = pinocchio::difference(model_handler.getModel(), test.q, q_target);
     const double error = delta_q.tail(nv - 6).norm(); // Consider only the posture not the free flyer
-    test.check_decreasing_error("posture", error);
+    BOOST_CHECK(test.is_error_decreasing("posture", error));
   }
 }
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
 {
-  RobotModelHandler model_handler = getSoloHandler();
-  RobotDataHandler data_handler(model_handler);
-  const double dt = 1e-3;
+  TestKinoID test(
+    getSoloHandler(), KinodynamicsID::Settings()
+                        .set_kp_posture(10.0)
+                        .set_kp_contact(10.0)
+                        .set_w_base(10.)
+                        .set_w_contact_motion(1.0)
+                        .set_w_contact_force(1.0));
 
-  KinodynamicsID solver(
-    model_handler, dt,
-    KinodynamicsID::Settings()
-      .set_kp_base(10.)
-      .set_kp_posture(10.0)
-      .set_kp_contact(10.0)
-      .set_w_base(10.)
-      .set_w_posture(1.0)
-      .set_w_contact_motion(1.0)
-      .set_w_contact_force(1.0));
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  const size_t nq = model_handler.getModel().nq;
+  const size_t nv = model_handler.getModel().nv;
 
-  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
-  std::vector<KinodynamicsID::TargetContactForce> f_target;
-  for (int i = 0; i < 4; i++)
-  {
-    f_target.push_back(KinodynamicsID::TargetContactForce::Zero(3));
-    f_target[i][2] = model_handler.getMass() * 9.81 / 4;
-  }
-  solver.setTarget(
-    q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),
-    {true, true, true, true}, f_target);
+  // No need to set target as KinodynamicsID sets it by default to reference state
+  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
 
-  double t = 0;
-  Eigen::VectorXd q = solo_q_start(model_handler);
-  Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
-  Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
-  Eigen::VectorXd tau = Eigen::VectorXd::Zero(model_handler.getModel().nv - 6);
+  // Change initial state
+  test.q = solo_q_start(model_handler);
 
   // Let the robot stabilize
   const int N_STEP_ON_GROUND = 6000;
   const int N_STEP_FREE_FALL = 2000;
   for (int i = 0; i < N_STEP_ON_GROUND + N_STEP_FREE_FALL; i++)
   {
-    // Solve and get solution
-    solver.solve(t, q, v, tau);
-    solver.getAccelerations(a);
+    // Solve
+    test.step();
 
-    // Integrate
-    t += dt;
-    q = pinocchio::integrate(model_handler.getModel(), q, (v + a / 2. * dt) * dt);
-    v += a * dt;
     if (i == N_STEP_ON_GROUND)
     {
       // Robot had time to reach permanent regime, is it stable on ground ?
-      BOOST_CHECK_SMALL(a.head(3).norm(), 1e-4);
-      BOOST_CHECK_SMALL(v.head(3).norm(), 1e-4);
+      BOOST_CHECK_SMALL(test.dq.head(3).norm(), 1e-4);
+      BOOST_CHECK_SMALL(test.ddq.head(3).norm(), 1e-4);
 
       // Remove contacts
-      solver.setTarget(
-        q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv),
-        Eigen::VectorXd::Zero(model_handler.getModel().nv), {false, false, false, false}, f_target);
+      test.solver.setTarget(
+        q_target, Eigen::VectorXd::Zero(nv), Eigen::VectorXd::Zero(nv), {false, false, false, false}, {});
     }
     if (i == N_STEP_ON_GROUND + N_STEP_FREE_FALL - 1)
     {
       // Robot had time to reach permanent regime, is it robot free falling ?
-      BOOST_CHECK_SMALL(a.head(3).norm() - model_handler.getModel().gravity.linear().norm(), 0.01);
+      BOOST_CHECK_SMALL(test.ddq.head(3).norm() - model_handler.getModel().gravity.linear().norm(), 0.01);
     }
   }
 }
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
 {
-  RobotModelHandler model_handler = getSoloHandler();
-  RobotDataHandler data_handler(model_handler);
-  const double dt = 1e-3;
+  TestKinoID test(
+    getSoloHandler(), KinodynamicsID::Settings()
+                        .set_kp_base(7.)
+                        .set_kp_contact(10.0)
+                        .set_w_base(100.0)
+                        .set_w_contact_force(1.0)
+                        .set_w_contact_motion(1.0));
 
-  KinodynamicsID solver(
-    model_handler, dt,
-    KinodynamicsID::Settings()
-      .set_kp_base(7.)
-      .set_kp_contact(10.0)
-      .set_w_base(100.0)
-      .set_w_contact_force(1.0)
-      .set_w_contact_motion(1.0));
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  const size_t nq = model_handler.getModel().nq;
 
   // No need to set target as KinodynamicsID sets it by default to reference state
-  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
+  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
 
-  double t = 0;
-  Eigen::VectorXd q = solo_q_start(model_handler);
-  Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
-  Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
-  Eigen::VectorXd tau = Eigen::VectorXd::Zero(model_handler.getModel().nv - 6);
+  // Change initial state
+  test.q = solo_q_start(model_handler);
 
-  Eigen::VectorXd error = 1e12 * Eigen::VectorXd::Ones(6);
   const int N_STEP = 10000;
   for (int i = 0; i < N_STEP; i++)
   {
-    // Solve and get solution
-    solver.solve(t, q, v, tau);
-    solver.getAccelerations(a);
+    // Solve
+    test.step();
 
-    // Integrate
-    t += dt;
-    q = pinocchio::integrate(model_handler.getModel(), q, (v + a / 2. * dt) * dt);
-    v += a * dt;
+    // Compute error
+    const Eigen::VectorXd delta_pose = pinocchio::difference(model_handler.getModel(), test.q, q_target).head<6>();
+    const double error = delta_pose.norm();
 
-    // Check error is decreasing
-    Eigen::VectorXd new_error = pinocchio::difference(model_handler.getModel(), q, q_target).head(6);
-    if (i > N_STEP / 10) // Weird transitional phenomenon at first ...
-      BOOST_CHECK(
-        new_error.norm() < error.norm() || new_error.norm() < 2e-2); // Either strictly decreasing or close to target
-    if (i > 9 * N_STEP / 10)
-      BOOST_CHECK(new_error.norm() < 2e-2); // Should have converged by now
-
-    error = new_error;
+    // Checks
+    if (error > 2e-2) // If haven't converged yet, should be strictly decreasing
+      BOOST_CHECK(test.is_error_decreasing("base", error));
+    if (i > 9 * N_STEP / 10) // Should have converged by now
+      BOOST_CHECK(error < 2e-2);
   }
 }
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 {
-  RobotModelHandler model_handler = getTalosModelHandler();
-  RobotDataHandler data_handler(model_handler);
-  const double dt = 1e-3;
+  TestKinoID test(
+    getTalosModelHandler(), KinodynamicsID::Settings()
+                              .set_kp_base(7.)
+                              .set_kp_posture(10.)
+                              .set_kp_contact(1.0)
+                              .set_w_base(10.0)
+                              .set_w_posture(10.0)
+                              .set_w_contact_force(.1)
+                              .set_w_contact_motion(1.0));
 
-  KinodynamicsID solver(
-    model_handler, dt,
-    KinodynamicsID::Settings()
-      .set_kp_base(7.)
-      .set_kp_posture(10.)
-      .set_kp_contact(1.0)
-      .set_w_base(10.0)
-      .set_w_posture(10.0)
-      .set_w_contact_force(.1)
-      .set_w_contact_motion(1.0));
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  const size_t nq = model_handler.getModel().nq;
+  const size_t nv = model_handler.getModel().nv;
 
-  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
+  // Set target
+  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
   std::vector<KinodynamicsID::TargetContactForce> f_target;
   for (int i = 0; i < 2; i++)
   {
     f_target.push_back(KinodynamicsID::TargetContactForce::Zero(6));
     f_target[i][2] = model_handler.getMass() * 9.81 / 4;
   }
-  solver.setTarget(
-    q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),
-    {true, true, true, true}, f_target);
-
-  double t = 0;
-  Eigen::VectorXd q = model_handler.getReferenceState().head(model_handler.getModel().nq);
-  Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
-  Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
-  Eigen::VectorXd tau = Eigen::VectorXd::Zero(model_handler.getModel().nv - 6);
-
-  Eigen::VectorXd error = 1e12 * Eigen::VectorXd::Ones(model_handler.getModel().nv);
+  test.solver.setTarget(
+    q_target, Eigen::VectorXd::Zero(nv), Eigen::VectorXd::Zero(nv), {true, true, true, true}, f_target);
 
   const int N_STEP = 10000;
   for (int i = 0; i < N_STEP; i++)
   {
-    // Solve and get solution
-    solver.solve(t, q, v, tau);
-    solver.getAccelerations(a);
-
-    // Integrate
-    t += dt;
-    q = pinocchio::integrate(model_handler.getModel(), q, (v + a / 2. * dt) * dt);
-    v += a * dt;
+    // Solve
+    test.step();
 
     // Check error is decreasing
-    Eigen::VectorXd new_error = pinocchio::difference(model_handler.getModel(), q, q_target);
-    BOOST_CHECK_LE(new_error.norm(), error.norm());
-    error = new_error;
+    const Eigen::VectorXd delta_q = pinocchio::difference(model_handler.getModel(), test.q, q_target);
+    const double error = delta_q.norm();
+    BOOST_CHECK(test.is_error_decreasing("q", error));
   }
 }
 
