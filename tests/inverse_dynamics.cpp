@@ -25,70 +25,92 @@ Eigen::VectorXd solo_q_start(const RobotModelHandler & model_handler)
   return q_start;
 }
 
-void check_joint_limits(
-  const RobotModelHandler & model_handler,
-  const Eigen::VectorXd & q,
-  const Eigen::VectorXd & v,
-  const Eigen::VectorXd & tau)
+// Helper class to create the problem and run it
+class TestKinoID
 {
-  const pinocchio::Model & model = model_handler.getModel();
-  for (int i = 0; i < model.nv - 6; i++)
+public:
+  TestKinoID(RobotModelHandler model_handler_, KinodynamicsID::Settings settings_)
+  : model_handler(model_handler_)
+  , data_handler(model_handler)
+  , settings(settings_)
+  , solver(model_handler, dt, settings)
+  , q(model_handler.getReferenceState().head(model_handler.getModel().nq))
+  , dq(Eigen::VectorXd::Zero(model_handler.getModel().nv))
+  , ddq(Eigen::VectorXd::Zero(model_handler.getModel().nv))
+  , tau(Eigen::VectorXd::Zero(model_handler.getModel().nv - 6))
   {
-    BOOST_CHECK_LE(q[7 + i], model.upperPositionLimit[7 + i]);
-    BOOST_CHECK_GE(q[7 + i], model.lowerPositionLimit[7 + i]);
-    BOOST_CHECK_LE(v[6 + i], model.upperVelocityLimit[6 + i]);
-    // Do not use lower velocity bound as TSID cannot handle it
-    BOOST_CHECK_GE(v[6 + i], -model.upperVelocityLimit[6 + i]);
-    BOOST_CHECK_LE(tau[i], model.upperEffortLimit[6 + i]);
-    BOOST_CHECK_GE(tau[i], model.lowerEffortLimit[6 + i]);
   }
-}
+
+  void step()
+  {
+    // Solve
+    solver.solve(t, q, dq, tau);
+    solver.getAccelerations(ddq);
+
+    // Integrate
+    t += dt;
+    q = pinocchio::integrate(model_handler.getModel(), q, (dq + ddq / 2. * dt) * dt);
+    dq += ddq * dt;
+
+    // Check common to all tests
+    check_joint_limits();
+  }
+
+protected:
+  void check_joint_limits()
+  {
+    const pinocchio::Model & model = model_handler.getModel();
+    for (int i = 0; i < model.nv - 6; i++)
+    {
+      BOOST_CHECK_LE(q[7 + i], model.upperPositionLimit[7 + i]);
+      BOOST_CHECK_GE(q[7 + i], model.lowerPositionLimit[7 + i]);
+      BOOST_CHECK_LE(dq[6 + i], model.upperVelocityLimit[6 + i]);
+      // Do not use lower velocity bound as TSID cannot handle it
+      BOOST_CHECK_GE(dq[6 + i], -model.upperVelocityLimit[6 + i]);
+      BOOST_CHECK_LE(tau[i], model.upperEffortLimit[6 + i]);
+      BOOST_CHECK_GE(tau[i], model.lowerEffortLimit[6 + i]);
+    }
+  }
+
+public:
+  const RobotModelHandler model_handler;
+  RobotDataHandler data_handler;
+  KinodynamicsID::Settings settings;
+  double dt = 1e-3;
+  KinodynamicsID solver;
+
+  double t = 0.;
+  Eigen::VectorXd q;
+  Eigen::VectorXd dq;
+  Eigen::VectorXd ddq;
+  Eigen::VectorXd tau;
+};
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
 {
-  RobotModelHandler model_handler = getSoloHandler();
-  RobotDataHandler data_handler(model_handler);
-  const double dt = 1e-3;
-
-  KinodynamicsID solver(
-    model_handler, dt, KinodynamicsID::Settings().set_kp_posture(20.).set_w_posture(1.)); // only a posture task
-
-  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
-
-  solver.setTarget(
-    q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),
-    {false, false, false, false}, {});
-
-  double t = 0;
-  Eigen::VectorXd q = solo_q_start(model_handler);
-  Eigen::VectorXd v = Eigen::VectorXd::Random(model_handler.getModel().nv);
-  Eigen::VectorXd a = Eigen::VectorXd::Random(model_handler.getModel().nv);
-  Eigen::VectorXd tau = Eigen::VectorXd::Zero(model_handler.getModel().nv - 6);
+  TestKinoID test(getSoloHandler(), KinodynamicsID::Settings().set_kp_posture(20.).set_w_posture(1.));
+  const RobotModelHandler & model_handler = test.model_handler;
 
   Eigen::VectorXd error = 1e12 * Eigen::VectorXd::Ones(model_handler.getModel().nv);
+
+  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
+  test.solver.setTarget(
+    q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),
+    {false, false, false, false}, {});
 
   for (int i = 0; i < 10000; i++)
   {
     // Solve and get solution
-    solver.solve(t, q, v, tau);
-    solver.getAccelerations(a);
-
-    // Integrate
-    t += dt;
-    q = pinocchio::integrate(model_handler.getModel(), q, (v + a / 2. * dt) * dt);
-    v += a * dt;
+    test.step();
 
     // compensate for free fall as we only care about joint posture
-    q.head(7) = q_target.head(7);
-    v.head(6).setZero();
+    test.q.head(7) = q_target.head(7);
+    test.dq.head(6).setZero();
 
     // Check error is decreasing
-    Eigen::VectorXd new_error = pinocchio::difference(model_handler.getModel(), q, q_target);
+    Eigen::VectorXd new_error = pinocchio::difference(model_handler.getModel(), test.q, q_target);
     BOOST_CHECK_LE(new_error.norm(), error.norm());
     error = new_error;
-
-    // Check joints limits
-    check_joint_limits(model_handler, q, v, tau);
   }
 }
 
@@ -155,9 +177,6 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
       // Robot had time to reach permanent regime, is it robot free falling ?
       BOOST_CHECK_SMALL(a.head(3).norm() - model_handler.getModel().gravity.linear().norm(), 0.01);
     }
-
-    // Check joints limits
-    check_joint_limits(model_handler, q, v, tau);
   }
 }
 
@@ -207,8 +226,6 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
       BOOST_CHECK(new_error.norm() < 2e-2); // Should have converged by now
 
     error = new_error;
-    // Check joints limits
-    check_joint_limits(model_handler, q, v, tau);
   }
 }
 
@@ -264,9 +281,6 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
     Eigen::VectorXd new_error = pinocchio::difference(model_handler.getModel(), q, q_target);
     BOOST_CHECK_LE(new_error.norm(), error.norm());
     error = new_error;
-
-    // Check joints limits
-    check_joint_limits(model_handler, q, v, tau);
   }
 }
 
