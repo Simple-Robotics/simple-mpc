@@ -56,6 +56,17 @@ public:
     check_joint_limits();
   }
 
+  void check_decreasing_error(std::string name, double error)
+  {
+    if (errors.count(name) == 0)
+    {
+      errors.insert({name, error});
+      return; // no further check
+    }
+    BOOST_CHECK_LE(error, errors.at(name)); // Perform check
+    errors.at(name) = error;                // Update value
+  }
+
 protected:
   void check_joint_limits()
   {
@@ -84,33 +95,39 @@ public:
   Eigen::VectorXd dq;
   Eigen::VectorXd ddq;
   Eigen::VectorXd tau;
+
+  std::map<std::string, double> errors;
 };
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
 {
   TestKinoID test(getSoloHandler(), KinodynamicsID::Settings().set_kp_posture(20.).set_w_posture(1.));
+
+  // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
+  const size_t nq = model_handler.getModel().nq;
+  const size_t nv = model_handler.getModel().nv;
 
-  Eigen::VectorXd error = 1e12 * Eigen::VectorXd::Ones(model_handler.getModel().nv);
-
-  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(model_handler.getModel().nq);
+  // Target state
+  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
   test.solver.setTarget(
-    q_target, Eigen::VectorXd::Zero(model_handler.getModel().nv), Eigen::VectorXd::Zero(model_handler.getModel().nv),
-    {false, false, false, false}, {});
+    q_target, Eigen::VectorXd::Zero(nv), Eigen::VectorXd::Zero(nv), {false, false, false, false}, {});
 
+  // Change initial state
+  test.q = solo_q_start(model_handler);
   for (int i = 0; i < 10000; i++)
   {
-    // Solve and get solution
+    // Solve
     test.step();
 
-    // compensate for free fall as we only care about joint posture
+    // compensate for free fall as we did not set any contact (we only care about joint posture)
     test.q.head(7) = q_target.head(7);
     test.dq.head(6).setZero();
 
     // Check error is decreasing
-    Eigen::VectorXd new_error = pinocchio::difference(model_handler.getModel(), test.q, q_target);
-    BOOST_CHECK_LE(new_error.norm(), error.norm());
-    error = new_error;
+    Eigen::VectorXd delta_q = pinocchio::difference(model_handler.getModel(), test.q, q_target);
+    const double error = delta_q.tail(nv - 6).norm(); // Consider only the posture not the free flyer
+    test.check_decreasing_error("posture", error);
   }
 }
 
