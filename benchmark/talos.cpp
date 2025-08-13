@@ -152,36 +152,36 @@ int main()
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 50; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), false});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), false});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 50; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), false});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), false});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
 

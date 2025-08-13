@@ -21,15 +21,17 @@ namespace simple_mpc
   , ocp_handler_(problem)
   {
 
-    data_handler_ = std::make_shared<RobotDataHandler>(ocp_handler_->getModelHandler());
-    data_handler_->updateInternalData(ocp_handler_->getModelHandler().getReferenceState(), true);
+    const RobotModelHandler & model_handler = ocp_handler_->getModelHandler();
+    data_handler_ = std::make_shared<RobotDataHandler>(model_handler);
+    data_handler_->updateInternalData(model_handler.getReferenceState(), true);
     std::map<std::string, Eigen::Vector3d> starting_poses;
-    for (auto const & name : ocp_handler_->getModelHandler().getFeetNames())
+    for (int foot_nb = 0; foot_nb < model_handler.getFeetNb(); foot_nb++)
     {
-      starting_poses.insert({name, data_handler_->getFootPose(name).translation()});
+      const std::string & name = model_handler.getFootFrameName(foot_nb);
+      starting_poses.insert({name, data_handler_->getFootPose(foot_nb).translation()});
 
       relative_feet_poses_.insert(
-        {name, data_handler_->getBaseFramePose().inverse() * data_handler_->getFootPose(name)});
+        {name, data_handler_->getBaseFramePose().inverse() * data_handler_->getFootPose(foot_nb)});
     }
     foot_trajectories_ = FootTrajectory(
       starting_poses, settings_.swing_apex, settings_.T_fly, settings_.T_contact, ocp_handler_->getSize());
@@ -51,8 +53,8 @@ namespace simple_mpc
     solver_->force_initial_condition_ = true;
     // solver_->reg_min = 1e-6;
 
-    ee_names_ = ocp_handler_->getModelHandler().getFeetNames();
-    Eigen::VectorXd force_ref(ocp_handler_->getReferenceForce(0, ocp_handler_->getModelHandler().getFootName(0)));
+    ee_names_ = model_handler.getFeetFrameNames();
+    Eigen::VectorXd force_ref(ocp_handler_->getReferenceForce(0, model_handler.getFootFrameName(0)));
 
     std::map<std::string, bool> contact_states;
     std::map<std::string, bool> land_constraint;
@@ -63,7 +65,7 @@ namespace simple_mpc
     {
       contact_states.insert({name, true});
       land_constraint.insert({name, false});
-      contact_poses.insert({name, data_handler_->getFootPose(name)});
+      contact_poses.insert({name, data_handler_->getFootPose(model_handler.getFootNb(name))});
       force_map.insert({name, force_ref});
     }
 
@@ -144,8 +146,10 @@ namespace simple_mpc
           active_contacts += 1;
       }
 
-      Eigen::VectorXd force_ref(ocp_handler_->getReferenceForce(0, ocp_handler_->getModelHandler().getFootName(0)));
-      Eigen::VectorXd force_zero(ocp_handler_->getReferenceForce(0, ocp_handler_->getModelHandler().getFootName(0)));
+      Eigen::VectorXd force_ref(
+        ocp_handler_->getReferenceForce(0, ocp_handler_->getModelHandler().getFootFrameName(0)));
+      Eigen::VectorXd force_zero(
+        ocp_handler_->getReferenceForce(0, ocp_handler_->getModelHandler().getFootFrameName(0)));
       force_ref.setZero();
       force_zero.setZero();
       force_ref[2] = settings_.support_force / active_contacts;
@@ -155,7 +159,7 @@ namespace simple_mpc
 
       for (auto const & name : ee_names_)
       {
-        contact_poses.insert({name, data_handler_->getFootPose(name)});
+        contact_poses.insert({name, data_handler_->getFootPose(ocp_handler_->getModelHandler().getFootNb(name))});
         if (state.at(name))
           force_map.insert({name, force_ref});
         else
@@ -275,6 +279,7 @@ namespace simple_mpc
   {
     for (auto const & name : ee_names_)
     {
+      const size_t foot_nb = ocp_handler_->getModelHandler().getFootNb(name);
       int foot_land_time = -1;
       if (!foot_land_times_.at(name).empty())
         foot_land_time = foot_land_times_.at(name)[0];
@@ -285,16 +290,16 @@ namespace simple_mpc
 
       // Use the Raibert heuristics to compute the next foot pose
       twist_vect_[0] =
-        -(data_handler_->getRefFootPose(name).translation()[1] - data_handler_->getBaseFramePose().translation()[1]);
+        -(data_handler_->getFootRefPose(foot_nb).translation()[1] - data_handler_->getBaseFramePose().translation()[1]);
       twist_vect_[1] =
-        data_handler_->getRefFootPose(name).translation()[0] - data_handler_->getBaseFramePose().translation()[0];
-      next_pose_.head<2>() = data_handler_->getRefFootPose(name).translation().head<2>();
+        data_handler_->getFootRefPose(foot_nb).translation()[0] - data_handler_->getBaseFramePose().translation()[0];
+      next_pose_.head<2>() = data_handler_->getFootRefPose(foot_nb).translation().head<2>();
       next_pose_.head<2>() += (velocity_base_.head<2>() + velocity_base_[5] * twist_vect_)
                               * (settings_.T_fly + settings_.T_contact) * settings_.timestep;
-      next_pose_[2] = data_handler_->getFootPose(name).translation()[2];
+      next_pose_[2] = data_handler_->getFootPose(foot_nb).translation()[2];
 
       foot_trajectories_.updateTrajectory(
-        update, foot_land_time, data_handler_->getFootPose(name).translation(), next_pose_, name);
+        update, foot_land_time, data_handler_->getFootPose(foot_nb).translation(), next_pose_, name);
       pinocchio::SE3 pose = pinocchio::SE3::Identity();
       for (unsigned long time = 0; time < ocp_handler_->getSize(); time++)
       {

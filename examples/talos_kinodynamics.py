@@ -36,7 +36,7 @@ nu = nv - 6
 """ Define kinodynamics problem """
 gravity = np.array([0, 0, -9.81])
 fref = np.zeros(6)
-fref[2] = -model_handler.getMass() / len(model_handler.getFeetNames()) * gravity[2]
+fref[2] = -model_handler.getMass() / len(model_handler.getFeetFrameNames()) * gravity[2]
 u0 = np.concatenate((fref, fref, np.zeros(nv - 6)))
 
 w_basepos = [0, 0, 1000, 1000, 1000, 1000]
@@ -182,8 +182,8 @@ nk = 2
 force_size = 6
 
 device.showTargetToTrack(
-    mpc.getDataHandler().getFootPoseByName("left_sole_link"),
-    mpc.getDataHandler().getFootPoseByName("right_sole_link"),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("left_sole_link")),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("right_sole_link")),
 )
 
 v = np.zeros(6)

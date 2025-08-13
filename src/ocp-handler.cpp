@@ -32,7 +32,7 @@ namespace simple_mpc
       throw std::runtime_error("Contact phases and forces sequences do not have the same size");
     }
     std::map<std::string, bool> previous_phases;
-    for (auto const & name : model_handler_.getFeetNames())
+    for (auto const & name : model_handler_.getFeetFrameNames())
     {
       previous_phases.insert({name, true});
     }
@@ -40,7 +40,7 @@ namespace simple_mpc
     for (std::size_t i = 0; i < contact_phases.size(); i++)
     {
       std::map<std::string, bool> land_constraint;
-      for (auto const & name : model_handler_.getFeetNames())
+      for (auto const & name : model_handler_.getFeetFrameNames())
       {
         if (!previous_phases.at(name) and contact_phases[i].at(name))
           land_constraint.insert({name, true});
@@ -106,12 +106,12 @@ namespace simple_mpc
 
     Eigen::VectorXd force_ref(force_size);
     force_ref.setZero();
-    force_ref[2] = -model_handler_.getMass() * gravity / (double)model_handler_.getFeetNames().size();
+    force_ref[2] = -model_handler_.getMass() * gravity / (double)model_handler_.getFeetFrameNames().size();
 
     std::map<std::string, bool> contact_phase;
     std::map<std::string, pinocchio::SE3> contact_pose;
     std::map<std::string, Eigen::VectorXd> contact_force;
-    for (auto & name : model_handler_.getFeetNames())
+    for (auto & name : model_handler_.getFeetFrameNames())
     {
       contact_phase.insert({name, true});
       contact_pose.insert({name, pinocchio::SE3::Identity()});

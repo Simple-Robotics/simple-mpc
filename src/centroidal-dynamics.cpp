@@ -29,7 +29,7 @@ namespace simple_mpc
   , settings_(settings)
   {
     nx_ = 9;
-    nu_ = (int)model_handler_.getFeetNames().size() * settings_.force_size;
+    nu_ = (int)model_handler_.getFeetFrameNames().size() * settings_.force_size;
     control_ref_.resize(nu_);
     control_ref_.setZero();
     com_ref_.setZero();
@@ -58,7 +58,7 @@ namespace simple_mpc
 
     computeControlFromForces(contact_force);
 
-    ContactMap contact_map = ContactMap(model_handler_.getFeetNames(), contact_states, contact_poses);
+    ContactMap contact_map = ContactMap(model_handler_.getFeetFrameNames(), contact_states, contact_poses);
 
     auto com_res = CentroidalCoMResidual(nx_, nu_, com_ref_);
     auto linear_mom = LinearMomentumResidual(nx_, nu_, Eigen::Vector3d::Zero());
@@ -83,7 +83,7 @@ namespace simple_mpc
     StageModel stm = StageModel(rcost, dyn_model);
 
     int i = 0;
-    for (auto const & name : model_handler_.getFeetNames())
+    for (auto const & name : model_handler_.getFeetFrameNames())
     {
       if (contact_phase.at(name))
       {
@@ -107,14 +107,14 @@ namespace simple_mpc
 
   void CentroidalOCP::computeControlFromForces(const std::map<std::string, Eigen::VectorXd> & force_refs)
   {
-    for (std::size_t i = 0; i < model_handler_.getFeetNames().size(); i++)
+    for (std::size_t i = 0; i < model_handler_.getFeetFrameNames().size(); i++)
     {
-      if (settings_.force_size != force_refs.at(model_handler_.getFootName(i)).size())
+      if (settings_.force_size != force_refs.at(model_handler_.getFootFrameName(i)).size())
       {
         throw std::runtime_error("force size in settings does not match reference force size");
       }
       control_ref_.segment((long)i * settings_.force_size, settings_.force_size) =
-        force_refs.at(model_handler_.getFootName(i));
+        force_refs.at(model_handler_.getFootFrameName(i));
     }
   }
 
@@ -124,7 +124,7 @@ namespace simple_mpc
     {
       throw std::runtime_error("Stage index exceeds stage vector size");
     }
-    if (pose_refs.size() != model_handler_.getFeetNames().size())
+    if (pose_refs.size() != model_handler_.getFeetFrameNames().size())
     {
       throw std::runtime_error("pose_refs size does not match number of end effectors");
     }
@@ -137,7 +137,7 @@ namespace simple_mpc
     }
     CostStack * cs = getCostStack(t);
 
-    for (auto ee_name : model_handler_.getFeetNames())
+    for (auto ee_name : model_handler_.getFeetFrameNames())
     {
       QuadraticResidualCost * qrc1 = cs->getComponent<QuadraticResidualCost>("linear_acc_cost");
       QuadraticResidualCost * qrc2 = cs->getComponent<QuadraticResidualCost>("angular_acc_cost");
@@ -192,7 +192,7 @@ namespace simple_mpc
   void
   CentroidalOCP::setReferenceForce(const std::size_t t, const std::string & ee_name, const ConstVectorRef & force_ref)
   {
-    std::vector<std::string> hname = model_handler_.getFeetNames();
+    std::vector<std::string> hname = model_handler_.getFeetFrameNames();
     std::vector<std::string>::iterator it = std::find(hname.begin(), hname.end(), ee_name);
     long id = it - hname.begin();
     control_ref_.segment(id * settings_.force_size, settings_.force_size) = force_ref;
@@ -201,7 +201,7 @@ namespace simple_mpc
 
   const Eigen::VectorXd CentroidalOCP::getReferenceForce(const std::size_t t, const std::string & ee_name)
   {
-    std::vector<std::string> hname = model_handler_.getFeetNames();
+    std::vector<std::string> hname = model_handler_.getFeetFrameNames();
     std::vector<std::string>::iterator it = std::find(hname.begin(), hname.end(), ee_name);
     long id = it - hname.begin();
 
@@ -267,7 +267,7 @@ namespace simple_mpc
       problem_->stages_[t]->getDynamics<IntegratorEuler>()->getDynamics<CentroidalFwdDynamics>();
 
     size_t active_contacts = 0;
-    for (auto name : model_handler_.getFeetNames())
+    for (auto name : model_handler_.getFeetFrameNames())
     {
       if (ode->contact_map_.getContactState(name))
       {
@@ -283,7 +283,7 @@ namespace simple_mpc
     CentroidalFwdDynamics * ode =
       problem_->stages_[t]->getDynamics<IntegratorEuler>()->getDynamics<CentroidalFwdDynamics>();
     assert(ode != nullptr);
-    for (auto name : model_handler_.getFeetNames())
+    for (auto name : model_handler_.getFeetFrameNames())
       contact_state.push_back(ode->contact_map_.getContactState(name));
 
     return contact_state;

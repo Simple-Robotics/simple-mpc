@@ -31,11 +31,11 @@ namespace simple_mpc
         .def("getBaseFrameId", &RobotModelHandler::getBaseFrameId)
         .def("getReferenceState", &RobotModelHandler::getReferenceState)
         .def("getFootNb", &RobotModelHandler::getFootNb)
-        .def("getFeetIds", &RobotModelHandler::getFeetIds, bp::return_internal_reference<>())
-        .def("getFootName", &RobotModelHandler::getFootName, bp::return_internal_reference<>())
-        .def("getFeetNames", &RobotModelHandler::getFeetNames, bp::return_internal_reference<>())
-        .def("getFootId", &RobotModelHandler::getFootId)
-        .def("getRefFootId", &RobotModelHandler::getRefFootId)
+        .def("getFeetFrameIds", &RobotModelHandler::getFeetFrameIds, bp::return_internal_reference<>())
+        .def("getFootFrameName", &RobotModelHandler::getFootFrameName, bp::return_internal_reference<>())
+        .def("getFeetFrameNames", &RobotModelHandler::getFeetFrameNames, bp::return_internal_reference<>())
+        .def("getFootFrameId", &RobotModelHandler::getFootFrameId)
+        .def("getFootRefFrameId", &RobotModelHandler::getFootRefFrameId)
         .def("getMass", &RobotModelHandler::getMass)
         .def("getModel", &RobotModelHandler::getModel, bp::return_internal_reference<>());
 
@@ -47,24 +47,8 @@ namespace simple_mpc
           "updateInternalData", static_cast<void (RobotDataHandler::*)(const ConstVectorRef &, const bool)>(
                                   &RobotDataHandler::updateInternalData))
         .def("updateJacobiansMassMatrix", &RobotDataHandler::updateJacobiansMassMatrix)
-        .def(
-          "getRefFootPose",
-          static_cast<const pinocchio::SE3 & (RobotDataHandler::*)(size_t) const>(&RobotDataHandler::getRefFootPose),
-          bp::return_internal_reference<>())
-        .def(
-          "getRefFootPoseByName",
-          static_cast<const pinocchio::SE3 & (RobotDataHandler::*)(const std::string &) const>(
-            &RobotDataHandler::getRefFootPose),
-          bp::return_internal_reference<>())
-        .def(
-          "getFootPose",
-          static_cast<const pinocchio::SE3 & (RobotDataHandler::*)(size_t) const>(&RobotDataHandler::getFootPose),
-          bp::return_internal_reference<>())
-        .def(
-          "getFootPoseByName",
-          static_cast<const pinocchio::SE3 & (RobotDataHandler::*)(const std::string &) const>(
-            &RobotDataHandler::getFootPose),
-          bp::return_internal_reference<>())
+        .def("getFootRefPose", &RobotDataHandler::getFootRefPose, bp::return_internal_reference<>())
+        .def("getFootPose", &RobotDataHandler::getFootPose, bp::return_internal_reference<>())
         .def("getBaseFramePose", &RobotDataHandler::getBaseFramePose, bp::return_internal_reference<>())
         .def("getModelHandler", &RobotDataHandler::getModelHandler, bp::return_internal_reference<>())
         .def("getData", &RobotDataHandler::getData, bp::return_internal_reference<>())

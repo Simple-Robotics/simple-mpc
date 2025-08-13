@@ -27,8 +27,8 @@ BOOST_AUTO_TEST_CASE(fulldynamics)
   land_constraint.insert({contact_names[0], true});
   land_constraint.insert({contact_names[1], false});
 
-  pinocchio::SE3 p1 = data_handler.getFootPose(contact_names[0]);
-  pinocchio::SE3 p2 = data_handler.getFootPose(contact_names[1]);
+  pinocchio::SE3 p1 = data_handler.getFootPose(0);
+  pinocchio::SE3 p2 = data_handler.getFootPose(1);
   p1.translation() << 0, 0.1, 0;
   p2.translation() << 0, -0.1, 0;
   contact_poses.insert({contact_names[0], p1});
@@ -118,8 +118,8 @@ BOOST_AUTO_TEST_CASE(kinodynamics)
   land_constraint.insert({contact_names[0], true});
   land_constraint.insert({contact_names[1], false});
 
-  pinocchio::SE3 p1 = data_handler.getFootPose(contact_names[0]);
-  pinocchio::SE3 p2 = data_handler.getFootPose(contact_names[1]);
+  pinocchio::SE3 p1 = data_handler.getFootPose(0);
+  pinocchio::SE3 p2 = data_handler.getFootPose(1);
   p1.translation() << 0, 0.1, 0;
   p2.translation() << 0, -0.1, 0;
   contact_poses.insert({contact_names[0], p1});
@@ -213,8 +213,8 @@ BOOST_AUTO_TEST_CASE(centroidal)
   land_constraint.insert({contact_names[0], true});
   land_constraint.insert({contact_names[1], false});
 
-  pinocchio::SE3 p1 = data_handler.getFootPose(contact_names[0]);
-  pinocchio::SE3 p2 = data_handler.getFootPose(contact_names[1]);
+  pinocchio::SE3 p1 = data_handler.getFootPose(0);
+  pinocchio::SE3 p2 = data_handler.getFootPose(1);
   p1.translation() << 0, 0.1, 0;
   p2.translation() << 0, -0.1, 0;
   contact_poses.insert({contact_names[0], p1});
@@ -303,10 +303,10 @@ BOOST_AUTO_TEST_CASE(centroidal_solo)
   contact_states.insert({contact_names[1], true});
   contact_states.insert({contact_names[2], true});
   contact_states.insert({contact_names[3], false});
-  pinocchio::SE3 p1 = data_handler.getFootPose("FR_FOOT");
-  pinocchio::SE3 p2 = data_handler.getFootPose("FL_FOOT");
-  pinocchio::SE3 p3 = data_handler.getFootPose("HR_FOOT");
-  pinocchio::SE3 p4 = data_handler.getFootPose("HL_FOOT");
+  pinocchio::SE3 p1 = data_handler.getFootPose(model_handler.getFootNb("FR_FOOT"));
+  pinocchio::SE3 p2 = data_handler.getFootPose(model_handler.getFootNb("FL_FOOT"));
+  pinocchio::SE3 p3 = data_handler.getFootPose(model_handler.getFootNb("HR_FOOT"));
+  pinocchio::SE3 p4 = data_handler.getFootPose(model_handler.getFootNb("HL_FOOT"));
 
   contact_poses.insert({contact_names[0], p1});
   contact_poses.insert({contact_names[1], p2});

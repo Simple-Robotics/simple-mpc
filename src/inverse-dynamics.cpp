@@ -18,14 +18,14 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   const size_t nu = nv - 6;
 
   // Prepare foot contact tasks
-  const size_t n_contacts = model_handler_.getFeetNames().size();
+  const size_t n_contacts = model_handler_.getFeetFrameNames().size();
   const Eigen::Vector3d normal{0, 0, 1};
   const double weight = model_handler_.getMass() * 9.81;
   const double max_f = settings_.contact_weight_ratio_max * weight;
   const double min_f = settings_.contact_weight_ratio_min * weight;
   for (int i = 0; i < n_contacts; i++)
   {
-    const std::string frame_name = model_handler.getFootName(i);
+    const std::string frame_name = model_handler.getFootFrameName(i);
     switch (model_handler.getFootType(i))
     {
     case RobotModelHandler::FootType::POINT: {
@@ -139,40 +139,42 @@ void KinodynamicsID::setTarget(
   baseTask_->setReference(sampleBase_);
 
   // Foot contacts
-  for (std::size_t i = 0; i < model_handler_.getFeetNames().size(); i++)
+  for (std::size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
   {
-    const std::string & name{model_handler_.getFootName(i)};
-    if (contact_state_target[i])
+    const std::string & name{model_handler_.getFootFrameName(foot_nb)};
+    if (contact_state_target[foot_nb])
     {
-      if (!active_tsid_contacts_[i])
+      if (!active_tsid_contacts_[foot_nb])
       {
         formulation_.addRigidContact(
-          *tsid_contacts[i], settings_.w_contact_force, settings_.w_contact_motion,
+          *tsid_contacts[foot_nb], settings_.w_contact_force, settings_.w_contact_motion,
           settings_.contact_motion_equality ? 0 : 1);
       }
-      switch (model_handler_.getFootType(i))
+      switch (model_handler_.getFootType(foot_nb))
       {
       case RobotModelHandler::FootType::POINT: {
-        std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[i])->setForceReference(f_target.at(i));
+        std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[foot_nb])
+          ->setForceReference(f_target.at(foot_nb));
         break;
       }
       case RobotModelHandler::FootType::QUAD: {
-        std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[i])->setForceReference(f_target.at(i));
+        std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[foot_nb])
+          ->setForceReference(f_target.at(foot_nb));
         break;
       }
       default: {
         assert(false);
       }
       }
-      tsid_contacts[i];
-      active_tsid_contacts_[i] = true;
+      tsid_contacts[foot_nb];
+      active_tsid_contacts_[foot_nb] = true;
     }
     else
     {
-      if (active_tsid_contacts_[i])
+      if (active_tsid_contacts_[foot_nb])
       {
         formulation_.removeRigidContact(name, 0);
-        active_tsid_contacts_[i] = false;
+        active_tsid_contacts_[foot_nb] = false;
       }
     }
   }
@@ -187,20 +189,20 @@ void KinodynamicsID::solve(
 {
   // Update contact position based on the real robot foot placement
   data_handler_.updateInternalData(q_meas, v_meas, false);
-  for (std::size_t i = 0; i < active_tsid_contacts_.size(); i++)
+  for (std::size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
   {
-    if (active_tsid_contacts_[i])
+    if (active_tsid_contacts_[foot_nb])
     {
-      switch (model_handler_.getFootType(i))
+      switch (model_handler_.getFootType(foot_nb))
       {
       case RobotModelHandler::FootType::POINT: {
-        std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[i])
-          ->setReference(data_handler_.getFootPose(i));
+        std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[foot_nb])
+          ->setReference(data_handler_.getFootPose(foot_nb));
         break;
       }
       case RobotModelHandler::FootType::QUAD: {
-        std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[i])
-          ->setReference(data_handler_.getFootPose(i));
+        std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[foot_nb])
+          ->setReference(data_handler_.getFootPose(foot_nb));
         break;
       }
       default: {

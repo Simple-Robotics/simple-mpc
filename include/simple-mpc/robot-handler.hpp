@@ -34,53 +34,6 @@ namespace simple_mpc
     };
     typedef Eigen::Matrix<double, 4, 3> ContactPointsMatrix;
 
-  private:
-    /**
-     * @brief Model to be used by ocp
-     */
-    Model model_;
-
-    /**
-     * @brief Robot total mass
-     */
-    double mass_;
-
-    /**
-     * @brief Reference configuration and velocity (most probably null velocity)
-     * to use
-     */
-    Eigen::VectorXd reference_state_;
-
-    /**
-     * @brief Names of the frames to be in contact with the environment
-     */
-    std::vector<std::string> feet_names_;
-
-    /**
-     * @brief Is the foot a contact point or a 6D contact
-     */
-    std::vector<FootType> feet_types_;
-
-    /**
-     * @brief List of contact points for each 6D feets
-     */
-    std::map<size_t, Eigen::Matrix<double, 4, 3>> feet_contact_points_;
-
-    /**
-     * @brief Ids of the frames to be in contact with the environment
-     */
-    std::vector<FrameIndex> feet_ids_;
-
-    /**
-     * @brief Ids of the frames that are reference position for the feet
-     */
-    std::vector<FrameIndex> ref_feet_ids_;
-
-    /**
-     * @brief Base frame id
-     */
-    pinocchio::FrameIndex base_id_;
-
   public:
     /**
      * @brief Construct a new Robot Model Handler object
@@ -146,54 +99,61 @@ namespace simple_mpc
     {
       return reference_state_;
     }
-    size_t getFootNb(const std::string & foot_name) const
+
+    const std::string & getFootFrameName(size_t foot_nb) const
     {
-      return size_t(std::find(feet_names_.begin(), feet_names_.end(), foot_name) - feet_names_.begin());
+      return feet_frame_names_.at(foot_nb);
     }
 
-    FootType getFootType(size_t i) const
+    size_t getFeetNb() const
     {
-      return feet_types_[i];
+      return size(feet_ids_);
     }
 
-    const ContactPointsMatrix & getQuadFootContactPoints(size_t i) const
+    size_t getFootNb(const std::string & foot_frame_name) const
     {
-      return feet_contact_points_.at(i);
+      return size_t(
+        std::find(feet_frame_names_.begin(), feet_frame_names_.end(), foot_frame_name) - feet_frame_names_.begin());
     }
 
-    const std::vector<FrameIndex> & getFeetIds() const
+    FootType getFootType(size_t foot_nb) const
+    {
+      return feet_types_[foot_nb];
+    }
+
+    const ContactPointsMatrix & getQuadFootContactPoints(size_t foot_nb) const
+    {
+      return feet_contact_points_.at(foot_nb);
+    }
+
+    const std::vector<FrameIndex> & getFeetFrameIds() const
     {
       return feet_ids_;
     }
 
-    const std::string & getFootName(size_t i) const
+    const std::vector<std::string> & getFeetFrameNames() const
     {
-      return feet_names_.at(i);
-    }
-
-    const std::vector<std::string> & getFeetNames() const
-    {
-      return feet_names_;
+      return feet_frame_names_;
     }
 
     FrameIndex getBaseFrameId() const
     {
-      return base_id_;
+      return base_frame_id_;
     }
 
     std::string getBaseFrameName() const
     {
-      return model_.frames[base_id_].name;
+      return model_.frames[base_frame_id_].name;
     }
 
-    FrameIndex getFootId(const std::string & foot_name) const
+    FrameIndex getFootFrameId(size_t foot_nb) const
     {
-      return feet_ids_.at(getFootNb(foot_name));
+      return feet_ids_.at(foot_nb);
     }
 
-    FrameIndex getRefFootId(const std::string & foot_name) const
+    FrameIndex getFootRefFrameId(size_t foot_nb) const
     {
-      return ref_feet_ids_.at(getFootNb(foot_name));
+      return feet_ref_frame_ids.at(foot_nb);
     }
 
     double getMass() const
@@ -215,6 +175,53 @@ namespace simple_mpc
      * @param reference_frame_name Name of the frame where the reference frame of the foot will be attached
      */
     void addFootFrames(const std::string & foot_name, const std::string & reference_frame_name);
+
+  private:
+    /**
+     * @brief Model to be used by ocp
+     */
+    Model model_;
+
+    /**
+     * @brief Robot total mass
+     */
+    double mass_;
+
+    /**
+     * @brief Reference configuration and velocity (most probably null velocity)
+     * to use
+     */
+    Eigen::VectorXd reference_state_;
+
+    /**
+     * @brief Names of the frames to be in contact with the environment
+     */
+    std::vector<std::string> feet_frame_names_;
+
+    /**
+     * @brief Is the foot a contact point or a 6D contact
+     */
+    std::vector<FootType> feet_types_;
+
+    /**
+     * @brief List of contact points for each 6D feets
+     */
+    std::map<size_t, Eigen::Matrix<double, 4, 3>> feet_contact_points_;
+
+    /**
+     * @brief Ids of the frames to be in contact with the environment
+     */
+    std::vector<FrameIndex> feet_ids_;
+
+    /**
+     * @brief Ids of the frames that are reference position for the feet
+     */
+    std::vector<FrameIndex> feet_ref_frame_ids;
+
+    /**
+     * @brief Base frame id
+     */
+    pinocchio::FrameIndex base_frame_id_;
   };
 
   class RobotDataHandler
@@ -236,21 +243,13 @@ namespace simple_mpc
     void updateJacobiansMassMatrix(const ConstVectorRef & x);
 
     // Const getters
-    const SE3 & getRefFootPose(const std::string & foot_name) const
+    const SE3 & getFootRefPose(size_t foot_nb) const
     {
-      return getRefFootPose(model_handler_.getRefFootId(foot_name));
+      return data_.oMf[model_handler_.getFootRefFrameId(foot_nb)];
     };
-    const SE3 & getRefFootPose(size_t foot_id) const
+    const SE3 & getFootPose(size_t foot_nb) const
     {
-      return data_.oMf[foot_id];
-    };
-    const SE3 & getFootPose(const std::string & foot_name) const
-    {
-      return getFootPose(model_handler_.getFootId(foot_name));
-    };
-    const SE3 & getFootPose(size_t foot_id) const
-    {
-      return data_.oMf[foot_id];
+      return data_.oMf[model_handler_.getFootFrameId(foot_nb)];
     };
     const SE3 & getBaseFramePose() const
     {

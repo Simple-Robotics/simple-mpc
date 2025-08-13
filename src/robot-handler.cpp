@@ -14,7 +14,7 @@ namespace simple_mpc
   : model_(model)
   {
     // Root frame id
-    base_id_ = model_.getFrameId(base_frame_name);
+    base_frame_id_ = model_.getFrameId(base_frame_name);
 
     // Set reference state
     reference_state_.resize(model_.nq + model_.nv);
@@ -26,7 +26,7 @@ namespace simple_mpc
 
   void RobotModelHandler::addFootFrames(const std::string & foot_name, const std::string & reference_frame_name)
   {
-    feet_names_.push_back(foot_name);
+    feet_frame_names_.push_back(foot_name);
     feet_ids_.push_back(model_.getFrameId(foot_name));
 
     // Create reference frame
@@ -38,7 +38,7 @@ namespace simple_mpc
     auto frame_id = model_.addFrame(new_frame);
 
     // Save foot id
-    ref_feet_ids_.push_back(frame_id);
+    feet_ref_frame_ids.push_back(frame_id);
 
     // Set placement to default value
     pinocchio::Data data(model_);

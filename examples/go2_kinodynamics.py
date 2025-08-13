@@ -29,7 +29,7 @@ nv = model_handler.getModel().nv
 nu = nv - 6
 nf = 12
 force_size = 3
-nk = len(model_handler.getFeetNames())
+nk = len(model_handler.getFeetFrameNames())
 gravity = np.array([0, 0, -9.81])
 fref = np.zeros(force_size)
 fref[2] = -model_handler.getMass() / nk * gravity[2]
@@ -168,10 +168,10 @@ q_meas, v_meas = device.measureState()
 x_measured  = np.concatenate([q_meas, v_meas])
 
 device.showQuadrupedFeet(
-    mpc.getDataHandler().getFootPoseByName("FL_foot"),
-    mpc.getDataHandler().getFootPoseByName("FR_foot"),
-    mpc.getDataHandler().getFootPoseByName("RL_foot"),
-    mpc.getDataHandler().getFootPoseByName("RR_foot"),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FL_foot")),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FR_foot")),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RL_foot")),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RR_foot")),
 )
 
 force_FL = []
@@ -217,10 +217,10 @@ for step in range(300):
     force_RL.append(mpc.us[0][6:9])
     force_RR.append(mpc.us[0][9:12])
 
-    FL_measured.append(mpc.getDataHandler().getFootPoseByName("FL_foot").translation)
-    FR_measured.append(mpc.getDataHandler().getFootPoseByName("FR_foot").translation)
-    RL_measured.append(mpc.getDataHandler().getFootPoseByName("RL_foot").translation)
-    RR_measured.append(mpc.getDataHandler().getFootPoseByName("RR_foot").translation)
+    FL_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FL_foot")).translation)
+    FR_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FR_foot")).translation)
+    RL_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RL_foot")).translation)
+    RR_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RR_foot")).translation)
     FL_references.append(mpc.getReferencePose(0, "FL_foot").translation)
     FR_references.append(mpc.getReferencePose(0, "FR_foot").translation)
     RL_references.append(mpc.getReferencePose(0, "RL_foot").translation)

@@ -24,11 +24,11 @@ data_handler = RobotDataHandler(model_handler)
 
 x0 = np.zeros(9)
 x0[:3] = data_handler.getData().com[0]
-nu = model_handler.getModel().nv - 6 + len(model_handler.getFeetNames()) * 6
+nu = model_handler.getModel().nv - 6 + len(model_handler.getFeetFrameNames()) * 6
 
 gravity = np.array([0, 0, -9.81])
 fref = np.zeros(6)
-fref[2] = -model_handler.getMass() / len(model_handler.getFeetNames()) * gravity[2]
+fref[2] = -model_handler.getMass() / len(model_handler.getFeetFrameNames()) * gravity[2]
 u0 = np.concatenate((fref, fref))
 
 w_control_linear = np.ones(3) * 0.001
@@ -125,8 +125,8 @@ force_size = 6
 x_centroidal = mpc.getDataHandler().getCentroidalState()
 
 device.showTargetToTrack(
-    mpc.getDataHandler().getFootPoseByName("left_sole_link"),
-    mpc.getDataHandler().getFootPoseByName("right_sole_link"),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("left_sole_link")),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("right_sole_link")),
 )
 
 v = np.zeros(6)
@@ -157,8 +157,8 @@ for t in range(600):
     )
 
     contact_states = mpc.ocp_handler.getContactState(0)
-    foot_ref = [mpc.getReferencePose(0, name) for name in model_handler.getFeetNames()]
-    foot_ref_next = [mpc.getReferencePose(1, name) for name in model_handler.getFeetNames()]
+    foot_ref = [mpc.getReferencePose(0, name) for name in model_handler.getFeetFrameNames()]
+    foot_ref_next = [mpc.getReferencePose(1, name) for name in model_handler.getFeetFrameNames()]
     dH = mpc.getStateDerivative(0)[3:9]
 
     for j in range(10):
