@@ -157,12 +157,6 @@ void test_contact(TestKinoID test)
     // Solve
     test.step();
 
-    for (int i = 0; i < test.q.size(); i++)
-    {
-      std::cout << test.q[i] << " ";
-    }
-    std::cout << std::endl;
-
     // Check that contact velocity is null
     for (int foot_nb = 0; foot_nb < model_handler.getFeetNb(); foot_nb++)
     {
@@ -274,16 +268,8 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
   const size_t nq = model_handler.getModel().nq;
   const size_t nv = model_handler.getModel().nv;
 
-  // Set target
+  // No need to set target as KinodynamicsID sets it by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
-  std::vector<KinodynamicsID::TargetContactForce> f_target;
-  for (int i = 0; i < 2; i++)
-  {
-    f_target.push_back(KinodynamicsID::TargetContactForce::Zero(6));
-    f_target[i][2] = model_handler.getMass() * 9.81 / 4;
-  }
-  test.solver.setTarget(
-    q_target, Eigen::VectorXd::Zero(nv), Eigen::VectorXd::Zero(nv), {true, true, true, true}, f_target);
 
   const int N_STEP = 10000;
   for (int i = 0; i < N_STEP; i++)
