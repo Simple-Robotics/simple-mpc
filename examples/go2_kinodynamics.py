@@ -259,6 +259,7 @@ for step in range(300):
 
         q_interp = xs_interp[:mpc.getModelHandler().getModel().nq]
         v_interp = xs_interp[mpc.getModelHandler().getModel().nq:]
+        force_interp = [force_interp[i, :] for i in range(4)]
 
         q_meas, v_meas = device.measureState()
         x_measured  = np.concatenate([q_meas, v_meas])
