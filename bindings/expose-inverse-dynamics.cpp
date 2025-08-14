@@ -1,6 +1,6 @@
 #include <eigenpy/eigenpy.hpp>
 
-#include "simple-mpc/inverse-dynamics.hpp"
+#include "simple-mpc/inverse-dynamics/kinodynamics.hpp"
 
 namespace simple_mpc
 {
