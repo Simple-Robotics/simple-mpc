@@ -185,6 +185,20 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contactPoint_cost)
   test_contact(simu);
 }
 
+BOOST_AUTO_TEST_CASE(KinodynamicsID_contactQuad_cost)
+{
+  TestKinoID simu(
+    getTalosModelHandler(), KinodynamicsID::Settings()
+                              .set_kp_base(1.0)
+                              .set_kp_posture(1.)
+                              .set_kp_contact(10.0)
+                              .set_w_base(1.)
+                              .set_w_posture(0.05)
+                              .set_w_contact_motion(10.0)
+                              .set_w_contact_force(1.0));
+  test_contact(simu);
+}
+
 BOOST_AUTO_TEST_CASE(KinodynamicsID_contactPoint_equality)
 {
   TestKinoID simu(
@@ -207,8 +221,9 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_contactQuad_equality)
                               .set_kp_posture(1.)
                               .set_kp_contact(10.0)
                               .set_w_base(1.)
-                              .set_w_posture(0.1)
+                              .set_w_posture(0.05)
                               .set_w_contact_motion(10.0)
+                              .set_w_contact_force(1.0)
                               .set_contact_motion_equality(true));
   test_contact(simu);
 }
