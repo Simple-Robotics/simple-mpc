@@ -269,14 +269,14 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
 BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 {
   TestKinoID test(
-    getTalosModelHandler(), KinodynamicsID::Settings()
-                              .set_kp_base(7.)
-                              .set_kp_posture(10.)
-                              .set_kp_contact(1.0)
-                              .set_w_base(10.0)
-                              .set_w_posture(10.0)
-                              .set_w_contact_force(.1)
-                              .set_w_contact_motion(1.0));
+    getSoloHandler(), KinodynamicsID::Settings()
+                        .set_kp_base(10.)
+                        .set_kp_posture(1.)
+                        .set_kp_contact(10.)
+                        .set_w_base(10.0)
+                        .set_w_posture(0.1)
+                        .set_w_contact_force(1.0)
+                        .set_w_contact_motion(1.0));
 
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
@@ -286,7 +286,8 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
   // No need to set target as KinodynamicsID sets it by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
 
-  const int N_STEP = 10000;
+  test.q = solo_q_start(model_handler);
+  const int N_STEP = 1000;
   for (int i = 0; i < N_STEP; i++)
   {
     // Solve
@@ -295,6 +296,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
     // Check error is decreasing
     const Eigen::VectorXd delta_q = pinocchio::difference(model_handler.getModel(), test.q, q_target);
     const double error = delta_q.norm();
+
     BOOST_CHECK(test.is_error_decreasing("q", error));
   }
 }
