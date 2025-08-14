@@ -1,6 +1,8 @@
 
 #include <boost/test/tools/old/interface.hpp>
 #include <boost/test/unit_test.hpp>
+#include <pinocchio/algorithm/center-of-mass.hpp>
+#include <pinocchio/algorithm/frames.hpp>
 
 #include "simple-mpc/inverse-dynamics.hpp"
 #include "simple-mpc/robot-handler.hpp"
@@ -48,9 +50,13 @@ public:
     solver.getAccelerations(ddq);
 
     // Integrate
+    step_i += 1;
     t += dt;
     q = pinocchio::integrate(model_handler.getModel(), q, (dq + ddq / 2. * dt) * dt);
     dq += ddq * dt;
+
+    // Update data handler
+    data_handler.updateInternalData(q, dq, true);
 
     // Check common to all tests
     check_joint_limits();
@@ -92,6 +98,7 @@ public:
   KinodynamicsID solver;
 
   double t = 0.;
+  int step_i = 0;
   Eigen::VectorXd q;
   Eigen::VectorXd dq;
   Eigen::VectorXd ddq;
@@ -132,51 +139,84 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
   }
 }
 
-BOOST_AUTO_TEST_CASE(KinodynamicsID_contact)
+void test_contact(TestKinoID test)
 {
-  TestKinoID test(
-    getSoloHandler(), KinodynamicsID::Settings()
-                        .set_kp_posture(10.0)
-                        .set_kp_contact(10.0)
-                        .set_w_base(10.)
-                        .set_w_contact_motion(1.0)
-                        .set_w_contact_force(1.0));
-
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
+  const RobotDataHandler & data_handler = test.data_handler;
   const size_t nq = model_handler.getModel().nq;
   const size_t nv = model_handler.getModel().nv;
 
   // No need to set target as KinodynamicsID sets it by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
 
-  // Change initial state
-  test.q = solo_q_start(model_handler);
-
   // Let the robot stabilize
-  const int N_STEP_ON_GROUND = 6000;
-  const int N_STEP_FREE_FALL = 2000;
-  for (int i = 0; i < N_STEP_ON_GROUND + N_STEP_FREE_FALL; i++)
+  const int N_STEP = 500;
+  while (test.step_i < N_STEP)
   {
     // Solve
     test.step();
 
-    if (i == N_STEP_ON_GROUND)
+    for (int i = 0; i < test.q.size(); i++)
     {
-      // Robot had time to reach permanent regime, is it stable on ground ?
-      BOOST_CHECK_SMALL(test.dq.head(3).norm(), 1e-4);
-      BOOST_CHECK_SMALL(test.ddq.head(3).norm(), 1e-4);
-
-      // Remove contacts
-      test.solver.setTarget(
-        q_target, Eigen::VectorXd::Zero(nv), Eigen::VectorXd::Zero(nv), {false, false, false, false}, {});
+      std::cout << test.q[i] << " ";
     }
-    if (i == N_STEP_ON_GROUND + N_STEP_FREE_FALL - 1)
+    std::cout << std::endl;
+
+    // Check that contact velocity is null
+    for (int foot_nb = 0; foot_nb < model_handler.getFeetNb(); foot_nb++)
     {
-      // Robot had time to reach permanent regime, is it robot free falling ?
-      BOOST_CHECK_SMALL(test.ddq.head(3).norm() - model_handler.getModel().gravity.linear().norm(), 0.01);
+      const pinocchio::Motion foot_vel = pinocchio::getFrameVelocity(
+        model_handler.getModel(), data_handler.getData(), model_handler.getFootFrameId(foot_nb), pinocchio::WORLD);
+      BOOST_CHECK_LE(foot_vel.linear().norm(), 1e-2);
+      if (model_handler.getFootType(foot_nb) == RobotModelHandler::FootType::QUAD)
+      {
+        // Rotation should also be null for quadrilateral contacts
+        BOOST_CHECK_LE(foot_vel.angular().norm(), 1e-1);
+      }
     }
   }
+}
+
+BOOST_AUTO_TEST_CASE(KinodynamicsID_contactPoint_cost)
+{
+  TestKinoID simu(
+    getSoloHandler(), KinodynamicsID::Settings()
+                        .set_kp_base(1.0)
+                        .set_kp_contact(10.0)
+                        .set_w_base(1.)
+                        .set_w_contact_motion(10.0)
+                        .set_w_contact_force(1.0));
+  simu.q = solo_q_start(simu.model_handler); // Set initial configuration
+  test_contact(simu);
+}
+
+BOOST_AUTO_TEST_CASE(KinodynamicsID_contactPoint_equality)
+{
+  TestKinoID simu(
+    getSoloHandler(), KinodynamicsID::Settings()
+                        .set_kp_base(1.0)
+                        .set_kp_contact(10.0)
+                        .set_w_base(1.)
+                        .set_w_contact_motion(10.0)
+                        .set_w_contact_force(1.0)
+                        .set_contact_motion_equality(true));
+  simu.q = solo_q_start(simu.model_handler); // Set initial configuration
+  test_contact(simu);
+}
+
+BOOST_AUTO_TEST_CASE(KinodynamicsID_contactQuad_equality)
+{
+  TestKinoID simu(
+    getTalosModelHandler(), KinodynamicsID::Settings()
+                              .set_kp_base(1.0)
+                              .set_kp_posture(1.)
+                              .set_kp_contact(10.0)
+                              .set_w_base(1.)
+                              .set_w_posture(0.1)
+                              .set_w_contact_motion(10.0)
+                              .set_contact_motion_equality(true));
+  test_contact(simu);
 }
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
@@ -184,7 +224,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
   TestKinoID test(
     getSoloHandler(), KinodynamicsID::Settings()
                         .set_kp_base(7.)
-                        .set_kp_contact(10.0)
+                        .set_kp_contact(.1)
                         .set_w_base(100.0)
                         .set_w_contact_force(1.0)
                         .set_w_contact_motion(1.0));
