@@ -29,7 +29,7 @@ namespace simple_mpc
   , settings_(settings)
   {
     nx_ = 9;
-    nu_ = (int)model_handler_.getFeetFrameNames().size() * settings_.force_size;
+    nu_ = (int)model_handler_.getFeetNb() * settings_.force_size;
     control_ref_.resize(nu_);
     control_ref_.setZero();
     com_ref_.setZero();
@@ -107,7 +107,7 @@ namespace simple_mpc
 
   void CentroidalOCP::computeControlFromForces(const std::map<std::string, Eigen::VectorXd> & force_refs)
   {
-    for (std::size_t i = 0; i < model_handler_.getFeetFrameNames().size(); i++)
+    for (std::size_t i = 0; i < model_handler_.getFeetNb(); i++)
     {
       if (settings_.force_size != force_refs.at(model_handler_.getFootFrameName(i)).size())
       {
@@ -124,7 +124,7 @@ namespace simple_mpc
     {
       throw std::runtime_error("Stage index exceeds stage vector size");
     }
-    if (pose_refs.size() != model_handler_.getFeetFrameNames().size())
+    if (pose_refs.size() != model_handler_.getFeetNb())
     {
       throw std::runtime_error("pose_refs size does not match number of end effectors");
     }

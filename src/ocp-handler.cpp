@@ -106,7 +106,7 @@ namespace simple_mpc
 
     Eigen::VectorXd force_ref(force_size);
     force_ref.setZero();
-    force_ref[2] = -model_handler_.getMass() * gravity / (double)model_handler_.getFeetFrameNames().size();
+    force_ref[2] = -model_handler_.getMass() * gravity / (double)model_handler_.getFeetNb();
 
     std::map<std::string, bool> contact_phase;
     std::map<std::string, pinocchio::SE3> contact_pose;

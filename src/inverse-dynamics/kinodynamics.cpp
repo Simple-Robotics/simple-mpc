@@ -18,7 +18,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   const size_t nu = nv - 6;
 
   // Prepare foot contact tasks
-  const size_t n_contacts = model_handler_.getFeetFrameNames().size();
+  const size_t n_contacts = model_handler_.getFeetNb();
   const Eigen::Vector3d normal{0, 0, 1};
   const double weight = model_handler_.getMass() * 9.81;
   const double max_f = settings_.contact_weight_ratio_max * weight;

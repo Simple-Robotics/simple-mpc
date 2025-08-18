@@ -215,7 +215,7 @@ namespace simple_mpc
 
   void FullDynamicsOCP::setReferencePoses(const std::size_t t, const std::map<std::string, pinocchio::SE3> & pose_refs)
   {
-    if (pose_refs.size() != model_handler_.getFeetFrameNames().size())
+    if (pose_refs.size() != model_handler_.getFeetNb())
     {
       throw std::runtime_error("pose_refs size does not match number of end effectors");
     }
@@ -275,7 +275,7 @@ namespace simple_mpc
   FullDynamicsOCP::setReferenceForces(const std::size_t t, const std::map<std::string, Eigen::VectorXd> & force_refs)
   {
     CostStack * cs = getCostStack(t);
-    if (force_refs.size() != model_handler_.getFeetFrameNames().size())
+    if (force_refs.size() != model_handler_.getFeetNb())
     {
       throw std::runtime_error("force_refs size does not match number of end effectors");
     }
