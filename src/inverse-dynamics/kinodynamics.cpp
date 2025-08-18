@@ -144,12 +144,14 @@ void KinodynamicsID::setTarget(
     const std::string & name{model_handler_.getFootFrameName(foot_nb)};
     if (contact_state_target[foot_nb])
     {
+      // Add contact to tsid if necessary
       if (!active_tsid_contacts_[foot_nb])
       {
         formulation_.addRigidContact(
           *tsid_contacts[foot_nb], settings_.w_contact_force, settings_.w_contact_motion,
           settings_.contact_motion_equality ? 0 : 1);
       }
+      // Set contact target force
       switch (model_handler_.getFootType(foot_nb))
       {
       case RobotModelHandler::FootType::POINT: {
@@ -166,11 +168,11 @@ void KinodynamicsID::setTarget(
         assert(false);
       }
       }
-      tsid_contacts[foot_nb];
       active_tsid_contacts_[foot_nb] = true;
     }
     else
     {
+      // Remove contact from tsid if necessary
       if (active_tsid_contacts_[foot_nb])
       {
         formulation_.removeRigidContact(name, 0);
