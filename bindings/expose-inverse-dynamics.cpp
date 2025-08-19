@@ -1,5 +1,6 @@
 #include <eigenpy/eigenpy.hpp>
 
+#include "simple-mpc/inverse-dynamics/centroidal.hpp"
 #include "simple-mpc/inverse-dynamics/kinodynamics.hpp"
 
 namespace simple_mpc
@@ -26,6 +27,18 @@ namespace simple_mpc
       return a;
     }
 
+    void setTarget_CentroidalID(
+      CentroidalID & self,
+      const Eigen::Ref<const Eigen::Vector<double, 3>> & com_position,
+      const Eigen::Ref<const Eigen::Vector<double, 3>> & com_velocity,
+      const CentroidalID::FeetPoseVector & feet_pose,
+      const CentroidalID::FeetVelocityVector & feet_velocity,
+      const std::vector<bool> & contact_state_target,
+      const std::vector<CentroidalID::TargetContactForce> & f_target)
+    {
+      self.setTarget(com_position, com_velocity, feet_pose, feet_velocity, contact_state_target, f_target);
+    }
+
     void exposeInverseDynamics()
     {
       bp::class_<KinodynamicsID::Settings>("KinodynamicsIDSettings", bp::init<>(bp::args("self")))
@@ -44,6 +57,20 @@ namespace simple_mpc
         "KinodynamicsID", bp::init<const simple_mpc::RobotModelHandler &, double, const KinodynamicsID::Settings>(
                             bp::args("self", "model_handler", "control_dt", "settings")))
         .def("setTarget", &KinodynamicsID::setTarget)
+        .def("solve", &solveProxy)
+        .def("getAccelerations", &getAccelerationsProxy);
+
+      bp::class_<CentroidalID::Settings, bp::bases<KinodynamicsID::Settings>>(
+        "CentroidalIDSettings", bp::init<>(bp::args("self")))
+        .def_readwrite("kp_com", &CentroidalID::Settings::kp_com)
+        .def_readwrite("kp_feet_tracking", &CentroidalID::Settings::kp_feet_tracking)
+        .def_readwrite("w_com", &CentroidalID::Settings::w_com)
+        .def_readwrite("w_feet_tracking", &CentroidalID::Settings::w_feet_tracking);
+
+      bp::class_<CentroidalID>(
+        "CentroidalID", bp::init<const simple_mpc::RobotModelHandler &, double, const CentroidalID::Settings>(
+                          bp::args("self", "model_handler", "control_dt", "settings")))
+        .def("setTarget", &setTarget_CentroidalID)
         .def("solve", &solveProxy)
         .def("getAccelerations", &getAccelerationsProxy);
     }
