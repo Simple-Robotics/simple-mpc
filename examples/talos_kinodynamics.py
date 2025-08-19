@@ -162,7 +162,6 @@ kino_ID_settings.w_contact_motion = 1.
 kino_ID = KinodynamicsID(model_handler, dt_simu, kino_ID_settings)
 
 """ Initialize simulation"""
-N_simu = 10 # Number of substep the simulation does between two MPC computation
 device = BulletRobot(
     model_handler.getModel().names,
     erd.getModelPath(URDF_SUBPATH),

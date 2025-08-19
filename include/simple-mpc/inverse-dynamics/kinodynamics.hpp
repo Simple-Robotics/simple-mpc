@@ -80,7 +80,7 @@ namespace simple_mpc
     const Settings settings_;
     const simple_mpc::RobotModelHandler & model_handler_;
 
-  private:
+  protected:
     // Order still matter here
     simple_mpc::RobotDataHandler data_handler_;
     tsid::robots::RobotWrapper robot_;
