@@ -155,11 +155,13 @@ void KinodynamicsID::setTarget(
       switch (model_handler_.getFootType(foot_nb))
       {
       case RobotModelHandler::FootType::POINT: {
+        assert(f_target.at(foot_nb).size() == 3);
         std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[foot_nb])
           ->setForceReference(f_target.at(foot_nb));
         break;
       }
       case RobotModelHandler::FootType::QUAD: {
+        assert(f_target.at(foot_nb).size() == 6);
         std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[foot_nb])
           ->setForceReference(f_target.at(foot_nb));
         break;
