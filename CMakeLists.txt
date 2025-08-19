@@ -95,8 +95,8 @@ endif()
 include(dependencies.cmake)
 
 # Main Library
-file(GLOB mpc_SOURCE CONFIGURE_DEPENDS src/*.cpp)
-file(GLOB mpc_HEADER CONFIGURE_DEPENDS include/${PROJECT_NAME}/*.hpp)
+file(GLOB_RECURSE mpc_SOURCE CONFIGURE_DEPENDS src/*.cpp)
+file(GLOB_RECURSE mpc_HEADER CONFIGURE_DEPENDS include/${PROJECT_NAME}/*.hpp)
 
 add_library(${PROJECT_NAME} SHARED ${mpc_HEADER} ${mpc_SOURCE})
 target_include_directories(
