@@ -31,6 +31,7 @@ namespace simple_mpc
       trackingTask.Kp(settings_.kp_feet_tracking * Eigen::VectorXd::Ones(6));
       trackingTask.Kd(2.0 * trackingTask.Kp().cwiseSqrt());
       // Do not add tasks ; will be done in setTarget depending on desired contacts.
+      feet_tracked_.push_back(false);
       trackingSamples_.emplace_back(12, 6);
     }
   }
