@@ -9,7 +9,7 @@ namespace simple_mpc
   {
     namespace bp = boost::python;
 
-    Eigen::VectorXd solveProxy(
+    Eigen::VectorXd solveKinoProxy(
       KinodynamicsID & self,
       const double t,
       const Eigen::Ref<const Eigen::VectorXd> & q_meas,
@@ -20,7 +20,25 @@ namespace simple_mpc
       return tau_res;
     }
 
-    Eigen::VectorXd getAccelerationsProxy(KinodynamicsID & self)
+    Eigen::VectorXd getAccelerationsKinoProxy(KinodynamicsID & self)
+    {
+      Eigen::VectorXd a(self.model_handler_.getModel().nv - 6);
+      self.getAccelerations(a);
+      return a;
+    }
+
+    Eigen::VectorXd solveCentroidalProxy(
+      CentroidalID & self,
+      const double t,
+      const Eigen::Ref<const Eigen::VectorXd> & q_meas,
+      const Eigen::Ref<const Eigen::VectorXd> & v_meas)
+    {
+      Eigen::VectorXd tau_res(self.model_handler_.getModel().nv - 6);
+      self.solve(t, q_meas, v_meas, tau_res);
+      return tau_res;
+    }
+
+    Eigen::VectorXd getAccelerationsCentroidalProxy(CentroidalID & self)
     {
       Eigen::VectorXd a(self.model_handler_.getModel().nv - 6);
       self.getAccelerations(a);
@@ -57,8 +75,8 @@ namespace simple_mpc
         "KinodynamicsID", bp::init<const simple_mpc::RobotModelHandler &, double, const KinodynamicsID::Settings>(
                             bp::args("self", "model_handler", "control_dt", "settings")))
         .def("setTarget", &KinodynamicsID::setTarget)
-        .def("solve", &solveProxy)
-        .def("getAccelerations", &getAccelerationsProxy);
+        .def("solve", &solveKinoProxy)
+        .def("getAccelerations", &getAccelerationsKinoProxy);
 
       bp::class_<CentroidalID::Settings, bp::bases<KinodynamicsID::Settings>>(
         "CentroidalIDSettings", bp::init<>(bp::args("self")))
@@ -71,8 +89,8 @@ namespace simple_mpc
         "CentroidalID", bp::init<const simple_mpc::RobotModelHandler &, double, const CentroidalID::Settings>(
                           bp::args("self", "model_handler", "control_dt", "settings")))
         .def("setTarget", &setTarget_CentroidalID)
-        .def("solve", &solveProxy)
-        .def("getAccelerations", &getAccelerationsProxy);
+        .def("solve", &solveCentroidalProxy)
+        .def("getAccelerations", &getAccelerationsCentroidalProxy);
     }
   } // namespace python
 } // namespace simple_mpc
