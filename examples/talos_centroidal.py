@@ -194,6 +194,8 @@ for step in range(600):
     forces_next = mpc.us[0][: nk * force_size]
 
     for sub_step in range(N_simu):
+        t = step * dt_mpc + sub_step * dt_simu
+
         q_meas, v_meas = device.measureState()
         x_measured = np.concatenate([q_meas, v_meas])
 
@@ -208,6 +210,7 @@ for step in range(600):
         forces_interp = forces_interp.reshape(2,6)
         forces_interp = [forces_interp[i, :] for i in range(2)]
 
-        tau_cmd = centroidal_ID.setTarget(pos_com_interp, v_com, feet_ref_interp, feet_velocity, contact_states, forces_interp)
+        centroidal_ID.setTarget(pos_com_interp, v_com, feet_ref_interp, feet_velocity, contact_states, forces_interp)
+        tau_cmd = centroidal_ID.solve(t, q_meas, v_meas)
 
         device.execute(tau_cmd)
