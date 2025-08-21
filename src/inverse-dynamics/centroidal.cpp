@@ -34,6 +34,39 @@ namespace simple_mpc
       feet_tracked_.push_back(false);
       trackingSamples_.emplace_back(12, 6);
     }
+
+    // By default initialize target in reference state
+    const size_t nq = model_handler_.getModel().nq;
+    const size_t nv = model_handler_.getModel().nv;
+    const Eigen::VectorXd q_ref = model_handler.getReferenceState().head(nq);
+    const Eigen::VectorXd v_ref = model_handler.getReferenceState().tail(nv);
+    data_handler_.updateInternalData(q_ref, v_ref, false);
+    const Eigen::Vector3d com_pos{data_handler_.getData().com[0].head<3>()};
+    const Eigen::Vector3d com_vel{0, 0, 0};
+    FeetPoseVector feet_pose(n_contacts);
+    FeetVelocityVector feet_vel(n_contacts);
+    std::vector<bool> feet_contact(n_contacts);
+    std::vector<TargetContactForce> feet_force;
+    for (int i = 0; i < n_contacts; i++)
+    {
+      // By default initialize all foot in contact with same amount of force
+      feet_contact[i] = true;
+      const RobotModelHandler::FootType foot_type = model_handler.getFootType(i);
+      if (foot_type == RobotModelHandler::POINT)
+        feet_force.push_back(TargetContactForce::Zero(3));
+      else if (foot_type == RobotModelHandler::QUAD)
+        feet_force.push_back(TargetContactForce::Zero(6));
+      else
+        assert(false);
+      feet_force[i][2] = 9.81 * model_handler_.getMass() / n_contacts; // Weight on Z axis
+      feet_pose[i] = data_handler_.getFootRefPose(i);
+      feet_vel[i].setZero();
+    }
+    setTarget(com_pos, com_vel, feet_pose, feet_vel, feet_contact, feet_force);
+
+    // Dry run to initialize solver data & output
+    const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(0, q_ref, v_ref);
+    last_solution_ = solver_->solve(solver_data);
   }
 
   void CentroidalID::setTarget(
