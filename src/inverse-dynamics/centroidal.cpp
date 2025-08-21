@@ -8,8 +8,8 @@ namespace simple_mpc
   , settings_(settings)
   {
     // Update base task to be only on the base orientation
-    const Eigen::Vector<double, 6> kp_base{0., 0., 0., 1., 1., 1.};
-    baseTask_->Kp(settings_.kp_base * kp_base);
+    const Eigen::Vector<double, 6> orientation_mask{0., 0., 0., 1., 1., 1.};
+    baseTask_->Kp(settings_.kp_base * orientation_mask);
     baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
 
     // Add the center of mass task
@@ -83,7 +83,7 @@ namespace simple_mpc
           if (feet_tracked_[foot_nb])
           {
             formulation_.removeTask(task_name, 0);
-            active_tsid_contacts_[foot_nb] = false;
+            feet_tracked_[foot_nb] = false;
           }
         }
       }
