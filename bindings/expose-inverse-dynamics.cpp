@@ -69,7 +69,8 @@ namespace simple_mpc
         .def_readwrite("w_base", &KinodynamicsID::Settings::w_base)
         .def_readwrite("w_posture", &KinodynamicsID::Settings::w_posture)
         .def_readwrite("w_contact_motion", &KinodynamicsID::Settings::w_contact_motion)
-        .def_readwrite("w_contact_force", &KinodynamicsID::Settings::w_contact_force);
+        .def_readwrite("w_contact_force", &KinodynamicsID::Settings::w_contact_force)
+        .def_readwrite("contact_motion_equality", &KinodynamicsID::Settings::contact_motion_equality);
 
       bp::class_<KinodynamicsID>(
         "KinodynamicsID", bp::init<const simple_mpc::RobotModelHandler &, double, const KinodynamicsID::Settings>(
