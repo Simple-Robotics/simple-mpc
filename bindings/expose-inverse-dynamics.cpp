@@ -22,7 +22,7 @@ namespace simple_mpc
 
     Eigen::VectorXd getAccelerationsKinoProxy(KinodynamicsID & self)
     {
-      Eigen::VectorXd a(self.model_handler_.getModel().nv - 6);
+      Eigen::VectorXd a(self.model_handler_.getModel().nv);
       self.getAccelerations(a);
       return a;
     }
@@ -40,7 +40,7 @@ namespace simple_mpc
 
     Eigen::VectorXd getAccelerationsCentroidalProxy(CentroidalID & self)
     {
-      Eigen::VectorXd a(self.model_handler_.getModel().nv - 6);
+      Eigen::VectorXd a(self.model_handler_.getModel().nv);
       self.getAccelerations(a);
       return a;
     }
