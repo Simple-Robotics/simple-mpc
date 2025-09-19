@@ -4,7 +4,6 @@ import example_robot_data as erd
 from bullet_robot import BulletRobot
 from simple_mpc import RobotModelHandler, RobotDataHandler, CentroidalOCP, MPC, CentroidalID, CentroidalIDSettings, Interpolator
 from utils import loadTalos
-import time
 
 # RobotWrapper
 URDF_SUBPATH = "/talos_data/robots/talos_reduced.urdf"
@@ -23,8 +22,6 @@ foot_points = np.array([
 ])
 model_handler.addQuadFoot("left_sole_link",  base_joint_name, foot_points)
 model_handler.addQuadFoot("right_sole_link", base_joint_name, foot_points)
-model_handler.setFootReferencePlacement("left_sole_link", pin.XYZQUATToSE3(np.array([ 0.0, 0.1, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("right_sole_link", pin.XYZQUATToSE3(np.array([ 0.0,-0.1, 0.0, 0,0,0,1])))
 
 data_handler = RobotDataHandler(model_handler)
 

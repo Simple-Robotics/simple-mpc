@@ -48,8 +48,8 @@ namespace simple_mpc
     const Eigen::VectorXd q_ref = model_handler.getReferenceState().head(nq);
     const Eigen::VectorXd v_ref = model_handler.getReferenceState().tail(nv);
     data_handler_.updateInternalData(q_ref, v_ref, false);
-    const Eigen::Vector3d com_pos{data_handler_.getData().com[0].head<3>()};
-    const Eigen::Vector3d com_vel{0, 0, 0};
+    const Eigen::Vector3d com_pos{data_handler_.getData().com[0]};
+    const Eigen::Vector3d com_vel{0., 0., 0.};
     FeetPoseVector feet_pose(n_contacts);
     FeetVelocityVector feet_vel(n_contacts);
     std::vector<bool> feet_contact(n_contacts);
