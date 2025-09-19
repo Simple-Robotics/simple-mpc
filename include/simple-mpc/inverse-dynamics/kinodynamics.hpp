@@ -33,11 +33,11 @@ namespace simple_mpc
     {
 
       // Physical quantities
-      DEFINE_FIELD(double, friction_coefficient, 0.3)
+      DEFINE_FIELD(double, friction_coefficient, 0.6)
       DEFINE_FIELD(
         double,
         contact_weight_ratio_max,
-        2.0) // Max force for one foot contact (express as a multiple of the robot weight)
+        10.0) // Max force for one foot contact (express as a multiple of the robot weight)
       DEFINE_FIELD(
         double,
         contact_weight_ratio_min,
