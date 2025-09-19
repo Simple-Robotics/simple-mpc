@@ -25,9 +25,10 @@ function(set_standard_output_directory target)
   )
 endfunction()
 
-function(_add_test_prototype name prefix dependencies)
+function(_add_test_prototype filename prefix dependencies)
+  string(REGEX REPLACE "/" "_" name ${filename})
   set(test_name "test-cpp-${prefix}${name}")
-  set(test_file ${name}.cpp)
+  set(test_file ${filename}.cpp)
   message(STATUS "Adding C++ test: ${test_file} (${test_name})")
 
   ADD_UNIT_TEST(${test_name} ${test_file} ${TEST_HEADERS})
@@ -45,14 +46,15 @@ function(_add_test_prototype name prefix dependencies)
   target_link_libraries(${test_name} PRIVATE Boost::unit_test_framework)
 endfunction()
 
-function(add_aligator_test name)
-  _add_test_prototype(${name} "" ${PROJECT_NAME})
+function(add_aligator_test filename)
+  _add_test_prototype(${filename} "" ${PROJECT_NAME})
 endfunction()
 
 set(
   TEST_NAMES
   robot_handler
   problem
+  inverse-dynamics/kinodynamics
   #mpc
   friction
   interpolator
