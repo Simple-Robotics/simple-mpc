@@ -150,6 +150,7 @@ void KinodynamicsID::setTarget(
         formulation_.addRigidContact(
           *tsid_contacts[foot_nb], settings_.w_contact_force, settings_.w_contact_motion,
           settings_.contact_motion_equality ? 0 : 1);
+        active_tsid_contacts_[foot_nb] = true;
       }
       // Set contact target force
       switch (model_handler_.getFootType(foot_nb))
@@ -170,7 +171,6 @@ void KinodynamicsID::setTarget(
         assert(false);
       }
       }
-      active_tsid_contacts_[foot_nb] = true;
     }
     else
     {

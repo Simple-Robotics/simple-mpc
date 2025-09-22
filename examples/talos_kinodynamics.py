@@ -156,7 +156,7 @@ kino_ID_settings.kp_posture = 10.
 kino_ID_settings.kp_contact = 10.
 kino_ID_settings.w_base = 100.
 kino_ID_settings.w_posture = 1.
-kino_ID_settings.w_contact_force = 1.
+kino_ID_settings.w_contact_force = 0.001
 kino_ID_settings.w_contact_motion = 1.
 
 kino_ID = KinodynamicsID(model_handler, dt_simu, kino_ID_settings)
