@@ -13,17 +13,21 @@ reference_configuration_name = "half_sitting"
 rmodelComplete, rmodel, qComplete, q0 = loadTalos()
 
 # Create Model and Data handler
-model_handler = RobotModelHandler(rmodel, reference_configuration_name, base_joint_name)
 foot_points = np.array([
     [0.1, 0.075, 0],
     [-0.1, 0.075, 0],
     [-0.1, -0.075, 0],
     [0.1, -0.075, 0],
 ])
+model_handler = RobotModelHandler(rmodel, reference_configuration_name, base_joint_name)
 model_handler.addQuadFoot("left_sole_link",  base_joint_name, foot_points)
 model_handler.addQuadFoot("right_sole_link", base_joint_name, foot_points)
-
+model_handler.setFootReferencePlacement("left_sole_link", pin.XYZQUATToSE3(np.array([ 0.0, 0.1, 0.0, 0,0,0,1])))
+model_handler.setFootReferencePlacement("right_sole_link", pin.XYZQUATToSE3(np.array([ 0.0,-0.1, 0.0, 0,0,0,1])))
 data_handler = RobotDataHandler(model_handler)
+
+nq = model_handler.getModel().nq
+nv = model_handler.getModel().nv
 
 x0 = np.zeros(9)
 x0[:3] = data_handler.getData().com[0]
@@ -130,15 +134,12 @@ device = BulletRobot(
     model_handler.getModel().names,
     erd.getModelPath(URDF_SUBPATH),
     URDF_SUBPATH,
-    1e-3,
+    dt_simu,
     model_handler.getModel(),
     model_handler.getReferenceState()[:3],
 )
 device.initializeJoints(model_handler.getModel().referenceConfigurations[reference_configuration_name])
-device.changeCamera(1.0, 90, -5, [1.5, 0, 1])
-
-nq = mpc.getModelHandler().getModel().nq
-nv = mpc.getModelHandler().getModel().nv
+device.changeCamera(1.0, 50, -15, [1.7, -0.5, 1.2])
 
 q_meas, v_meas = device.measureState()
 x_measured = np.concatenate([q_meas, v_meas])
@@ -146,7 +147,6 @@ x_measured = np.concatenate([q_meas, v_meas])
 Tmpc = len(contact_phases)
 nk = 2
 force_size = 6
-x_centroidal = mpc.getDataHandler().getCentroidalState()
 
 device.showTargetToTrack(
     mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("left_sole_link")),
