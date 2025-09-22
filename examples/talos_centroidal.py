@@ -188,7 +188,7 @@ for step in range(600):
     pos_com_next = mpc.xs[1][:3]
 
     forces = mpc.us[0][: nk * force_size]
-    forces_next = mpc.us[0][: nk * force_size]
+    forces_next = mpc.us[1][: nk * force_size]
 
     for sub_step in range(N_simu):
         t = step * dt_mpc + sub_step * dt_simu
