@@ -117,15 +117,15 @@ interpolator = Interpolator(model_handler.getModel())
 
 """ Inverse Dynamics """
 centroidal_ID_settings = CentroidalIDSettings()
-centroidal_ID_settings.kp_feet_tracking = 10.
-centroidal_ID_settings.kp_com = 10.
-centroidal_ID_settings.kp_posture = 1.
+centroidal_ID_settings.kp_base = 7.
+centroidal_ID_settings.kp_com = 7.
+centroidal_ID_settings.kp_posture = 10.
 centroidal_ID_settings.kp_contact = 10.
-centroidal_ID_settings.w_feet_tracking = 10
-centroidal_ID_settings.w_com = 10
-centroidal_ID_settings.w_posture = 0.1
-centroidal_ID_settings.w_contact_force = 1.
-centroidal_ID_settings.w_contact_motion = 1.
+centroidal_ID_settings.w_base = 50.
+centroidal_ID_settings.w_com = 100.
+centroidal_ID_settings.w_posture = 1.
+centroidal_ID_settings.w_contact_force = 1e-6
+centroidal_ID_settings.w_contact_motion = 1e-3
 
 centroidal_ID = CentroidalID(model_handler, dt_simu, centroidal_ID_settings)
 
