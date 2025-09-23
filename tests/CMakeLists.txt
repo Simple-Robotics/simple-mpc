@@ -55,6 +55,7 @@ set(
   robot_handler
   problem
   inverse-dynamics/kinodynamics
+  inverse-dynamics/centroidal
   #mpc
   friction
   interpolator

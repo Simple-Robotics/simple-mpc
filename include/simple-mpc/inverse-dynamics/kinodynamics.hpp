@@ -11,15 +11,6 @@
 #include <tsid/tasks/task-se3-equality.hpp>
 #include <tsid/trajectories/trajectory-base.hpp>
 
-// Allow to define a field, it's default value and its convenient chainable setter in one keyword.
-#define DEFINE_FIELD(type, name, value)                                                                                \
-  type name = value;                                                                                                   \
-  Settings & set_##name(type v)                                                                                        \
-  {                                                                                                                    \
-    name = v;                                                                                                          \
-    return *this;                                                                                                      \
-  }
-
 namespace simple_mpc
 {
 
@@ -33,29 +24,27 @@ namespace simple_mpc
     {
 
       // Physical quantities
-      DEFINE_FIELD(double, friction_coefficient, 0.6)
-      DEFINE_FIELD(
-        double,
-        contact_weight_ratio_max,
-        10.0) // Max force for one foot contact (express as a multiple of the robot weight)
-      DEFINE_FIELD(
-        double,
-        contact_weight_ratio_min,
-        0.01) // Min force for one foot contact (express as a multiple of the robot weight)
+      double friction_coefficient = 0.6;
+
+      double contact_weight_ratio_max =
+        10.0; // Max force for one foot contact (express as a multiple of the robot weight)
+
+      double contact_weight_ratio_min =
+        0.01; // Min force for one foot contact (express as a multiple of the robot weight)
 
       // Tasks gains
-      DEFINE_FIELD(double, kp_base, 0.)
-      DEFINE_FIELD(double, kp_posture, 0.)
-      DEFINE_FIELD(double, kp_contact, 0.)
+      double kp_base = 0.;
+      double kp_posture = 0.;
+      double kp_contact = 0.;
 
       // Tasks weights
-      DEFINE_FIELD(double, w_base, -1.)           // Disabled by default
-      DEFINE_FIELD(double, w_posture, -1.)        // Disabled by default
-      DEFINE_FIELD(double, w_contact_motion, -1.) // Disabled by default
-      DEFINE_FIELD(double, w_contact_force, -1.)  // Disabled by default
+      double w_base = -1.;           // Disabled by default
+      double w_posture = -1.;        // Disabled by default
+      double w_contact_motion = -1.; // Disabled by default
+      double w_contact_force = -1.;  // Disabled by default
 
       ///< Are the contact motion = 0 handled as a hard contraint (true) or a cost (if false)
-      DEFINE_FIELD(bool, contact_motion_equality, false)
+      bool contact_motion_equality = false;
     };
 
     KinodynamicsID(const simple_mpc::RobotModelHandler & model_handler, double control_dt, const Settings settings);

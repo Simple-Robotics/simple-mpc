@@ -17,12 +17,12 @@ namespace simple_mpc
     struct Settings : public KinodynamicsID::Settings
     {
       // Tasks gains
-      DEFINE_FIELD(double, kp_com, 0.)
-      DEFINE_FIELD(double, kp_feet_tracking, 0.)
+      double kp_com = 0.;
+      double kp_feet_tracking = 0.;
 
       // Tasks weights
-      DEFINE_FIELD(double, w_com, -1.)           // Disabled by default
-      DEFINE_FIELD(double, w_feet_tracking, -1.) // Disabled by default
+      double w_com = -1.;           // Disabled by default
+      double w_feet_tracking = -1.; // Disabled by default
     };
 
     CentroidalID(const RobotModelHandler & model_handler, double control_dt, const Settings settings);

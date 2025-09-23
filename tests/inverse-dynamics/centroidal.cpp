@@ -4,11 +4,11 @@
 #include <pinocchio/algorithm/center-of-mass.hpp>
 #include <pinocchio/algorithm/frames.hpp>
 
-#include "simple-mpc/inverse-dynamics/kinodynamics.hpp"
+#include "simple-mpc/inverse-dynamics/centroidal.hpp"
 #include "simple-mpc/robot-handler.hpp"
 #include "test_utils.cpp"
 
-BOOST_AUTO_TEST_SUITE(inverse_dynamics)
+BOOST_AUTO_TEST_SUITE(inverse_dynamics_centroidal)
 
 using namespace simple_mpc;
 
@@ -28,10 +28,10 @@ Eigen::VectorXd solo_q_start(const RobotModelHandler & model_handler)
 }
 
 // Helper class to create the problem and run it
-class TestKinoID
+class TestCentroidalID
 {
 public:
-  TestKinoID(RobotModelHandler model_handler_, KinodynamicsID::Settings settings_)
+  TestCentroidalID(RobotModelHandler model_handler_, CentroidalID::Settings settings_)
   : model_handler(model_handler_)
   , data_handler(model_handler)
   , settings(settings_)
@@ -93,9 +93,9 @@ protected:
 public:
   const RobotModelHandler model_handler;
   RobotDataHandler data_handler;
-  KinodynamicsID::Settings settings;
+  CentroidalID::Settings settings;
   double dt = 1e-3;
-  KinodynamicsID solver;
+  CentroidalID solver;
 
   double t = 0.;
   int step_i = 0;
@@ -107,9 +107,13 @@ public:
   std::map<std::string, double> errors;
 };
 
-BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
+BOOST_AUTO_TEST_CASE(CentroidalID_postureTask)
 {
-  TestKinoID test(getSoloHandler(), KinodynamicsID::Settings().set_kp_posture(20.).set_w_posture(1.));
+  CentroidalID::Settings settings;
+  settings.kp_posture = 20.;
+  settings.w_posture = 1.;
+
+  TestCentroidalID test(getSoloHandler(), settings);
 
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
@@ -117,9 +121,17 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
   const size_t nv = model_handler.getModel().nv;
 
   // Target state
-  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
+  const Eigen::VectorXd q_target =
+    model_handler.getReferenceState().head(nq); // CentroidalID set posture target to reference configuration
+  CentroidalID::FeetPoseVector feet_pose_vec;
+  CentroidalID::FeetVelocityVector feet_vel_vec;
+  for (int foot_nb; foot_nb < test.model_handler.getFeetNb(); foot_nb++)
+  {
+    feet_pose_vec.push_back(pinocchio::SE3::Identity());
+    feet_vel_vec.push_back(pinocchio::Motion::Zero());
+  }
   test.solver.setTarget(
-    q_target, Eigen::VectorXd::Zero(nv), Eigen::VectorXd::Zero(nv), {false, false, false, false}, {});
+    Eigen::VectorXd::Zero(3), Eigen::VectorXd::Zero(3), feet_pose_vec, feet_vel_vec, {false, false, false, false}, {});
 
   // Change initial state
   test.q = solo_q_start(model_handler);
@@ -139,7 +151,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
   }
 }
 
-void test_contact(TestKinoID test)
+void test_contact(TestCentroidalID test)
 {
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
@@ -147,7 +159,7 @@ void test_contact(TestKinoID test)
   const size_t nq = model_handler.getModel().nq;
   const size_t nv = model_handler.getModel().nv;
 
-  // No need to set target as KinodynamicsID sets it by default to reference state
+  // No need to set target as CentroidalID sets it by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
 
   // Let the robot stabilize
@@ -172,77 +184,81 @@ void test_contact(TestKinoID test)
   }
 }
 
-BOOST_AUTO_TEST_CASE(KinodynamicsID_contactPoint_cost)
+BOOST_AUTO_TEST_CASE(CentroidalID_contactPoint_cost)
 {
-  TestKinoID simu(
-    getSoloHandler(), KinodynamicsID::Settings()
-                        .set_kp_base(1.0)
-                        .set_kp_contact(10.0)
-                        .set_w_base(1.)
-                        .set_w_contact_motion(10.0)
-                        .set_w_contact_force(1.0));
+  CentroidalID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+
+  TestCentroidalID simu(getSoloHandler(), settings);
   simu.q = solo_q_start(simu.model_handler); // Set initial configuration
   test_contact(simu);
 }
 
-BOOST_AUTO_TEST_CASE(KinodynamicsID_contactQuad_cost)
+BOOST_AUTO_TEST_CASE(CentroidalID_contactQuad_cost)
 {
-  TestKinoID simu(
-    getTalosModelHandler(), KinodynamicsID::Settings()
-                              .set_kp_base(1.0)
-                              .set_kp_posture(1.)
-                              .set_kp_contact(10.0)
-                              .set_w_base(1.)
-                              .set_w_posture(0.05)
-                              .set_w_contact_motion(10.0)
-                              .set_w_contact_force(1.0));
+  CentroidalID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_posture = 1.;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_posture = 0.05;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+
+  TestCentroidalID simu(getTalosModelHandler(), settings);
   test_contact(simu);
 }
 
-BOOST_AUTO_TEST_CASE(KinodynamicsID_contactPoint_equality)
+BOOST_AUTO_TEST_CASE(CentroidalID_contactPoint_equality)
 {
-  TestKinoID simu(
-    getSoloHandler(), KinodynamicsID::Settings()
-                        .set_kp_base(1.0)
-                        .set_kp_contact(10.0)
-                        .set_w_base(1.)
-                        .set_w_contact_motion(10.0)
-                        .set_w_contact_force(1.0)
-                        .set_contact_motion_equality(true));
+  CentroidalID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+  settings.contact_motion_equality = true;
+  TestCentroidalID simu(getSoloHandler(), settings);
   simu.q = solo_q_start(simu.model_handler); // Set initial configuration
   test_contact(simu);
 }
 
-BOOST_AUTO_TEST_CASE(KinodynamicsID_contactQuad_equality)
+BOOST_AUTO_TEST_CASE(CentroidalID_contactQuad_equality)
 {
-  TestKinoID simu(
-    getTalosModelHandler(), KinodynamicsID::Settings()
-                              .set_kp_base(1.0)
-                              .set_kp_posture(1.)
-                              .set_kp_contact(10.0)
-                              .set_w_base(1.)
-                              .set_w_posture(0.05)
-                              .set_w_contact_motion(10.0)
-                              .set_w_contact_force(1.0)
-                              .set_contact_motion_equality(true));
+  CentroidalID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_posture = 1.;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_posture = 0.05;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+  settings.contact_motion_equality = true;
+
+  TestCentroidalID simu(getTalosModelHandler(), settings);
   test_contact(simu);
 }
 
-BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
+BOOST_AUTO_TEST_CASE(CentroidalID_baseTask)
 {
-  TestKinoID test(
-    getSoloHandler(), KinodynamicsID::Settings()
-                        .set_kp_base(7.)
-                        .set_kp_contact(.1)
-                        .set_w_base(100.0)
-                        .set_w_contact_force(1.0)
-                        .set_w_contact_motion(1.0));
+  CentroidalID::Settings settings;
+  settings.kp_base = 7.;
+  settings.kp_contact = .1;
+  settings.w_base = 100.0;
+  settings.w_contact_force = 1.0;
+  settings.w_contact_motion = 1.0;
+
+  TestCentroidalID test(getSoloHandler(), settings);
 
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
   const size_t nq = model_handler.getModel().nq;
 
-  // No need to set target as KinodynamicsID sets it by default to reference state
+  // No need to set target as CentroidalID sets it by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
 
   // Change initial state
@@ -266,24 +282,25 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
   }
 }
 
-BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
+BOOST_AUTO_TEST_CASE(CentroidalID_allTasks)
 {
-  TestKinoID test(
-    getSoloHandler(), KinodynamicsID::Settings()
-                        .set_kp_base(10.)
-                        .set_kp_posture(1.)
-                        .set_kp_contact(10.)
-                        .set_w_base(10.0)
-                        .set_w_posture(0.1)
-                        .set_w_contact_force(1.0)
-                        .set_w_contact_motion(1.0));
+  CentroidalID::Settings settings;
+  settings.kp_base = 10.;
+  settings.kp_posture = 1.;
+  settings.kp_contact = 10.;
+  settings.w_base = 10.0;
+  settings.w_posture = 0.1;
+  settings.w_contact_force = 1.0;
+  settings.w_contact_motion = 1.0;
+
+  TestCentroidalID test(getSoloHandler(), settings);
 
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
   const size_t nq = model_handler.getModel().nq;
   const size_t nv = model_handler.getModel().nv;
 
-  // No need to set target as KinodynamicsID sets it by default to reference state
+  // No need to set target as CentroidalID sets it by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
 
   test.q = solo_q_start(model_handler);

@@ -8,7 +8,7 @@
 #include "simple-mpc/robot-handler.hpp"
 #include "test_utils.cpp"
 
-BOOST_AUTO_TEST_SUITE(inverse_dynamics)
+BOOST_AUTO_TEST_SUITE(inverse_dynamics_kinodynamics)
 
 using namespace simple_mpc;
 
@@ -109,7 +109,11 @@ public:
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
 {
-  TestKinoID test(getSoloHandler(), KinodynamicsID::Settings().set_kp_posture(20.).set_w_posture(1.));
+  KinodynamicsID::Settings settings;
+  settings.kp_posture = 20.;
+  settings.w_posture = 1.;
+
+  TestKinoID test(getSoloHandler(), settings);
 
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
@@ -174,69 +178,74 @@ void test_contact(TestKinoID test)
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_contactPoint_cost)
 {
-  TestKinoID simu(
-    getSoloHandler(), KinodynamicsID::Settings()
-                        .set_kp_base(1.0)
-                        .set_kp_contact(10.0)
-                        .set_w_base(1.)
-                        .set_w_contact_motion(10.0)
-                        .set_w_contact_force(1.0));
+  KinodynamicsID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+
+  TestKinoID simu(getSoloHandler(), settings);
   simu.q = solo_q_start(simu.model_handler); // Set initial configuration
   test_contact(simu);
 }
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_contactQuad_cost)
 {
-  TestKinoID simu(
-    getTalosModelHandler(), KinodynamicsID::Settings()
-                              .set_kp_base(1.0)
-                              .set_kp_posture(1.)
-                              .set_kp_contact(10.0)
-                              .set_w_base(1.)
-                              .set_w_posture(0.05)
-                              .set_w_contact_motion(10.0)
-                              .set_w_contact_force(1.0));
+  KinodynamicsID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_posture = 1.;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_posture = 0.05;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+
+  TestKinoID simu(getTalosModelHandler(), settings);
   test_contact(simu);
 }
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_contactPoint_equality)
 {
-  TestKinoID simu(
-    getSoloHandler(), KinodynamicsID::Settings()
-                        .set_kp_base(1.0)
-                        .set_kp_contact(10.0)
-                        .set_w_base(1.)
-                        .set_w_contact_motion(10.0)
-                        .set_w_contact_force(1.0)
-                        .set_contact_motion_equality(true));
+  KinodynamicsID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+  settings.contact_motion_equality = true;
+
+  TestKinoID simu(getSoloHandler(), settings);
   simu.q = solo_q_start(simu.model_handler); // Set initial configuration
   test_contact(simu);
 }
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_contactQuad_equality)
 {
-  TestKinoID simu(
-    getTalosModelHandler(), KinodynamicsID::Settings()
-                              .set_kp_base(1.0)
-                              .set_kp_posture(1.)
-                              .set_kp_contact(10.0)
-                              .set_w_base(1.)
-                              .set_w_posture(0.05)
-                              .set_w_contact_motion(10.0)
-                              .set_w_contact_force(1.0)
-                              .set_contact_motion_equality(true));
+  KinodynamicsID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_posture = 1.;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_posture = 0.05;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+  settings.contact_motion_equality = true;
+
+  TestKinoID simu(getTalosModelHandler(), settings);
   test_contact(simu);
 }
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
 {
-  TestKinoID test(
-    getSoloHandler(), KinodynamicsID::Settings()
-                        .set_kp_base(7.)
-                        .set_kp_contact(.1)
-                        .set_w_base(100.0)
-                        .set_w_contact_force(1.0)
-                        .set_w_contact_motion(1.0));
+  KinodynamicsID::Settings settings;
+  settings.kp_base = 7.;
+  settings.kp_contact = .1;
+  settings.w_base = 100.0;
+  settings.w_contact_force = 1.0;
+  settings.w_contact_motion = 1.0;
+
+  TestKinoID test(getSoloHandler(), settings);
 
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
@@ -268,15 +277,16 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
 
 BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 {
-  TestKinoID test(
-    getSoloHandler(), KinodynamicsID::Settings()
-                        .set_kp_base(10.)
-                        .set_kp_posture(1.)
-                        .set_kp_contact(10.)
-                        .set_w_base(10.0)
-                        .set_w_posture(0.1)
-                        .set_w_contact_force(1.0)
-                        .set_w_contact_motion(1.0));
+  KinodynamicsID::Settings settings;
+  settings.kp_base = 10.;
+  settings.kp_posture = 1.;
+  settings.kp_contact = 10.;
+  settings.w_base = 10.0;
+  settings.w_posture = 0.1;
+  settings.w_contact_force = 1.0;
+  settings.w_contact_motion = 1.0;
+
+  TestKinoID test(getSoloHandler(), settings);
 
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
