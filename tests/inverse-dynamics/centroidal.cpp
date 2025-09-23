@@ -251,8 +251,10 @@ BOOST_AUTO_TEST_CASE(CentroidalID_baseTask)
 {
   CentroidalID::Settings settings;
   settings.kp_base = 7.;
+  settings.kp_com = 1.;
   settings.kp_contact = .1;
   settings.w_base = 100.0;
+  settings.w_com = 10.0;
   settings.w_contact_force = 1.0;
   settings.w_contact_motion = 1.0;
 
