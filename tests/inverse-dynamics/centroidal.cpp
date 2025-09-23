@@ -188,8 +188,10 @@ BOOST_AUTO_TEST_CASE(CentroidalID_contactPoint_cost)
 {
   CentroidalID::Settings settings;
   settings.kp_base = 1.0;
+  settings.kp_com = 1.0;
   settings.kp_contact = 10.0;
   settings.w_base = 1.;
+  settings.w_com = 1.;
   settings.w_contact_motion = 10.0;
   settings.w_contact_force = 1.0;
 
@@ -217,8 +219,10 @@ BOOST_AUTO_TEST_CASE(CentroidalID_contactPoint_equality)
 {
   CentroidalID::Settings settings;
   settings.kp_base = 1.0;
+  settings.kp_com = 1.0;
   settings.kp_contact = 10.0;
   settings.w_base = 1.;
+  settings.w_com = 1.;
   settings.w_contact_motion = 10.0;
   settings.w_contact_force = 1.0;
   settings.contact_motion_equality = true;
