@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(CentroidalID_postureTask)
     feet_vel_vec.push_back(pinocchio::Motion::Zero());
   }
   test.solver.setTarget(
-    Eigen::VectorXd::Zero(3), Eigen::VectorXd::Zero(3), feet_pose_vec, feet_vel_vec, {false, false, false, false}, {});
+    Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), feet_pose_vec, feet_vel_vec, {false, false, false, false}, {});
 
   // Change initial state
   test.q = solo_q_start(model_handler);
@@ -264,27 +264,30 @@ BOOST_AUTO_TEST_CASE(CentroidalID_baseTask)
   const RobotModelHandler & model_handler = test.model_handler;
   const size_t nq = model_handler.getModel().nq;
 
-  // No need to set target as CentroidalID sets it by default to reference state
+  // CentroidalID sets posture task by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
 
   // Change initial state
   test.q = solo_q_start(model_handler);
+  test.q.segment<4>(3) << 0.0025, 0.05, 0.05, 0.998; // small orientation perturbation (~6° on pitch and yaw)
+  test.q.segment<4>(3) /= test.q.segment<4>(3).norm();
 
-  const int N_STEP = 10000;
+  const int N_STEP = 5000;
   for (int i = 0; i < N_STEP; i++)
   {
     // Solve
     test.step();
 
     // Compute error
-    const Eigen::VectorXd delta_pose = pinocchio::difference(model_handler.getModel(), test.q, q_target).head<6>();
-    const double error = delta_pose.norm();
+    const Eigen::VectorXd delta_orientation =
+      pinocchio::difference(model_handler.getModel(), test.q, q_target).segment<3>(3);
+    const double error = delta_orientation.norm();
 
     // Checks
-    if (error > 2e-2) // If haven't converged yet, should be strictly decreasing
-      BOOST_CHECK(test.is_error_decreasing("base", error));
+    if (error > 1e-3) // If haven't converged yet, should be strictly decreasing
+      BOOST_CHECK(test.is_error_decreasing("base_orientation", error));
     if (i > 9 * N_STEP / 10) // Should have converged by now
-      BOOST_CHECK(error < 2e-2);
+      BOOST_CHECK(error < 1e-3);
   }
 }
 
