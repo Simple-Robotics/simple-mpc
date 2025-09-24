@@ -288,6 +288,60 @@ BOOST_AUTO_TEST_CASE(CentroidalID_baseTask)
   }
 }
 
+BOOST_AUTO_TEST_CASE(CentroidalID_comTask)
+{
+  CentroidalID::Settings settings;
+  settings.kp_com = 7.;
+  settings.kp_contact = .1;
+  settings.w_com = 100.0;
+  settings.w_contact_force = 1.0;
+  settings.w_contact_motion = 1.0;
+
+  TestCentroidalID test(getSoloHandler(), settings);
+  test.q = solo_q_start(test.model_handler);
+
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  RobotDataHandler & data_handler = test.data_handler;
+  const int feet_nb = test.model_handler.getFeetNb();
+
+  // Set target
+  const Eigen::Vector3d com_target{-0.01, -0.01, 0.15};
+  const Eigen::Vector3d com_vel{0., 0., 0.};
+  data_handler.updateInternalData(test.q, test.dq, false);
+  CentroidalID::FeetPoseVector feet_pose_vec(feet_nb);
+  CentroidalID::FeetVelocityVector feet_vel_vec(feet_nb);
+  std::vector<bool> feet_contact(feet_nb);
+  std::vector<CentroidalID::TargetContactForce> feet_force;
+  for (int i = 0; i < feet_nb; i++)
+  {
+    feet_pose_vec[i] = data_handler.getFootPose(i);
+    feet_vel_vec[i].setZero();
+    feet_contact[i] = true;
+    feet_force.push_back(CentroidalID::TargetContactForce::Zero(3));
+    feet_force[i][2] = 9.81 * model_handler.getMass() / feet_nb;
+  }
+  test.solver.setTarget(com_target, com_vel, feet_pose_vec, feet_vel_vec, feet_contact, feet_force);
+
+  const int N_STEP = 5000;
+  for (int i = 0; i < N_STEP; i++)
+  {
+    // Solve
+    test.step();
+
+    // Compute error
+    data_handler.updateInternalData(test.q, test.dq, false);
+    const Eigen::VectorXd delta_position = data_handler.getData().com[0] - com_target;
+    const double error = delta_position.norm();
+
+    // Checks
+    if (error > 1e-3) // If haven't converged yet, should be strictly decreasing
+      BOOST_CHECK(test.is_error_decreasing("com_position", error));
+    if (i > 9 * N_STEP / 10) // Should have converged by now
+      BOOST_CHECK(error < 1e-3);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(CentroidalID_allTasks)
 {
   CentroidalID::Settings settings;
