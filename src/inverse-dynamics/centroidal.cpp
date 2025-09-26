@@ -32,11 +32,20 @@ namespace simple_mpc
     const size_t n_contacts = model_handler_.getFeetNb();
     for (int i = 0; i < n_contacts; i++)
     {
+      const RobotModelHandler::FootType foot_type = model_handler.getFootType(i);
       const std::string frame_name = model_handler.getFootFrameName(i);
+      Eigen::Vector<double, 6> position_mask = Eigen::Vector<double, 6>::Ones();
+      if (foot_type == RobotModelHandler::POINT)
+        position_mask.tail<3>().setZero();
+      else if (foot_type == RobotModelHandler::QUAD)
+        position_mask.tail<3>().setOnes();
+      else
+        assert(false);
       tsid::tasks::TaskSE3Equality & trackingTask =
         trackingTasks_.emplace_back("task-tracking-" + frame_name, robot_, frame_name);
       trackingTask.Kp(settings_.kp_feet_tracking * Eigen::VectorXd::Ones(6));
       trackingTask.Kd(2.0 * trackingTask.Kp().cwiseSqrt());
+      trackingTask.setMask(position_mask);
       // Do not add tasks ; will be done in setTarget depending on desired contacts.
       feet_tracked_.push_back(false);
       trackingSamples_.emplace_back(12, 6);

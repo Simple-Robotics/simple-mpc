@@ -342,6 +342,73 @@ BOOST_AUTO_TEST_CASE(CentroidalID_comTask)
   }
 }
 
+BOOST_AUTO_TEST_CASE(CentroidalID_footTrackingTask)
+{
+  CentroidalID::Settings settings;
+  settings.kp_feet_tracking = 5.;
+  settings.kp_posture = 0.1;
+  settings.kp_contact = 1.0;
+  settings.w_feet_tracking = 1e3;
+  settings.w_posture = 1.0;
+  settings.w_contact_force = 0.1;
+  settings.contact_motion_equality = true;
+
+  TestCentroidalID test(getSoloHandler(), settings);
+
+  // Rotate the robot slightly so that it doesn't fall forward due to gravity
+  test.q.segment<4>(3) << 0, -0.17, 0, 0.98;
+  test.q.segment<4>(3) /= test.q.segment<4>(3).norm();
+
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  RobotDataHandler & data_handler = test.data_handler;
+  const int feet_nb = test.model_handler.getFeetNb();
+
+  // Set target
+  data_handler.updateInternalData(test.q, test.dq, false);
+  const Eigen::Vector3d com_target{data_handler.getData().com[0]};
+  const Eigen::Vector3d com_vel{0., 0., 0.};
+  CentroidalID::FeetPoseVector feet_pose_vec(feet_nb);
+  CentroidalID::FeetVelocityVector feet_vel_vec(feet_nb);
+  std::vector<bool> feet_contact(feet_nb);
+  std::vector<CentroidalID::TargetContactForce> feet_force;
+  for (int i = 0; i < feet_nb; i++)
+  {
+    feet_pose_vec[i] = data_handler.getFootPose(i);
+    feet_vel_vec[i].setZero();
+    feet_contact[i] = true;
+    feet_force.push_back(CentroidalID::TargetContactForce::Zero(3));
+    feet_force[i][2] = 9.81 * model_handler.getMass() / (feet_nb - 1);
+  }
+
+  // Lift first foot (front right)
+  feet_contact[0] = false;
+  feet_pose_vec[0].translation()[0] -= 0.05; // Move foot 5 cm backward
+  feet_pose_vec[0].translation()[1] += 0.05; // Move foot 5cm to the left (inside)
+  feet_pose_vec[0].translation()[2] += 0.05; // Lift foot 5 cm higher
+
+  test.solver.setTarget(com_target, com_vel, feet_pose_vec, feet_vel_vec, feet_contact, feet_force);
+
+  const int N_STEP = 5000;
+  for (int i = 0; i < N_STEP; i++)
+  {
+    // Solve
+    test.step();
+
+    // Compute error
+    data_handler.updateInternalData(test.q, test.dq, false);
+    const Eigen::VectorXd delta_foot_pose =
+      pinocchio::log6(feet_pose_vec[0].actInv(data_handler.getFootPose(0))).toVector().head<3>();
+    const double error = delta_foot_pose.norm();
+
+    // Checks
+    if (error > 1e-3) // If haven't converged yet, should be strictly decreasing
+      BOOST_CHECK(test.is_error_decreasing("foot_pose", error));
+    if (i > 9 * N_STEP / 10) // Should have converged by now
+      BOOST_CHECK(error < 1e-3);
+  }
+}
+
 BOOST_AUTO_TEST_CASE(CentroidalID_allTasks)
 {
   CentroidalID::Settings settings;
