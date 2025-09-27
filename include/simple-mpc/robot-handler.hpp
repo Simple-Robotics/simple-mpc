@@ -77,12 +77,12 @@ namespace simple_mpc
       const ContactPointsMatrix & contactPoints);
 
     /**
-     * @brief Update the reference placement of the foot wrt to the frame it is attached to
+     * @brief Update the placement of the foot reference frame wrt to the joint/frame it is attached to
      *
      * @param foot_name Foot frame name
      * @param refMfoot Placement in the local frame
      */
-    void setFootReferencePlacement(const std::string & foot_name, const SE3 & refMfoot);
+    void setFootReferencePlacement(size_t foot_nb, const SE3 & refMfoot);
 
     /**
      * @brief Perform a finite difference on the sates.
@@ -107,7 +107,7 @@ namespace simple_mpc
 
     size_t getFeetNb() const
     {
-      return size(feet_ids_);
+      return size(feet_frame_ids_);
     }
 
     size_t getFootNb(const std::string & foot_frame_name) const
@@ -128,7 +128,7 @@ namespace simple_mpc
 
     const std::vector<FrameIndex> & getFeetFrameIds() const
     {
-      return feet_ids_;
+      return feet_frame_ids_;
     }
 
     const std::vector<std::string> & getFeetFrameNames() const
@@ -148,12 +148,12 @@ namespace simple_mpc
 
     FrameIndex getFootFrameId(size_t foot_nb) const
     {
-      return feet_ids_.at(foot_nb);
+      return feet_frame_ids_.at(foot_nb);
     }
 
     FrameIndex getFootRefFrameId(size_t foot_nb) const
     {
-      return feet_ref_frame_ids.at(foot_nb);
+      return feet_ref_frame_ids_.at(foot_nb);
     }
 
     double getMass() const
@@ -211,12 +211,12 @@ namespace simple_mpc
     /**
      * @brief Ids of the frames to be in contact with the environment
      */
-    std::vector<FrameIndex> feet_ids_;
+    std::vector<FrameIndex> feet_frame_ids_;
 
     /**
      * @brief Ids of the frames that are reference position for the feet
      */
-    std::vector<FrameIndex> feet_ref_frame_ids;
+    std::vector<FrameIndex> feet_ref_frame_ids_;
 
     /**
      * @brief Base frame id

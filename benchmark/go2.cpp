@@ -44,10 +44,10 @@ int main()
   model_handler.addPointFoot("FR_foot", base_joint_name);
   model_handler.addPointFoot("RL_foot", base_joint_name);
   model_handler.addPointFoot("RR_foot", base_joint_name);
-  model_handler.setFootReferencePlacement("FL_foot", ref_FL_foot);
-  model_handler.setFootReferencePlacement("FR_foot", ref_FR_foot);
-  model_handler.setFootReferencePlacement("RL_foot", ref_RL_foot);
-  model_handler.setFootReferencePlacement("RR_foot", ref_RR_foot);
+  model_handler.setFootReferencePlacement(model_handler.getFootNb("FL_foot"), ref_FL_foot);
+  model_handler.setFootReferencePlacement(model_handler.getFootNb("FR_foot"), ref_FR_foot);
+  model_handler.setFootReferencePlacement(model_handler.getFootNb("RL_foot"), ref_RL_foot);
+  model_handler.setFootReferencePlacement(model_handler.getFootNb("RR_foot"), ref_RR_foot);
 
   RobotDataHandler data_handler(model_handler);
 

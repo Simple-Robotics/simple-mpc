@@ -76,9 +76,11 @@ int main()
   model_handler.addQuadFoot("right_sole_link", base_joint);
 
   model_handler.setFootReferencePlacement(
-    "left_sole_link", pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., 0.1, 0.)));
+    model_handler.getFootNb("left_sole_link"),
+    pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., 0.1, 0.)));
   model_handler.setFootReferencePlacement(
-    "right_sole_link", pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., -0.1, 0.)));
+    model_handler.getFootNb("right_sole_link"),
+    pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., -0.1, 0.)));
 
   RobotDataHandler data_handler(model_handler);
 

@@ -26,8 +26,10 @@ namespace simple_mpc
 
   void RobotModelHandler::addFootFrames(const std::string & foot_name, const std::string & reference_frame_name)
   {
+    const size_t new_foot_index = getFeetNb();
+
     feet_frame_names_.push_back(foot_name);
-    feet_ids_.push_back(model_.getFrameId(foot_name));
+    feet_frame_ids_.push_back(model_.getFrameId(foot_name));
 
     // Create reference frame
     FrameIndex reference_frame_id = model_.getFrameId(reference_frame_name);
@@ -38,7 +40,7 @@ namespace simple_mpc
     auto frame_id = model_.addFrame(new_frame);
 
     // Save foot id
-    feet_ref_frame_ids.push_back(frame_id);
+    feet_ref_frame_ids_.push_back(frame_id);
 
     // Set placement to default value
     pinocchio::Data data(model_);
@@ -47,7 +49,7 @@ namespace simple_mpc
 
     const pinocchio::SE3 default_placement = data.oMf[reference_frame_id].actInv(data.oMf[frame_id]);
 
-    setFootReferencePlacement(foot_name, default_placement);
+    setFootReferencePlacement(new_foot_index, default_placement);
   }
 
   size_t RobotModelHandler::addPointFoot(const std::string & foot_name, const std::string & reference_frame_name)
@@ -68,9 +70,9 @@ namespace simple_mpc
     return foot_nb;
   }
 
-  void RobotModelHandler::setFootReferencePlacement(const std::string & foot_name, const SE3 & refMfoot)
+  void RobotModelHandler::setFootReferencePlacement(size_t foot_nb, const SE3 & refMfoot)
   {
-    model_.frames[model_.getFrameId(foot_name + "_ref", pinocchio::OP_FRAME)].placement = refMfoot;
+    model_.frames[feet_ref_frame_ids_.at(foot_nb)].placement = refMfoot;
   }
 
   Eigen::VectorXd RobotModelHandler::difference(const ConstVectorRef & x1, const ConstVectorRef & x2) const

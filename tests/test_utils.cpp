@@ -93,13 +93,13 @@ RobotModelHandler getSoloHandler()
   model_handler.addPointFoot("HR_FOOT", base_joint);
   model_handler.addPointFoot("HL_FOOT", base_joint);
   model_handler.setFootReferencePlacement(
-    "FR_FOOT", SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0.1, -0.1, 0.)));
+    model_handler.getFootNb("FR_FOOT"), SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0.1, -0.1, 0.)));
   model_handler.setFootReferencePlacement(
-    "FL_FOOT", SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0.1, 0.1, 0.)));
+    model_handler.getFootNb("FL_FOOT"), SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0.1, 0.1, 0.)));
   model_handler.setFootReferencePlacement(
-    "HR_FOOT", SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(-0.1, -0.1, 0.)));
+    model_handler.getFootNb("HR_FOOT"), SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(-0.1, -0.1, 0.)));
   model_handler.setFootReferencePlacement(
-    "HL_FOOT", SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(-0.1, 0.1, 0.)));
+    model_handler.getFootNb("HL_FOOT"), SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(-0.1, 0.1, 0.)));
 
   return model_handler;
 }

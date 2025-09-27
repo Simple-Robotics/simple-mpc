@@ -46,10 +46,10 @@ BOOST_AUTO_TEST_CASE(model_handler)
   RobotModelHandler model_handler(model, default_conf_name, base_frame);
 
   // Add feet
-  for (size_t i = 0; i < feet_names.size(); i++)
+  for (size_t foot_nb = 0; foot_nb < feet_names.size(); foot_nb++)
   {
-    model_handler.addPointFoot(feet_names.at(i), base_frame);
-    model_handler.setFootReferencePlacement(feet_names.at(i), feet_refs.at(i));
+    model_handler.addPointFoot(feet_names.at(foot_nb), base_frame);
+    model_handler.setFootReferencePlacement(foot_nb, feet_refs.at(foot_nb));
   }
 
   /*********/
