@@ -48,7 +48,7 @@ namespace simple_mpc
     pinocchio::forwardKinematics(model_, data, getReferenceState().head(model_.nq));
     pinocchio::updateFramePlacements(model_, data);
 
-    const pinocchio::SE3 default_placement = data.oMf[reference_parent_frame_id].actInv(data.oMf[frame_id]);
+    const pinocchio::SE3 default_placement = data.oMf[reference_parent_frame_id].actInv(data.oMf[foot_frame_id]);
 
     setFootReferencePlacement(new_foot_index, default_placement);
   }
