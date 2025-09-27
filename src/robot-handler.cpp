@@ -24,19 +24,20 @@ namespace simple_mpc
     mass_ = pinocchio::computeTotalMass(model_);
   }
 
-  void RobotModelHandler::addFootFrames(const std::string & foot_name, const std::string & reference_frame_name)
+  void RobotModelHandler::addFootFrames(const std::string & foot_name, const std::string & reference_parent_frame_name)
   {
     const size_t new_foot_index = getFeetNb();
+    const FrameIndex foot_frame_id = model_.getFrameId(foot_name);
 
     feet_frame_names_.push_back(foot_name);
-    feet_frame_ids_.push_back(model_.getFrameId(foot_name));
+    feet_frame_ids_.push_back(foot_frame_id);
 
     // Create reference frame
-    FrameIndex reference_frame_id = model_.getFrameId(reference_frame_name);
-    JointIndex parent_joint = model_.frames[reference_frame_id].parentJoint;
+    FrameIndex reference_parent_frame_id = model_.getFrameId(reference_parent_frame_name);
+    JointIndex parent_joint = model_.frames[reference_parent_frame_id].parentJoint;
 
     auto new_frame = pinocchio::Frame(
-      foot_name + "_ref", parent_joint, reference_frame_id, pinocchio::SE3::Identity(), pinocchio::OP_FRAME);
+      foot_name + "_ref", parent_joint, reference_parent_frame_id, pinocchio::SE3::Identity(), pinocchio::OP_FRAME);
     auto frame_id = model_.addFrame(new_frame);
 
     // Save foot id
@@ -47,32 +48,34 @@ namespace simple_mpc
     pinocchio::forwardKinematics(model_, data, getReferenceState().head(model_.nq));
     pinocchio::updateFramePlacements(model_, data);
 
-    const pinocchio::SE3 default_placement = data.oMf[reference_frame_id].actInv(data.oMf[frame_id]);
+    const pinocchio::SE3 default_placement = data.oMf[reference_parent_frame_id].actInv(data.oMf[frame_id]);
 
     setFootReferencePlacement(new_foot_index, default_placement);
   }
 
-  size_t RobotModelHandler::addPointFoot(const std::string & foot_name, const std::string & reference_frame_name)
+  size_t RobotModelHandler::addPointFoot(const std::string & foot_name, const std::string & reference_parent_frame_name)
   {
-    addFootFrames(foot_name, reference_frame_name);
+    addFootFrames(foot_name, reference_parent_frame_name);
     feet_types_.push_back(FootType::POINT);
     const size_t foot_nb = feet_types_.size() - 1;
     return foot_nb;
   }
 
   size_t RobotModelHandler::addQuadFoot(
-    const std::string & foot_name, const std::string & reference_frame_name, const ContactPointsMatrix & contactPoints)
+    const std::string & foot_name,
+    const std::string & reference_parent_frame_name,
+    const ContactPointsMatrix & contactPoints)
   {
-    addFootFrames(foot_name, reference_frame_name);
+    addFootFrames(foot_name, reference_parent_frame_name);
     feet_types_.push_back(FootType::QUAD);
     const size_t foot_nb = feet_types_.size() - 1;
     feet_contact_points_.insert({foot_nb, contactPoints});
     return foot_nb;
   }
 
-  void RobotModelHandler::setFootReferencePlacement(size_t foot_nb, const SE3 & refMfoot)
+  void RobotModelHandler::setFootReferencePlacement(size_t foot_nb, const SE3 & parentframeMfootref)
   {
-    model_.frames[feet_ref_frame_ids_.at(foot_nb)].placement = refMfoot;
+    model_.frames[feet_ref_frame_ids_.at(foot_nb)].placement = parentframeMfootref;
   }
 
   Eigen::VectorXd RobotModelHandler::difference(const ConstVectorRef & x1, const ConstVectorRef & x2) const

@@ -50,20 +50,20 @@ namespace simple_mpc
      * @brief Create a point foot, that can apply 3D force to the ground. (in comparison to 6D foot)
      *
      * @param foot_name Frame name that will be used a a foot
-     * @param reference_frame_name Frame to which the foot reference
+     * @param reference_parent_frame_name Frame to which the foot reference
      * frame will be attached.
      *
      * @return the foot number
      *
      * @note The foot placement will be set by default using the reference configuration of the RobotModelHandler
      */
-    size_t addPointFoot(const std::string & foot_name, const std::string & reference_frame_name);
+    size_t addPointFoot(const std::string & foot_name, const std::string & reference_parent_frame_name);
 
     /**
      * @brief Create a point foot, that can apply 6D wrench to the ground. (in comparison to point foot)
      *
      * @param foot_name Frame name that will be used a a foot
-     * @param reference_frame_name Frame to which the foot reference
+     * @param reference_parent_frame_name Frame to which the foot reference
      * frame will be attached.
      * @param contactPoints 3D positions (in the local frame) of the foot 4 extremum point
      *
@@ -73,16 +73,16 @@ namespace simple_mpc
      */
     size_t addQuadFoot(
       const std::string & foot_name,
-      const std::string & reference_frame_name,
+      const std::string & reference_parent_frame_name,
       const ContactPointsMatrix & contactPoints);
 
     /**
      * @brief Update the placement of the foot reference frame wrt to the joint/frame it is attached to
      *
      * @param foot_name Foot frame name
-     * @param refMfoot Placement in the local frame
+     * @param parentframeMfootref Placement of the foot reference frame wrt the parent frame it is attached to.
      */
-    void setFootReferencePlacement(size_t foot_nb, const SE3 & refMfoot);
+    void setFootReferencePlacement(size_t foot_nb, const SE3 & parentframeMfootref);
 
     /**
      * @brief Perform a finite difference on the sates.
@@ -172,9 +172,9 @@ namespace simple_mpc
      * pose using the default pose of the robot
      *
      * @param foot_name Name of the frame foot
-     * @param reference_frame_name Name of the frame where the reference frame of the foot will be attached
+     * @param reference_parent_frame_name Name of the frame where the reference frame of the foot will be attached
      */
-    void addFootFrames(const std::string & foot_name, const std::string & reference_frame_name);
+    void addFootFrames(const std::string & foot_name, const std::string & reference_parent_frame_name);
 
   private:
     /**
