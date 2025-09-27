@@ -18,10 +18,6 @@ model_handler.addPointFoot("FL_foot", base_joint_name)
 model_handler.addPointFoot("FR_foot", base_joint_name)
 model_handler.addPointFoot("RL_foot", base_joint_name)
 model_handler.addPointFoot("RR_foot", base_joint_name)
-model_handler.setFootReferencePlacement("FL_foot", pin.XYZQUATToSE3(np.array([ 0.17, 0.15, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("FR_foot", pin.XYZQUATToSE3(np.array([ 0.17,-0.15, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("RL_foot", pin.XYZQUATToSE3(np.array([-0.24, 0.15, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("RR_foot", pin.XYZQUATToSE3(np.array([-0.24,-0.15, 0.0, 0,0,0,1])))
 data_handler = RobotDataHandler(model_handler)
 
 nq = model_handler.getModel().nq
