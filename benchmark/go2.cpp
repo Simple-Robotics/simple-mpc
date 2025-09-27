@@ -109,7 +109,6 @@ int main()
   int T_fly = 30;
   int T_contact = 5;
   simple_mpc::MPCSettings mpc_settings;
-  mpc_settings.ddpIteration = 1;
   mpc_settings.support_force = -gravity[2] * model_handler.getMass();
   mpc_settings.TOL = 1e-4;
   mpc_settings.mu_init = 1e-8;

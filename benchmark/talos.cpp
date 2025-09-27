@@ -72,8 +72,9 @@ int main()
   RobotModelHandler model_handler(model, "half_sitting", base_joint);
 
   // Add feet
-  model_handler.addQuadFoot("left_sole_link", base_joint);
-  model_handler.addQuadFoot("right_sole_link", base_joint);
+  Eigen::Matrix<double, 4, 3> foot_quad{{0.1, 0.075, 0}, {-0.1, 0.075, 0}, {-0.1, -0.075, 0}, {0.1, -0.075, 0}};
+  model_handler.addQuadFoot("left_sole_link", base_joint, foot_quad);
+  model_handler.addQuadFoot("right_sole_link", base_joint, foot_quad);
 
   model_handler.setFootReferencePlacement(
     model_handler.getFootNb("left_sole_link"),
