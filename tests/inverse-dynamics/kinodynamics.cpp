@@ -82,11 +82,11 @@ protected:
     {
       BOOST_CHECK_LE(q[7 + i], model.upperPositionLimit[7 + i]);
       BOOST_CHECK_GE(q[7 + i], model.lowerPositionLimit[7 + i]);
-      BOOST_CHECK_LE(dq[6 + i], model.upperVelocityLimit[6 + i]);
+      BOOST_CHECK_LE(dq[6 + i], model.velocityLimit[6 + i]);
       // Do not use lower velocity bound as TSID cannot handle it
-      BOOST_CHECK_GE(dq[6 + i], -model.upperVelocityLimit[6 + i]);
-      BOOST_CHECK_LE(tau[i], model.upperEffortLimit[6 + i]);
-      BOOST_CHECK_GE(tau[i], model.lowerEffortLimit[6 + i]);
+      BOOST_CHECK_GE(dq[6 + i], -model.velocityLimit[6 + i]);
+      BOOST_CHECK_LE(tau[i], model.effortLimit[6 + i]);
+      BOOST_CHECK_GE(tau[i], -model.effortLimit[6 + i]);
     }
   }
 

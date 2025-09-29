@@ -77,7 +77,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   boundsTask_->setPositionBounds(
     model_handler_.getModel().lowerPositionLimit.tail(nq_actuated),
     model_handler_.getModel().upperPositionLimit.tail(nq_actuated));
-  boundsTask_->setVelocityBounds(model_handler_.getModel().upperVelocityLimit.tail(nu));
+  boundsTask_->setVelocityBounds(model_handler_.getModel().velocityLimit.tail(nu));
   boundsTask_->setImposeBounds(
     true, true, true, false); // For now do not impose acceleration bound as it is not provided in URDF
   formulation_.addMotionTask(*boundsTask_, 1.0, 0); // No weight needed as it is set as constraint
@@ -85,7 +85,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   // Add actuation limit task
   actuationTask_ = std::make_shared<tsid::tasks::TaskActuationBounds>("actuation-limits", robot_);
   actuationTask_->setBounds(
-    model_handler_.getModel().lowerEffortLimit.tail(nu), model_handler_.getModel().upperEffortLimit.tail(nu));
+    -model_handler_.getModel().effortLimit.tail(nu), model_handler_.getModel().effortLimit.tail(nu));
   formulation_.addActuationTask(*actuationTask_, 1.0, 0); // No weight needed as it is set as constraint
 
   // Create an HQP solver
