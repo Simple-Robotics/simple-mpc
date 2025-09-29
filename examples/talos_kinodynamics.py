@@ -34,7 +34,7 @@ nu = nv - 6
 """ Define kinodynamics problem """
 gravity = np.array([0, 0, -9.81])
 fref = np.zeros(6)
-fref[2] = -model_handler.getMass() / len(model_handler.getFeetFrameNames()) * gravity[2]
+fref[2] = -model_handler.getMass() / model_handler.getFeetNb() * gravity[2]
 u0 = np.concatenate((fref, fref, np.zeros(nv - 6)))
 
 w_basepos = [0, 0, 1000, 1000, 1000, 1000]

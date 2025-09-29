@@ -29,11 +29,11 @@ nv = model_handler.getModel().nv
 
 x0 = np.zeros(9)
 x0[:3] = data_handler.getData().com[0]
-nu = model_handler.getModel().nv - 6 + len(model_handler.getFeetFrameNames()) * 6
+nu = model_handler.getModel().nv - 6 + model_handler.getFeetNb() * 6
 
 gravity = np.array([0, 0, -9.81])
 fref = np.zeros(6)
-fref[2] = -model_handler.getMass() / len(model_handler.getFeetFrameNames()) * gravity[2]
+fref[2] = -model_handler.getMass() / model_handler.getFeetNb() * gravity[2]
 u0 = np.concatenate((fref, fref))
 
 w_control_linear = np.ones(3) * 0.001

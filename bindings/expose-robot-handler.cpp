@@ -30,6 +30,7 @@ namespace simple_mpc
         .def("getBaseFrameName", &RobotModelHandler::getBaseFrameName)
         .def("getBaseFrameId", &RobotModelHandler::getBaseFrameId)
         .def("getReferenceState", &RobotModelHandler::getReferenceState)
+        .def("getFeetNb", &RobotModelHandler::getFeetNb)
         .def("getFootNb", &RobotModelHandler::getFootNb)
         .def("getFeetFrameIds", &RobotModelHandler::getFeetFrameIds, bp::return_internal_reference<>())
         .def("getFootFrameName", &RobotModelHandler::getFootFrameName, bp::return_internal_reference<>())

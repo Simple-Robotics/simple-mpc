@@ -34,7 +34,7 @@ nq = model_handler.getModel().nq
 nv = model_handler.getModel().nv
 nu = nv - 6
 force_size = 3
-nk = len(model_handler.getFeetFrameNames())
+nk = model_handler.getFeetNb()
 nf = force_size
 
 gravity = np.array([0, 0, -9.81])
