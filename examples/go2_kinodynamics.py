@@ -249,7 +249,7 @@ for step in range(300):
         t = step * dt_mpc + sub_step * dt_simu
 
         delay = sub_step / float(N_simu) * dt_mpc
-        xs_interp = interpolator.interpolateLinear(delay, dt_mpc, xss)
+        xs_interp = interpolator.interpolateState(delay, dt_mpc, xss)
         acc_interp = interpolator.interpolateLinear(delay, dt_mpc, ddqs)
         force_interp = interpolator.interpolateLinear(delay, dt_mpc, forces).reshape((4,3))
 
