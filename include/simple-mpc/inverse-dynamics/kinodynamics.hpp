@@ -18,7 +18,6 @@ namespace simple_mpc
   {
   public:
     typedef Eigen::VectorXd TargetContactForce;
-    // typedef Eigen::Matrix<double, Eigen::Dynamic, 1, 0, 6, 1> TargetContactForce;
 
     struct Settings
     {
