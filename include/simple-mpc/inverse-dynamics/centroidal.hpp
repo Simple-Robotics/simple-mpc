@@ -49,8 +49,8 @@ namespace simple_mpc
   private:
     std::shared_ptr<tsid::tasks::TaskComEquality> comTask_;
     std::vector<tsid::tasks::TaskSE3Equality> trackingTasks_;
-    tsid::trajectories::TrajectorySample sampleCom_;                    // TODO: no need to store it
-    std::vector<tsid::trajectories::TrajectorySample> trackingSamples_; // TODO: no need to store it
+    tsid::trajectories::TrajectorySample sampleCom_;
+    std::vector<tsid::trajectories::TrajectorySample> trackingSamples_;
     std::vector<bool> feet_tracked_;
   };
 

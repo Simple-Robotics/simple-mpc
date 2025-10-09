@@ -83,8 +83,8 @@ namespace simple_mpc
     std::shared_ptr<tsid::tasks::TaskActuationBounds> actuationTask_;
     tsid::solvers::SolverHQPBase * solver_;
     tsid::solvers::HQPOutput last_solution_;
-    tsid::trajectories::TrajectorySample samplePosture_; // TODO: no need to store it
-    tsid::trajectories::TrajectorySample sampleBase_;    // TODO: no need to store it
+    tsid::trajectories::TrajectorySample samplePosture_;
+    tsid::trajectories::TrajectorySample sampleBase_;
   };
 
 } // namespace simple_mpc
