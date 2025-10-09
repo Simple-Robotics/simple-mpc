@@ -69,7 +69,7 @@ namespace simple_mpc
     const simple_mpc::RobotModelHandler & model_handler_;
 
   protected:
-    // Order still matter here
+    // Order still matters here
     simple_mpc::RobotDataHandler data_handler_;
     tsid::robots::RobotWrapper robot_;
     tsid::InverseDynamicsFormulationAccForce formulation_;
