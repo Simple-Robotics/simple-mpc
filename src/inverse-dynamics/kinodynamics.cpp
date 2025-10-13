@@ -70,7 +70,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   if (settings_.w_base > 0.)
     formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
 
-  sampleBase_ = tsid::trajectories::TrajectorySample(12, 6);
+  sampleBase_.resize(12, 6);
 
   // Add joint limit task
   boundsTask_ = std::make_shared<tsid::tasks::TaskJointPosVelAccBounds>("task-joint-limits", robot_, control_dt);

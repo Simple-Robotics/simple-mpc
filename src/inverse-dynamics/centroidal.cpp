@@ -26,7 +26,7 @@ namespace simple_mpc
     if (settings_.w_com > 0.)
       formulation_.addMotionTask(*comTask_, settings_.w_com, 1);
 
-    sampleCom_ = tsid::trajectories::TrajectorySample(3);
+    sampleCom_.resize(3);
 
     // Add foot tracking task
     const size_t n_contacts = model_handler_.getFeetNb();
