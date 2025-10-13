@@ -60,7 +60,7 @@ namespace simple_mpc
     size_t addPointFoot(const std::string & foot_name, const std::string & reference_parent_frame_name);
 
     /**
-     * @brief Create a point foot, that can apply 6D wrench to the ground. (in comparison to point foot)
+     * @brief Create a quad foot, that can apply 6D wrench to the ground. (in comparison to point foot)
      *
      * @param foot_name Frame name that will be used a a foot
      * @param reference_parent_frame_name Frame to which the foot reference
@@ -85,7 +85,7 @@ namespace simple_mpc
     void setFootReferencePlacement(size_t foot_nb, const SE3 & parentframeMfootref);
 
     /**
-     * @brief Perform a finite difference on the sates.
+     * @brief Perform a difference on the states.
      *
      * @param[in] x1 Initial state
      * @param[in] x2 Desired state
