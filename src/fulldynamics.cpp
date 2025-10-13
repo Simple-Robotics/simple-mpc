@@ -47,7 +47,7 @@ namespace simple_mpc
       throw std::runtime_error("Force must be of same size as Kd correction");
     }
 
-    for (int foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
       auto frame_ids = model_handler_.getFootFrameId(foot_nb);
       auto joint_ids = model_handler_.getModel().frames[frame_ids].parentJoint;
@@ -94,7 +94,7 @@ namespace simple_mpc
     pinocchio::context::RigidConstraintModelVector cms;
 
     size_t c_id = 0;
-    for (int foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
       const std::string & name = model_handler_.getFootFrameName(foot_nb);
       if (settings_.force_size == 6)
@@ -119,7 +119,7 @@ namespace simple_mpc
       c_id++;
     }
 
-    for (int foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
       const std::string & name = model_handler_.getFootFrameName(foot_nb);
       std::shared_ptr<ContactForceResidual> frame_force;
@@ -159,7 +159,7 @@ namespace simple_mpc
       stm.addConstraint(state_slice, BoxConstraint(settings_.qmin, settings_.qmax));
     }
 
-    for (int foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
       const std::string & name = model_handler_.getFootFrameName(foot_nb);
       if (settings_.force_size == 6 and contact_phase.at(name))

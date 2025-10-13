@@ -13,10 +13,10 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
 , solver_("solver-proxqp")
 {
   const pinocchio::Model & model = model_handler.getModel();
-  const size_t nq = model.nq;
-  const size_t nq_actuated = robot_.nq_actuated();
-  const size_t nv = model.nv;
-  const size_t nu = nv - 6;
+  const int nq = model.nq;
+  const int nq_actuated = robot_.nq_actuated();
+  const int nv = model.nv;
+  const int nu = nv - 6;
 
   // Prepare foot contact tasks
   const size_t n_contacts = model_handler_.getFeetNb();
@@ -24,7 +24,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   const double weight = model_handler_.getMass() * 9.81;
   const double max_f = settings_.contact_weight_ratio_max * weight;
   const double min_f = settings_.contact_weight_ratio_min * weight;
-  for (int i = 0; i < n_contacts; i++)
+  for (size_t i = 0; i < n_contacts; i++)
   {
     const std::string frame_name = model_handler.getFootFrameName(i);
     switch (model_handler.getFootType(i))
@@ -97,7 +97,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   const Eigen::VectorXd v_ref = model_handler.getReferenceState().tail(nv);
   std::vector<bool> c_ref(n_contacts);
   std::vector<TargetContactForce> f_ref;
-  for (int i = 0; i < n_contacts; i++)
+  for (size_t i = 0; i < n_contacts; i++)
   {
     // By default initialize all foot in contact with same amount of force
     c_ref[i] = true;

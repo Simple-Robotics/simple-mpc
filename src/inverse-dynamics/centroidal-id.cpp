@@ -30,7 +30,7 @@ namespace simple_mpc
 
     // Add foot tracking task
     const size_t n_contacts = model_handler_.getFeetNb();
-    for (int i = 0; i < n_contacts; i++)
+    for (size_t i = 0; i < n_contacts; i++)
     {
       const RobotModelHandler::FootType foot_type = model_handler.getFootType(i);
       const std::string frame_name = model_handler.getFootFrameName(i);
@@ -52,8 +52,8 @@ namespace simple_mpc
     }
 
     // By default initialize target in reference state
-    const size_t nq = model_handler_.getModel().nq;
-    const size_t nv = model_handler_.getModel().nv;
+    const int nq = model_handler_.getModel().nq;
+    const int nv = model_handler_.getModel().nv;
     const Eigen::VectorXd q_ref = model_handler.getReferenceState().head(nq);
     const Eigen::VectorXd v_ref = model_handler.getReferenceState().tail(nv);
     data_handler_.updateInternalData(q_ref, v_ref, false);
@@ -63,7 +63,7 @@ namespace simple_mpc
     FeetVelocityVector feet_vel(n_contacts);
     std::vector<bool> feet_contact(n_contacts);
     std::vector<TargetContactForce> feet_force;
-    for (int i = 0; i < n_contacts; i++)
+    for (size_t i = 0; i < n_contacts; i++)
     {
       // By default initialize all foot in contact with same amount of force
       feet_contact[i] = true;
@@ -93,8 +93,8 @@ namespace simple_mpc
     const std::vector<bool> & contact_state_target,
     const std::vector<TargetContactForce> & f_target)
   {
-    const size_t nq = model_handler_.getModel().nq;
-    const size_t nv = model_handler_.getModel().nv;
+    const int nq = model_handler_.getModel().nq;
+    const int nv = model_handler_.getModel().nv;
 
     // Set CoM target
     sampleCom_.setValue(com_position);

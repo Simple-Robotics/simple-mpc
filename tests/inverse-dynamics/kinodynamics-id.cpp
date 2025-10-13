@@ -117,8 +117,8 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
 
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
-  const size_t nq = model_handler.getModel().nq;
-  const size_t nv = model_handler.getModel().nv;
+  const int nq = model_handler.getModel().nq;
+  const int nv = model_handler.getModel().nv;
 
   // Target state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
@@ -148,8 +148,8 @@ void test_contact(TestKinoID & test)
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
   const RobotDataHandler & data_handler = test.data_handler;
-  const size_t nq = model_handler.getModel().nq;
-  const size_t nv = model_handler.getModel().nv;
+  const int nq = model_handler.getModel().nq;
+  const int nv = model_handler.getModel().nv;
 
   // No need to set target as KinodynamicsID sets it by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
@@ -162,7 +162,7 @@ void test_contact(TestKinoID & test)
     test.step();
 
     // Check that contact velocity is null
-    for (int foot_nb = 0; foot_nb < model_handler.getFeetNb(); foot_nb++)
+    for (size_t foot_nb = 0; foot_nb < model_handler.getFeetNb(); foot_nb++)
     {
       const pinocchio::Motion foot_vel = pinocchio::getFrameVelocity(
         model_handler.getModel(), data_handler.getData(), model_handler.getFootFrameId(foot_nb), pinocchio::WORLD);
@@ -249,7 +249,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_baseTask)
 
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
-  const size_t nq = model_handler.getModel().nq;
+  const int nq = model_handler.getModel().nq;
 
   // No need to set target as KinodynamicsID sets it by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
@@ -290,8 +290,8 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_allTasks)
 
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;
-  const size_t nq = model_handler.getModel().nq;
-  const size_t nv = model_handler.getModel().nv;
+  const int nq = model_handler.getModel().nq;
+  const int nv = model_handler.getModel().nv;
 
   // No need to set target as KinodynamicsID sets it by default to reference state
   const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);

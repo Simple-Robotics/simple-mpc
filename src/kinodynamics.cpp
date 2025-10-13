@@ -62,7 +62,7 @@ namespace simple_mpc
     rcost.addCost("centroidal_cost", QuadraticResidualCost(space, cent_mom, settings_.w_cent));
     rcost.addCost("centroidal_derivative_cost", QuadraticResidualCost(space, centder_mom, settings_.w_centder));
 
-    for (int foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
       const std::string & name = model_handler_.getFootFrameName(foot_nb);
       if (settings_.force_size == 6)
@@ -102,7 +102,7 @@ namespace simple_mpc
 
     Motion v_ref = Motion::Zero();
     int i = 0;
-    for (int foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
       const std::string & name = model_handler_.getFootFrameName(foot_nb);
       if (contact_phase.at(name))
