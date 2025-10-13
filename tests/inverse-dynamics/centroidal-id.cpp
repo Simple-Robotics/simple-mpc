@@ -4,7 +4,7 @@
 #include <pinocchio/algorithm/center-of-mass.hpp>
 #include <pinocchio/algorithm/frames.hpp>
 
-#include "simple-mpc/inverse-dynamics/centroidal.hpp"
+#include "simple-mpc/inverse-dynamics/centroidal-id.hpp"
 #include "simple-mpc/robot-handler.hpp"
 #include "test_utils.cpp"
 

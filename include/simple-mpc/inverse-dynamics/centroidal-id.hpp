@@ -1,6 +1,6 @@
 #pragma once
 
-#include <simple-mpc/inverse-dynamics/kinodynamics.hpp>
+#include <simple-mpc/inverse-dynamics/kinodynamics-id.hpp>
 #include <tsid/tasks/task-com-equality.hpp>
 
 namespace simple_mpc

@@ -1,7 +1,7 @@
 #include <eigenpy/eigenpy.hpp>
 
-#include "simple-mpc/inverse-dynamics/centroidal.hpp"
-#include "simple-mpc/inverse-dynamics/kinodynamics.hpp"
+#include "simple-mpc/inverse-dynamics/centroidal-id.hpp"
+#include "simple-mpc/inverse-dynamics/kinodynamics-id.hpp"
 
 namespace simple_mpc
 {

@@ -1,4 +1,4 @@
-#include <simple-mpc/inverse-dynamics/kinodynamics.hpp>
+#include <simple-mpc/inverse-dynamics/kinodynamics-id.hpp>
 #include <tsid/contacts/contact-6d.hpp>
 #include <tsid/contacts/contact-point.hpp>
 

@@ -54,8 +54,8 @@ set(
   TEST_NAMES
   robot_handler
   problem
-  inverse-dynamics/kinodynamics
-  inverse-dynamics/centroidal
+  inverse-dynamics/kinodynamics-id
+  inverse-dynamics/centroidal-id
   #mpc
   friction
   interpolator
