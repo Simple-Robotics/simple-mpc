@@ -10,6 +10,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
 , data_handler_(model_handler_)
 , robot_(model_handler_.getModel())
 , formulation_("tsid", robot_)
+, solver_("solver-proxqp")
 {
   const pinocchio::Model & model = model_handler.getModel();
   const size_t nq = model.nq;
@@ -61,7 +62,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   if (settings_.w_posture > 0.)
     formulation_.addMotionTask(*postureTask_, settings_.w_posture, 1);
 
-  samplePosture_ = tsid::trajectories::TrajectorySample(nq_actuated, nu);
+  samplePosture_.resize(nq_actuated, nu);
 
   // Add the base task
   baseTask_ = std::make_shared<tsid::tasks::TaskSE3Equality>("task-base", robot_, model_handler_.getBaseFrameName());
@@ -89,8 +90,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   formulation_.addActuationTask(*actuationTask_, 1.0, 0); // No weight needed as it is set as constraint
 
   // Create an HQP solver
-  solver_ = tsid::solvers::SolverHQPFactory::createNewSolver(tsid::solvers::SOLVER_HQP_PROXQP, "solver-proxqp");
-  solver_->resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
+  solver_.resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
 
   // By default initialize target in reference state
   const Eigen::VectorXd q_ref = model_handler.getReferenceState().head(nq);
@@ -114,7 +114,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
 
   // Dry run to initialize solver data & output
   const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(0, q_ref, v_ref);
-  last_solution_ = solver_->solve(solver_data);
+  last_solution_ = solver_.solve(solver_data);
 }
 
 void KinodynamicsID::setTarget(
@@ -182,7 +182,7 @@ void KinodynamicsID::setTarget(
       }
     }
   }
-  solver_->resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
+  solver_.resize(formulation_.nVar(), formulation_.nEq(), formulation_.nIn());
 }
 
 void KinodynamicsID::solve(
@@ -217,7 +217,7 @@ void KinodynamicsID::solve(
   }
 
   const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(t, q_meas, v_meas);
-  last_solution_ = solver_->solve(solver_data);
+  last_solution_ = solver_.solve(solver_data);
   assert(last_solution_.status == tsid::solvers::HQPStatus::HQP_STATUS_OPTIMAL);
   tau_res = formulation_.getActuatorForces(last_solution_);
 }

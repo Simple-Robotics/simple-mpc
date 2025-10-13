@@ -82,7 +82,7 @@ namespace simple_mpc
 
     // Dry run to initialize solver data & output
     const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(0, q_ref, v_ref);
-    last_solution_ = solver_->solve(solver_data);
+    last_solution_ = solver_.solve(solver_data);
   }
 
   void CentroidalID::setTarget(

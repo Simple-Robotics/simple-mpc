@@ -3,7 +3,7 @@
 #include <simple-mpc/robot-handler.hpp>
 #include <tsid/contacts/contact-point.hpp>
 #include <tsid/formulations/inverse-dynamics-formulation-acc-force.hpp>
-#include <tsid/solvers/solver-HQP-factory.hxx>
+#include <tsid/solvers/solver-proxqp.hpp>
 #include <tsid/solvers/utils.hpp>
 #include <tsid/tasks/task-actuation-bounds.hpp>
 #include <tsid/tasks/task-joint-posVelAcc-bounds.hpp>
@@ -80,7 +80,7 @@ namespace simple_mpc
     std::shared_ptr<tsid::tasks::TaskSE3Equality> baseTask_;
     std::shared_ptr<tsid::tasks::TaskJointPosVelAccBounds> boundsTask_;
     std::shared_ptr<tsid::tasks::TaskActuationBounds> actuationTask_;
-    tsid::solvers::SolverHQPBase * solver_;
+    tsid::solvers::SolverProxQP solver_;
     tsid::solvers::HQPOutput last_solution_;
     tsid::trajectories::TrajectorySample samplePosture_;
     tsid::trajectories::TrajectorySample sampleBase_;
