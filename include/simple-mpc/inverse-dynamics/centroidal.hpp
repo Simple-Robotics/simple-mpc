@@ -26,6 +26,7 @@ namespace simple_mpc
     };
 
     CentroidalID(const RobotModelHandler & model_handler, double control_dt, const Settings settings);
+    CentroidalID(const CentroidalID &) = delete;
 
     void setTarget(
       const Eigen::Ref<const Eigen::Vector<double, 3>> & com_position,
@@ -47,7 +48,7 @@ namespace simple_mpc
     const Settings settings_;
 
   private:
-    std::shared_ptr<tsid::tasks::TaskComEquality> comTask_;
+    std::unique_ptr<tsid::tasks::TaskComEquality> comTask_;
     std::vector<tsid::tasks::TaskSE3Equality> trackingTasks_;
     tsid::trajectories::TrajectorySample sampleCom_;
     std::vector<tsid::trajectories::TrajectorySample> trackingSamples_;

@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(CentroidalID_postureTask)
   }
 }
 
-void test_contact(TestCentroidalID test)
+void test_contact(TestCentroidalID & test)
 {
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;

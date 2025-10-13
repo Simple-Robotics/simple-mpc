@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(KinodynamicsID_postureTask)
   }
 }
 
-void test_contact(TestKinoID test)
+void test_contact(TestKinoID & test)
 {
   // Easy access
   const RobotModelHandler & model_handler = test.model_handler;

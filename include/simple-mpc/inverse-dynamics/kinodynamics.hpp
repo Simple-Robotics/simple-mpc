@@ -47,6 +47,7 @@ namespace simple_mpc
     };
 
     KinodynamicsID(const simple_mpc::RobotModelHandler & model_handler, double control_dt, const Settings settings);
+    KinodynamicsID(const KinodynamicsID &) = delete;
 
     void setTarget(
       const Eigen::Ref<const Eigen::VectorXd> & q_target,
@@ -75,11 +76,11 @@ namespace simple_mpc
     tsid::InverseDynamicsFormulationAccForce formulation_;
 
     std::vector<bool> active_tsid_contacts_;
-    std::vector<std::shared_ptr<tsid::contacts::ContactBase>> tsid_contacts;
-    std::shared_ptr<tsid::tasks::TaskJointPosture> postureTask_;
-    std::shared_ptr<tsid::tasks::TaskSE3Equality> baseTask_;
-    std::shared_ptr<tsid::tasks::TaskJointPosVelAccBounds> boundsTask_;
-    std::shared_ptr<tsid::tasks::TaskActuationBounds> actuationTask_;
+    std::vector<std::unique_ptr<tsid::contacts::ContactBase>> tsid_contacts;
+    std::unique_ptr<tsid::tasks::TaskJointPosture> postureTask_;
+    std::unique_ptr<tsid::tasks::TaskSE3Equality> baseTask_;
+    std::unique_ptr<tsid::tasks::TaskJointPosVelAccBounds> boundsTask_;
+    std::unique_ptr<tsid::tasks::TaskActuationBounds> actuationTask_;
     tsid::solvers::SolverProxQP solver_;
     tsid::solvers::HQPOutput last_solution_;
     tsid::trajectories::TrajectorySample samplePosture_;

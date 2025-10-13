@@ -72,7 +72,7 @@ namespace simple_mpc
         .def_readwrite("w_contact_force", &KinodynamicsID::Settings::w_contact_force)
         .def_readwrite("contact_motion_equality", &KinodynamicsID::Settings::contact_motion_equality);
 
-      bp::class_<KinodynamicsID>(
+      bp::class_<KinodynamicsID, boost::noncopyable>(
         "KinodynamicsID", bp::init<const simple_mpc::RobotModelHandler &, double, const KinodynamicsID::Settings>(
                             bp::args("self", "model_handler", "control_dt", "settings")))
         .def("setTarget", &KinodynamicsID::setTarget)
@@ -86,7 +86,7 @@ namespace simple_mpc
         .def_readwrite("w_com", &CentroidalID::Settings::w_com)
         .def_readwrite("w_feet_tracking", &CentroidalID::Settings::w_feet_tracking);
 
-      bp::class_<CentroidalID>(
+      bp::class_<CentroidalID, boost::noncopyable>(
         "CentroidalID", bp::init<const simple_mpc::RobotModelHandler &, double, const CentroidalID::Settings>(
                           bp::args("self", "model_handler", "control_dt", "settings")))
         .def("setTarget", &setTarget_CentroidalID)

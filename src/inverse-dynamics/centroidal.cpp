@@ -20,7 +20,7 @@ namespace simple_mpc
     }
 
     // Add the center of mass task
-    comTask_ = std::make_shared<tsid::tasks::TaskComEquality>("task-com", robot_);
+    comTask_ = std::make_unique<tsid::tasks::TaskComEquality>("task-com", robot_);
     comTask_->Kp(settings_.kp_com * Eigen::VectorXd::Ones(3));
     comTask_->Kd(2.0 * comTask_->Kp().cwiseSqrt());
     if (settings_.w_com > 0.)

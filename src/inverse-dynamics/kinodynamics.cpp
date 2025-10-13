@@ -30,21 +30,21 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
     switch (model_handler.getFootType(i))
     {
     case RobotModelHandler::FootType::POINT: {
-      auto contact_point = std::make_shared<tsid::contacts::ContactPoint>(
+      auto contact_point = new tsid::contacts::ContactPoint(
         frame_name, robot_, frame_name, normal, settings_.friction_coefficient, min_f, max_f);
       contact_point->Kp(settings_.kp_contact * Eigen::VectorXd::Ones(3));
       contact_point->Kd(2.0 * contact_point->Kp().cwiseSqrt());
       contact_point->useLocalFrame(false);
-      tsid_contacts.push_back(contact_point);
+      tsid_contacts.emplace_back(contact_point);
       break;
     }
     case RobotModelHandler::FootType::QUAD: {
-      auto contact_6D = std::make_shared<tsid::contacts::Contact6d>(
+      auto contact_6D = new tsid::contacts::Contact6d(
         frame_name, robot_, frame_name, model_handler_.getQuadFootContactPoints(i).transpose(), normal,
         settings_.friction_coefficient, min_f, max_f);
       contact_6D->Kp(settings_.kp_contact * Eigen::VectorXd::Ones(6));
       contact_6D->Kd(2.0 * contact_6D->Kp().cwiseSqrt());
-      tsid_contacts.push_back(contact_6D);
+      tsid_contacts.emplace_back(contact_6D);
       break;
     }
     default: {
@@ -56,7 +56,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   }
 
   // Add the posture task
-  postureTask_ = std::make_shared<tsid::tasks::TaskJointPosture>("task-posture", robot_);
+  postureTask_ = std::make_unique<tsid::tasks::TaskJointPosture>("task-posture", robot_);
   postureTask_->Kp(settings_.kp_posture * Eigen::VectorXd::Ones(nu));
   postureTask_->Kd(2.0 * postureTask_->Kp().cwiseSqrt());
   if (settings_.w_posture > 0.)
@@ -65,7 +65,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   samplePosture_.resize(nq_actuated, nu);
 
   // Add the base task
-  baseTask_ = std::make_shared<tsid::tasks::TaskSE3Equality>("task-base", robot_, model_handler_.getBaseFrameName());
+  baseTask_ = std::make_unique<tsid::tasks::TaskSE3Equality>("task-base", robot_, model_handler_.getBaseFrameName());
   baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
   baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
   if (settings_.w_base > 0.)
@@ -74,7 +74,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   sampleBase_.resize(12, 6);
 
   // Add joint limit task
-  boundsTask_ = std::make_shared<tsid::tasks::TaskJointPosVelAccBounds>("task-joint-limits", robot_, control_dt);
+  boundsTask_ = std::make_unique<tsid::tasks::TaskJointPosVelAccBounds>("task-joint-limits", robot_, control_dt);
   boundsTask_->setPositionBounds(
     model_handler_.getModel().lowerPositionLimit.tail(nq_actuated),
     model_handler_.getModel().upperPositionLimit.tail(nq_actuated));
@@ -84,7 +84,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   formulation_.addMotionTask(*boundsTask_, 1.0, 0); // No weight needed as it is set as constraint
 
   // Add actuation limit task
-  actuationTask_ = std::make_shared<tsid::tasks::TaskActuationBounds>("actuation-limits", robot_);
+  actuationTask_ = std::make_unique<tsid::tasks::TaskActuationBounds>("actuation-limits", robot_);
   actuationTask_->setBounds(
     -model_handler_.getModel().effortLimit.tail(nu), model_handler_.getModel().effortLimit.tail(nu));
   formulation_.addActuationTask(*actuationTask_, 1.0, 0); // No weight needed as it is set as constraint
@@ -157,14 +157,12 @@ void KinodynamicsID::setTarget(
       {
       case RobotModelHandler::FootType::POINT: {
         assert(f_target.at(foot_nb).size() == 3);
-        std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[foot_nb])
-          ->setForceReference(f_target.at(foot_nb));
+        static_cast<tsid::contacts::ContactPoint &>(*tsid_contacts[foot_nb]).setForceReference(f_target.at(foot_nb));
         break;
       }
       case RobotModelHandler::FootType::QUAD: {
         assert(f_target.at(foot_nb).size() == 6);
-        std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[foot_nb])
-          ->setForceReference(f_target.at(foot_nb));
+        static_cast<tsid::contacts::Contact6d &>(*tsid_contacts[foot_nb]).setForceReference(f_target.at(foot_nb));
         break;
       }
       default: {
@@ -200,13 +198,13 @@ void KinodynamicsID::solve(
       switch (model_handler_.getFootType(foot_nb))
       {
       case RobotModelHandler::FootType::POINT: {
-        std::static_pointer_cast<tsid::contacts::ContactPoint>(tsid_contacts[foot_nb])
-          ->setReference(data_handler_.getFootPose(foot_nb));
+        static_cast<tsid::contacts::ContactPoint &>(*tsid_contacts[foot_nb])
+          .setReference(data_handler_.getFootPose(foot_nb));
         break;
       }
       case RobotModelHandler::FootType::QUAD: {
-        std::static_pointer_cast<tsid::contacts::Contact6d>(tsid_contacts[foot_nb])
-          ->setReference(data_handler_.getFootPose(foot_nb));
+        static_cast<tsid::contacts::Contact6d &>(*tsid_contacts[foot_nb])
+          .setReference(data_handler_.getFootPose(foot_nb));
         break;
       }
       default: {
