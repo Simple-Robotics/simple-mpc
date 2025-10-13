@@ -1,4 +1,4 @@
-#include <simple-mpc/inverse-dynamics/centroidal.hpp>
+#include <simple-mpc/inverse-dynamics/centroidal-id.hpp>
 
 namespace simple_mpc
 {
