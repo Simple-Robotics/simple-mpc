@@ -108,7 +108,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
       f_ref.push_back(TargetContactForce::Zero(6));
     else
       assert(false);
-    f_ref[i][2] = weight / n_contacts; // Weight on Z axis
+    f_ref[i][2] = weight / static_cast<double>(n_contacts); // Weight on Z axis
   }
   setTarget(q_ref, v_ref, v_ref, c_ref, f_ref);
 

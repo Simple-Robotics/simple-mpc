@@ -74,7 +74,7 @@ namespace simple_mpc
         feet_force.push_back(TargetContactForce::Zero(6));
       else
         assert(false);
-      feet_force[i][2] = 9.81 * model_handler_.getMass() / n_contacts; // Weight on Z axis
+      feet_force[i][2] = 9.81 * model_handler_.getMass() / static_cast<double>(n_contacts); // Weight on Z axis
       feet_pose[i] = data_handler_.getFootRefPose(i);
       feet_vel[i].setZero();
     }
