@@ -25,7 +25,7 @@ namespace simple_mpc
     data_handler_ = std::make_shared<RobotDataHandler>(model_handler);
     data_handler_->updateInternalData(model_handler.getReferenceState(), true);
     std::map<std::string, Eigen::Vector3d> starting_poses;
-    for (int foot_nb = 0; foot_nb < model_handler.getFeetNb(); foot_nb++)
+    for (size_t foot_nb = 0; foot_nb < model_handler.getFeetNb(); foot_nb++)
     {
       const std::string & name = model_handler.getFootFrameName(foot_nb);
       starting_poses.insert({name, data_handler_->getFootPose(foot_nb).translation()});
