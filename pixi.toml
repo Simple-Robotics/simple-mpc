@@ -30,27 +30,20 @@ tsid = ">=1.9.0,<2"
 scripts = ["build_scripts/pixi/activation.sh"]
 
 [tasks]
-# We must avoid to set CMAKE_CXX_FLAGS because of WIN32
-# https://discourse.cmake.org/t/strictly-appending-to-cmake-lang-flags/6478
-configure = { cmd = [
-  "CXXFLAGS=$ALIGATOR_CXX_FLAGS",
-  "cmake",
-  "-G",
-  "Ninja",
-  "-B",
-  "build",
-  "-S",
-  ".",
-  "-DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX",
-  "-DCMAKE_BUILD_TYPE=$SIMPLE_MPC_BUILD_TYPE",
-  "-DBUILD_TESTING=ON",
-  "-DGENERATE_PYTHON_STUBS=ON",
-] }
-build = { cmd = "cmake --build build --target all", depends-on = ["configure"] }
 clean = { cmd = "rm -rf build" }
-test = { cmd = "ctest --test-dir build --output-on-failure", depends-on = [
-  "build",
-] }
+
+[tasks.configure]
+args = [{ "arg" = "buildtype", "default" = "Release" }]
+cmd = "CXXFLAGS=$ALIGATOR_CXX_FLAGS cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE={{buildtype}} -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTING=ON -DGENERATE_PYTHON_STUBS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+
+[tasks.build]
+args = [{ "arg" = "buildtype", "default" = "Release" }]
+cmd = "cmake --build build --target all"
+depends-on = [{"task" = "configure", "args" = [{ "buildtype" = "{{buildtype}}" }] }]
+
+[tasks.test]
+cmd = "ctest --test-dir build --output-on-failure"
+depends-on = [{"task" = "build", "args" = [{ "buildtype" = "Debug" }] }]
 
 [feature.lint]
 dependencies = { pre-commit = ">=3.6.2" }
