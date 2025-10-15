@@ -13,16 +13,16 @@
 #pragma once
 
 #include <pinocchio/algorithm/joint-configuration.hpp>
+#include <pinocchio/multibody/fwd.hpp>
 
 #include "simple-mpc/fwd.hpp"
-#include "simple-mpc/model-utils.hpp"
 
 namespace simple_mpc
 {
   class Interpolator
   {
   public:
-    explicit Interpolator(const Model & model)
+    explicit Interpolator(const pinocchio::Model & model)
     : model_(model) {};
 
     void interpolateConfiguration(
@@ -50,7 +50,7 @@ namespace simple_mpc
       std::vector<bool> & c_interp);
 
     // Pinocchio model
-    Model model_;
+    pinocchio::Model model_;
   };
 
 } // namespace simple_mpc

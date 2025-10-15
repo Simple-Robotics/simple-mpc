@@ -110,7 +110,6 @@ target_link_libraries(
   PUBLIC
     pinocchio::pinocchio
     aligator::aligator
-    example-robot-data::example-robot-data
     ndcurves::ndcurves
     tsid::tsid
 )
@@ -123,7 +122,6 @@ set_target_properties(
 
 # Unit tests
 if(BUILD_TESTING)
-  find_package(Boost REQUIRED COMPONENTS unit_test_framework)
   add_subdirectory(tests)
 endif()
 

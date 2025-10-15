@@ -3,6 +3,7 @@
 #
 
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+find_package(example-robot-data 4.0.9 REQUIRED)
 
 macro(ADD_TEST_CFLAGS test_name flag)
   set_property(
@@ -43,6 +44,7 @@ function(_add_test_prototype filename prefix dependencies)
   ADD_TEST_CFLAGS(${test_name} "-DBOOST_TEST_MODULE=${MODULE_NAME}")
 
   target_link_libraries(${test_name} PUBLIC ${dependencies})
+  target_link_libraries(${test_name} PUBLIC example-robot-data::example-robot-data)
   target_link_libraries(${test_name} PRIVATE Boost::unit_test_framework)
 endfunction()
 

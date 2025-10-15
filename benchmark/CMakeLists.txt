@@ -1,4 +1,5 @@
 find_package(benchmark REQUIRED)
+find_package(example-robot-data 4.0.9 REQUIRED)
 
 # Add a benchmark.
 function(create_bench exfile)
