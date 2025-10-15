@@ -2,25 +2,35 @@ import numpy as np
 import pinocchio as pin
 import example_robot_data as erd
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, CentroidalOCP, MPC, CentroidalID, CentroidalIDSettings, Interpolator
+from simple_mpc import (
+    RobotModelHandler,
+    RobotDataHandler,
+    CentroidalOCP,
+    MPC,
+    CentroidalID,
+    CentroidalIDSettings,
+    Interpolator,
+)
 from utils import loadTalos
 
 # RobotWrapper
 URDF_SUBPATH = "/talos_data/robots/talos_reduced.urdf"
-base_joint_name ="root_joint"
+base_joint_name = "root_joint"
 reference_configuration_name = "half_sitting"
 
 rmodelComplete, rmodel, qComplete, q0 = loadTalos()
 
 # Create Model and Data handler
-foot_points = np.array([
-    [0.1, 0.075, 0],
-    [-0.1, 0.075, 0],
-    [-0.1, -0.075, 0],
-    [0.1, -0.075, 0],
-])
+foot_points = np.array(
+    [
+        [0.1, 0.075, 0],
+        [-0.1, 0.075, 0],
+        [-0.1, -0.075, 0],
+        [0.1, -0.075, 0],
+    ]
+)
 model_handler = RobotModelHandler(rmodel, reference_configuration_name, base_joint_name)
-model_handler.addQuadFoot("left_sole_link",  base_joint_name, foot_points)
+model_handler.addQuadFoot("left_sole_link", base_joint_name, foot_points)
 model_handler.addQuadFoot("right_sole_link", base_joint_name, foot_points)
 data_handler = RobotDataHandler(model_handler)
 
@@ -109,19 +119,19 @@ contact_phases += [contact_phase_right] * T_ss
 mpc.generateCycleHorizon(contact_phases)
 
 """ Interpolation """
-N_simu = 10 # Number of substep the simulation does between two MPC computation
-dt_simu = dt_mpc/N_simu
+N_simu = 10  # Number of substep the simulation does between two MPC computation
+dt_simu = dt_mpc / N_simu
 interpolator = Interpolator(model_handler.getModel())
 
 """ Inverse Dynamics """
 centroidal_ID_settings = CentroidalIDSettings()
-centroidal_ID_settings.kp_base = 7.
-centroidal_ID_settings.kp_com = 7.
-centroidal_ID_settings.kp_posture = 10.
-centroidal_ID_settings.kp_contact = 10.
-centroidal_ID_settings.w_base = 50.
-centroidal_ID_settings.w_com = 100.
-centroidal_ID_settings.w_posture = 1.
+centroidal_ID_settings.kp_base = 7.0
+centroidal_ID_settings.kp_com = 7.0
+centroidal_ID_settings.kp_posture = 10.0
+centroidal_ID_settings.kp_contact = 10.0
+centroidal_ID_settings.w_base = 50.0
+centroidal_ID_settings.w_com = 100.0
+centroidal_ID_settings.w_posture = 1.0
 centroidal_ID_settings.w_contact_force = 1e-6
 centroidal_ID_settings.w_contact_motion = 1e-3
 
@@ -136,7 +146,9 @@ device = BulletRobot(
     model_handler.getModel(),
     model_handler.getReferenceState()[:3],
 )
-device.initializeJoints(model_handler.getModel().referenceConfigurations[reference_configuration_name])
+device.initializeJoints(
+    model_handler.getModel().referenceConfigurations[reference_configuration_name]
+)
 device.changeCamera(1.0, 50, -15, [1.7, -0.5, 1.2])
 
 q_meas, v_meas = device.measureState()
@@ -148,7 +160,9 @@ force_size = 6
 
 device.showTargetToTrack(
     mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("left_sole_link")),
-    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("right_sole_link")),
+    mpc.getDataHandler().getFootPose(
+        mpc.getModelHandler().getFootNb("right_sole_link")
+    ),
 )
 
 v = np.zeros(6)
@@ -179,8 +193,12 @@ for step in range(600):
     )
 
     contact_states = mpc.ocp_handler.getContactState(0)
-    feet_ref = [mpc.getReferencePose(0, name) for name in model_handler.getFeetFrameNames()]
-    feet_ref_next = [mpc.getReferencePose(1, name) for name in model_handler.getFeetFrameNames()]
+    feet_ref = [
+        mpc.getReferencePose(0, name) for name in model_handler.getFeetFrameNames()
+    ]
+    feet_ref_next = [
+        mpc.getReferencePose(1, name) for name in model_handler.getFeetFrameNames()
+    ]
 
     pos_com = mpc.xs[0][:3]
     pos_com_next = mpc.xs[1][:3]
@@ -195,17 +213,34 @@ for step in range(600):
         x_measured = np.concatenate([q_meas, v_meas])
 
         # Interpolate solution
-        pos_com_interp = interpolator.interpolateLinear(sub_step, N_simu, [pos_com, pos_com_next])
+        pos_com_interp = interpolator.interpolateLinear(
+            sub_step, N_simu, [pos_com, pos_com_next]
+        )
         v_com = (pos_com_next - pos_com) / dt_simu
 
-        feet_ref_interp =  [pin.SE3.Interpolate(foot_ref, foot_ref_next, (1.0 * sub_step)/N_simu) for foot_ref, foot_ref_next in zip(feet_ref, feet_ref_next)]
-        feet_velocity =  [ pin.log6(foot_ref.actInv(foot_ref_next)) / dt_simu for foot_ref, foot_ref_next in zip(feet_ref, feet_ref_next)]
+        feet_ref_interp = [
+            pin.SE3.Interpolate(foot_ref, foot_ref_next, (1.0 * sub_step) / N_simu)
+            for foot_ref, foot_ref_next in zip(feet_ref, feet_ref_next)
+        ]
+        feet_velocity = [
+            pin.log6(foot_ref.actInv(foot_ref_next)) / dt_simu
+            for foot_ref, foot_ref_next in zip(feet_ref, feet_ref_next)
+        ]
 
-        forces_interp = interpolator.interpolateLinear(sub_step, N_simu, [forces, forces_next])
-        forces_interp = forces_interp.reshape(2,6)
+        forces_interp = interpolator.interpolateLinear(
+            sub_step, N_simu, [forces, forces_next]
+        )
+        forces_interp = forces_interp.reshape(2, 6)
         forces_interp = [forces_interp[i, :] for i in range(2)]
 
-        centroidal_ID.setTarget(pos_com_interp, v_com, feet_ref_interp, feet_velocity, contact_states, forces_interp)
+        centroidal_ID.setTarget(
+            pos_com_interp,
+            v_com,
+            feet_ref_interp,
+            feet_velocity,
+            contact_states,
+            forces_interp,
+        )
         tau_cmd = centroidal_ID.solve(t, q_meas, v_meas)
 
         device.execute(tau_cmd)

@@ -1,16 +1,23 @@
 import numpy as np
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC, Interpolator, KinodynamicsID, KinodynamicsIDSettings
+from simple_mpc import (
+    RobotModelHandler,
+    RobotDataHandler,
+    KinodynamicsOCP,
+    MPC,
+    Interpolator,
+    KinodynamicsID,
+    KinodynamicsIDSettings,
+)
 import example_robot_data as erd
-import pinocchio as pin
 import time
 import copy
 
 # ####### CONFIGURATION  ############
 # Load robot
 URDF_SUBPATH = "/go2_description/urdf/go2.urdf"
-base_joint_name ="root_joint"
-robot_wrapper = erd.load('go2')
+base_joint_name = "root_joint"
+robot_wrapper = erd.load("go2")
 
 # Create Model and Data handler
 model_handler = RobotModelHandler(robot_wrapper.model, "standing", base_joint_name)
@@ -74,12 +81,14 @@ problem_conf = dict(
     Wfoot=0.01,
     kinematics_limits=True,
     force_cone=False,
-    land_cstr=False
+    land_cstr=False,
 )
 T = 50
 
 dynproblem = KinodynamicsOCP(problem_conf, model_handler)
-dynproblem.createProblem(model_handler.getReferenceState(), T, force_size, gravity[2], False)
+dynproblem.createProblem(
+    model_handler.getReferenceState(), T, force_size, gravity[2], False
+)
 
 T_ds = 10
 T_ss = 30
@@ -130,19 +139,19 @@ contact_phases += [contact_phase_lift_FR] * T_ss
 mpc.generateCycleHorizon(contact_phases)
 
 """ Interpolation """
-N_simu = 10 # Number of substep the simulation does between two MPC computation
-dt_simu = dt_mpc/N_simu
+N_simu = 10  # Number of substep the simulation does between two MPC computation
+dt_simu = dt_mpc / N_simu
 interpolator = Interpolator(model_handler.getModel())
 
 """ Inverse Dynamics """
 kino_ID_settings = KinodynamicsIDSettings()
-kino_ID_settings.kp_base = 7.
-kino_ID_settings.kp_posture = 10.
-kino_ID_settings.kp_contact = 10.
-kino_ID_settings.w_base = 100.
-kino_ID_settings.w_posture = 1.
-kino_ID_settings.w_contact_force = 1.
-kino_ID_settings.w_contact_motion = 1.
+kino_ID_settings.kp_base = 7.0
+kino_ID_settings.kp_posture = 10.0
+kino_ID_settings.kp_contact = 10.0
+kino_ID_settings.w_base = 100.0
+kino_ID_settings.w_posture = 1.0
+kino_ID_settings.w_contact_force = 1.0
+kino_ID_settings.w_contact_motion = 1.0
 
 kino_ID = KinodynamicsID(model_handler, dt_simu, kino_ID_settings)
 
@@ -157,11 +166,13 @@ device = BulletRobot(
     model_handler.getReferenceState()[:3],
 )
 
-device.initializeJoints(model_handler.getReferenceState()[:model_handler.getModel().nq])
+device.initializeJoints(
+    model_handler.getReferenceState()[: model_handler.getModel().nq]
+)
 device.changeCamera(1.0, 60, -15, [0.6, -0.2, 0.5])
 
 q_meas, v_meas = device.measureState()
-x_measured  = np.concatenate([q_meas, v_meas])
+x_measured = np.concatenate([q_meas, v_meas])
 
 device.showQuadrupedFeet(
     mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FL_foot")),
@@ -213,10 +224,26 @@ for step in range(300):
     force_RL.append(mpc.us[0][6:9])
     force_RR.append(mpc.us[0][9:12])
 
-    FL_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FL_foot")).translation)
-    FR_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FR_foot")).translation)
-    RL_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RL_foot")).translation)
-    RR_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RR_foot")).translation)
+    FL_measured.append(
+        mpc.getDataHandler()
+        .getFootPose(mpc.getModelHandler().getFootNb("FL_foot"))
+        .translation
+    )
+    FR_measured.append(
+        mpc.getDataHandler()
+        .getFootPose(mpc.getModelHandler().getFootNb("FR_foot"))
+        .translation
+    )
+    RL_measured.append(
+        mpc.getDataHandler()
+        .getFootPose(mpc.getModelHandler().getFootNb("RL_foot"))
+        .translation
+    )
+    RR_measured.append(
+        mpc.getDataHandler()
+        .getFootPose(mpc.getModelHandler().getFootNb("RR_foot"))
+        .translation
+    )
     FL_references.append(mpc.getReferencePose(0, "FL_foot").translation)
     FR_references.append(mpc.getReferencePose(0, "FR_foot").translation)
     RL_references.append(mpc.getReferencePose(0, "RL_foot").translation)
@@ -251,14 +278,16 @@ for step in range(300):
         delay = sub_step / float(N_simu) * dt_mpc
         xs_interp = interpolator.interpolateState(delay, dt_mpc, xss)
         acc_interp = interpolator.interpolateLinear(delay, dt_mpc, ddqs)
-        force_interp = interpolator.interpolateLinear(delay, dt_mpc, forces).reshape((4,3))
+        force_interp = interpolator.interpolateLinear(delay, dt_mpc, forces).reshape(
+            (4, 3)
+        )
 
-        q_interp = xs_interp[:mpc.getModelHandler().getModel().nq]
-        v_interp = xs_interp[mpc.getModelHandler().getModel().nq:]
+        q_interp = xs_interp[: mpc.getModelHandler().getModel().nq]
+        v_interp = xs_interp[mpc.getModelHandler().getModel().nq :]
         force_interp = [force_interp[i, :] for i in range(4)]
 
         q_meas, v_meas = device.measureState()
-        x_measured  = np.concatenate([q_meas, v_meas])
+        x_measured = np.concatenate([q_meas, v_meas])
 
         mpc.getDataHandler().updateInternalData(x_measured, True)
 

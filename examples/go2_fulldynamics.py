@@ -6,19 +6,17 @@ from simple_mpc import (
     FullDynamicsOCP,
     MPC,
     Interpolator,
-    FrictionCompensation
+    FrictionCompensation,
 )
 import example_robot_data as erd
-import pinocchio as pin
 import time
-from utils import extract_forces
 import copy
 
 # ####### CONFIGURATION  ############
 # Load robot
 URDF_SUBPATH = "/go2_description/urdf/go2.urdf"
-base_joint_name ="root_joint"
-robot_wrapper = erd.load('go2')
+base_joint_name = "root_joint"
+robot_wrapper = erd.load("go2")
 
 # Create Model and Data handler
 model_handler = RobotModelHandler(robot_wrapper.model, "standing", base_joint_name)
@@ -75,12 +73,14 @@ problem_conf = dict(
     torque_limits=True,
     kinematics_limits=True,
     force_cone=False,
-    land_cstr=False
+    land_cstr=False,
 )
 T = 50
 
 dynproblem = FullDynamicsOCP(problem_conf, model_handler)
-dynproblem.createProblem(model_handler.getReferenceState(), T, force_size, gravity[2], False)
+dynproblem.createProblem(
+    model_handler.getReferenceState(), T, force_size, gravity[2], False
+)
 
 T_ds = 10
 T_ss = 30
@@ -154,10 +154,10 @@ device.initializeJoints(model_handler.getReferenceState()[:nq])
 
 for i in range(40):
     device.setFrictionCoefficients(i, 10, 0)
-#device.changeCamera(1.0, 60, -15, [0.6, -0.2, 0.5])
+# device.changeCamera(1.0, 60, -15, [0.6, -0.2, 0.5])
 
 q_meas, v_meas = device.measureState()
-x_measured  = np.concatenate([q_meas, v_meas])
+x_measured = np.concatenate([q_meas, v_meas])
 mpc.getDataHandler().updateInternalData(x_measured, False)
 
 ref_foot_pose = [mpc.getDataHandler().getFootRefPose(i) for i in range(4)]
@@ -225,27 +225,45 @@ for t in range(500):
     forces_vec1 = mpc.getContactForces(1)
     contact_states = mpc.ocp_handler.getContactState(0)
 
-    force_FL.append(forces_vec0[0,:])
-    force_FR.append(forces_vec0[1,:])
-    force_RL.append(forces_vec0[2,:])
-    force_RR.append(forces_vec0[3,:])
+    force_FL.append(forces_vec0[0, :])
+    force_FR.append(forces_vec0[1, :])
+    force_RL.append(forces_vec0[2, :])
+    force_RR.append(forces_vec0[3, :])
 
-    forces = [forces_vec0.flatten(), forces_vec1.flatten()] # Flattening for interpolation
+    forces = [
+        forces_vec0.flatten(),
+        forces_vec1.flatten(),
+    ]  # Flattening for interpolation
     ddqs = [a0, a1]
     xss = [mpc.xs[0], mpc.xs[1]]
     uss = [mpc.us[0], mpc.us[1]]
 
-    FL_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FL_foot")).translation)
-    FR_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FR_foot")).translation)
-    RL_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RL_foot")).translation)
-    RR_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RR_foot")).translation)
+    FL_measured.append(
+        mpc.getDataHandler()
+        .getFootPose(mpc.getModelHandler().getFootNb("FL_foot"))
+        .translation
+    )
+    FR_measured.append(
+        mpc.getDataHandler()
+        .getFootPose(mpc.getModelHandler().getFootNb("FR_foot"))
+        .translation
+    )
+    RL_measured.append(
+        mpc.getDataHandler()
+        .getFootPose(mpc.getModelHandler().getFootNb("RL_foot"))
+        .translation
+    )
+    RR_measured.append(
+        mpc.getDataHandler()
+        .getFootPose(mpc.getModelHandler().getFootNb("RR_foot"))
+        .translation
+    )
     FL_references.append(mpc.getReferencePose(0, "FL_foot").translation)
     FR_references.append(mpc.getReferencePose(0, "FR_foot").translation)
     RL_references.append(mpc.getReferencePose(0, "RL_foot").translation)
     RR_references.append(mpc.getReferencePose(0, "RR_foot").translation)
     com_measured.append(mpc.getDataHandler().getData().com[0].copy())
     L_measured.append(mpc.getDataHandler().getData().hg.angular.copy())
-
 
     for j in range(N_simu):
         # time.sleep(0.01)
@@ -254,18 +272,20 @@ for t in range(500):
         x_interp = interpolator.interpolateState(delay, dt, xss)
         u_interp = interpolator.interpolateLinear(delay, dt, uss)
         acc_interp = interpolator.interpolateLinear(delay, dt, ddqs)
-        force_interp = interpolator.interpolateLinear(delay, dt, forces).reshape(4,3)
+        force_interp = interpolator.interpolateLinear(delay, dt, forces).reshape(4, 3)
 
         q_meas, v_meas = device.measureState()
         x_measured = np.concatenate([q_meas, v_meas])
 
         mpc.getDataHandler().updateInternalData(x_measured, True)
 
-        current_torque = u_interp - 1. * mpc.Ks[0] @ model_handler.difference(
+        current_torque = u_interp - 1.0 * mpc.Ks[0] @ model_handler.difference(
             x_measured, x_interp
         )
 
-        friction_torque = fcompensation.computeFriction(x_interp[nq + 6:], current_torque)
+        friction_torque = fcompensation.computeFriction(
+            x_interp[nq + 6 :], current_torque
+        )
         device.execute(current_torque)
 
         u_multibody.append(copy.deepcopy(friction_torque))

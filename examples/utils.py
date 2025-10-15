@@ -4,18 +4,25 @@ import example_robot_data
 import os
 
 CURRENT_DIRECTORY = os.getcwd()
-DEFAULT_SAVE_DIR = CURRENT_DIRECTORY + '/tmp'
+DEFAULT_SAVE_DIR = CURRENT_DIRECTORY + "/tmp"
+
 
 def loadTalos():
     robotComplete = example_robot_data.load("talos")
     qComplete = robotComplete.model.referenceConfigurations["half_sitting"]
 
-    locked_joints_names = ["arm_left_5_joint", "arm_left_6_joint", "arm_left_7_joint",
-                          "gripper_left_joint",
-                          "arm_right_5_joint", "arm_right_6_joint", "arm_right_7_joint",
-                          "gripper_right_joint",
-                          "head_1_joint",
-                          "head_2_joint"]
+    locked_joints_names = [
+        "arm_left_5_joint",
+        "arm_left_6_joint",
+        "arm_left_7_joint",
+        "gripper_left_joint",
+        "arm_right_5_joint",
+        "arm_right_6_joint",
+        "arm_right_7_joint",
+        "gripper_right_joint",
+        "head_1_joint",
+        "head_2_joint",
+    ]
     locked_joints = [robotComplete.model.getJointId(el) for el in locked_joints_names]
     robot = robotComplete.buildReducedRobot(locked_joints, qComplete)
     rmodel: pin.Model = robot.model
@@ -23,10 +30,11 @@ def loadTalos():
 
     return robotComplete.model, rmodel, qComplete, q0
 
+
 def save_trajectory(
     xs,
     us,
-    #uq,
+    # uq,
     com,
     FL_force,
     FR_force,
@@ -51,7 +59,7 @@ def save_trajectory(
     simu_data = {}
     simu_data["xs"] = xs
     simu_data["us"] = us
-    #simu_data["uq"] = uq
+    # simu_data["uq"] = uq
     simu_data["com"] = com
     simu_data["FL_force"] = FL_force
     simu_data["FR_force"] = FR_force
@@ -84,20 +92,51 @@ def load_data(npz_file):
     d = np.load(npz_file, allow_pickle=True, encoding="latin1")
     return d["data"][()]
 
+
 def extract_forces(problem, workspace, id):
     force_FL = np.zeros(3)
     force_FR = np.zeros(3)
     force_RL = np.zeros(3)
     force_RR = np.zeros(3)
-    in_contact = problem.stages[id].dynamics.differential_dynamics.constraint_models.__len__()
+    in_contact = problem.stages[
+        id
+    ].dynamics.differential_dynamics.constraint_models.__len__()
     for i in range(in_contact):
-        if problem.stages[id].dynamics.differential_dynamics.constraint_models[i].name == 'FL_foot':
-            force_FL = workspace.problem_data.stage_data[id].dynamics_data.continuous_data.constraint_datas[i].contact_force.linear
-        elif problem.stages[id].dynamics.differential_dynamics.constraint_models[i].name == 'FR_foot':
-            force_FR = workspace.problem_data.stage_data[id].dynamics_data.continuous_data.constraint_datas[i].contact_force.linear
-        elif problem.stages[id].dynamics.differential_dynamics.constraint_models[i].name == 'RL_foot':
-            force_RL = workspace.problem_data.stage_data[id].dynamics_data.continuous_data.constraint_datas[i].contact_force.linear
-        elif problem.stages[id].dynamics.differential_dynamics.constraint_models[i].name == 'RR_foot':
-            force_RR = workspace.problem_data.stage_data[id].dynamics_data.continuous_data.constraint_datas[i].contact_force.linear
+        if (
+            problem.stages[id].dynamics.differential_dynamics.constraint_models[i].name
+            == "FL_foot"
+        ):
+            force_FL = (
+                workspace.problem_data.stage_data[id]
+                .dynamics_data.continuous_data.constraint_datas[i]
+                .contact_force.linear
+            )
+        elif (
+            problem.stages[id].dynamics.differential_dynamics.constraint_models[i].name
+            == "FR_foot"
+        ):
+            force_FR = (
+                workspace.problem_data.stage_data[id]
+                .dynamics_data.continuous_data.constraint_datas[i]
+                .contact_force.linear
+            )
+        elif (
+            problem.stages[id].dynamics.differential_dynamics.constraint_models[i].name
+            == "RL_foot"
+        ):
+            force_RL = (
+                workspace.problem_data.stage_data[id]
+                .dynamics_data.continuous_data.constraint_datas[i]
+                .contact_force.linear
+            )
+        elif (
+            problem.stages[id].dynamics.differential_dynamics.constraint_models[i].name
+            == "RR_foot"
+        ):
+            force_RR = (
+                workspace.problem_data.stage_data[id]
+                .dynamics_data.continuous_data.constraint_datas[i]
+                .contact_force.linear
+            )
 
     return force_FL, force_FR, force_RL, force_RR

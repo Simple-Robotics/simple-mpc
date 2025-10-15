@@ -1,27 +1,36 @@
 import numpy as np
 import example_robot_data as erd
-import pinocchio as pin
 from bullet_robot import BulletRobot
 import time
 from utils import loadTalos
-from simple_mpc import RobotModelHandler, RobotDataHandler, Interpolator, KinodynamicsOCP, MPC, KinodynamicsID, KinodynamicsIDSettings
+from simple_mpc import (
+    RobotModelHandler,
+    RobotDataHandler,
+    Interpolator,
+    KinodynamicsOCP,
+    MPC,
+    KinodynamicsID,
+    KinodynamicsIDSettings,
+)
 
 # RobotWrapper
 URDF_SUBPATH = "/talos_data/robots/talos_reduced.urdf"
-base_joint_name ="root_joint"
+base_joint_name = "root_joint"
 reference_configuration_name = "half_sitting"
 
 rmodelComplete, rmodel, qComplete, q0 = loadTalos()
 
 # Create Model and Data handler
-foot_points = np.array([
-    [0.1, 0.075, 0],
-    [-0.1, 0.075, 0],
-    [-0.1, -0.075, 0],
-    [0.1, -0.075, 0],
-])
+foot_points = np.array(
+    [
+        [0.1, 0.075, 0],
+        [-0.1, 0.075, 0],
+        [-0.1, -0.075, 0],
+        [0.1, -0.075, 0],
+    ]
+)
 model_handler = RobotModelHandler(rmodel, reference_configuration_name, base_joint_name)
-model_handler.addQuadFoot("left_sole_link",  base_joint_name, foot_points)
+model_handler.addQuadFoot("left_sole_link", base_joint_name, foot_points)
 model_handler.addQuadFoot("right_sole_link", base_joint_name, foot_points)
 data_handler = RobotDataHandler(model_handler)
 
@@ -97,7 +106,7 @@ problem_conf = dict(
     Wfoot=0.075,
     kinematics_limits=True,
     force_cone=False,
-    land_cstr=False
+    land_cstr=False,
 )
 
 T = 100
@@ -143,19 +152,19 @@ contact_phases += [contact_phase_right] * T_ss
 mpc.generateCycleHorizon(contact_phases)
 
 """ Interpolation """
-N_simu = 10 # Number of substep the simulation does between two MPC computation
-dt_simu = dt_mpc/N_simu
+N_simu = 10  # Number of substep the simulation does between two MPC computation
+dt_simu = dt_mpc / N_simu
 interpolator = Interpolator(model_handler.getModel())
 
 """ Inverse Dynamics """
 kino_ID_settings = KinodynamicsIDSettings()
-kino_ID_settings.kp_base = 7.
-kino_ID_settings.kp_posture = 10.
-kino_ID_settings.kp_contact = 10.
-kino_ID_settings.w_base = 100.
-kino_ID_settings.w_posture = 1.
+kino_ID_settings.kp_base = 7.0
+kino_ID_settings.kp_posture = 10.0
+kino_ID_settings.kp_contact = 10.0
+kino_ID_settings.w_base = 100.0
+kino_ID_settings.w_posture = 1.0
 kino_ID_settings.w_contact_force = 0.001
-kino_ID_settings.w_contact_motion = 1.
+kino_ID_settings.w_contact_motion = 1.0
 
 kino_ID = KinodynamicsID(model_handler, dt_simu, kino_ID_settings)
 
@@ -168,11 +177,13 @@ device = BulletRobot(
     model_handler.getModel(),
     model_handler.getReferenceState()[:3],
 )
-device.initializeJoints(model_handler.getModel().referenceConfigurations[reference_configuration_name])
+device.initializeJoints(
+    model_handler.getModel().referenceConfigurations[reference_configuration_name]
+)
 device.changeCamera(1.0, 50, -15, [1.7, -0.5, 1.2])
 
 q_meas, v_meas = device.measureState()
-x_measured  = np.concatenate([q_meas, v_meas])
+x_measured = np.concatenate([q_meas, v_meas])
 
 Tmpc = len(contact_phases)
 nk = 2
@@ -180,7 +191,9 @@ force_size = 6
 
 device.showTargetToTrack(
     mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("left_sole_link")),
-    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("right_sole_link")),
+    mpc.getDataHandler().getFootPose(
+        mpc.getModelHandler().getFootNb("right_sole_link")
+    ),
 )
 
 v = np.zeros(6)
@@ -231,14 +244,16 @@ for step in range(600):
         delay = sub_step / float(N_simu) * dt_mpc
         xs_interp = interpolator.interpolateState(delay, dt_mpc, xss)
         acc_interp = interpolator.interpolateLinear(delay, dt_mpc, ddqs)
-        force_interp = interpolator.interpolateLinear(delay, dt_mpc, forces).reshape((2,6))
+        force_interp = interpolator.interpolateLinear(delay, dt_mpc, forces).reshape(
+            (2, 6)
+        )
         force_interp = [force_interp[0, :], force_interp[1, :]]
 
-        q_interp = xs_interp[:mpc.getModelHandler().getModel().nq]
-        v_interp = xs_interp[mpc.getModelHandler().getModel().nq:]
+        q_interp = xs_interp[: mpc.getModelHandler().getModel().nq]
+        v_interp = xs_interp[mpc.getModelHandler().getModel().nq :]
 
         q_meas, v_meas = device.measureState()
-        x_measured  = np.concatenate([q_meas, v_meas])
+        x_measured = np.concatenate([q_meas, v_meas])
 
         mpc.getDataHandler().updateInternalData(x_measured, True)
 
