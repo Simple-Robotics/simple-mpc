@@ -33,17 +33,21 @@ scripts = ["build_scripts/pixi/activation.sh"]
 clean = { cmd = "rm -rf build" }
 
 [tasks.configure]
-args = [{ "arg" = "buildtype", "default" = "Release" }]
-cmd = "CXXFLAGS=$ALIGATOR_CXX_FLAGS cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE={{buildtype}} -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTING=ON -DGENERATE_PYTHON_STUBS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+args = [{ "arg" = "buildtype", "default" = "Release" }, { "arg" = "buildtests", "default" = "OFF" }, { "arg" = "buildbenchmarks", "default" = "OFF" }]
+cmd = "CXXFLAGS=$ALIGATOR_CXX_FLAGS cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE={{buildtype}} -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTING={{buildtests}} -DBUILD_BENCHMARK={{buildbenchmarks}} -DGENERATE_PYTHON_STUBS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
 
 [tasks.build]
-args = [{ "arg" = "buildtype", "default" = "Release" }]
+args = [{ "arg" = "buildtype", "default" = "Release" }, { "arg" = "buildtests", "default" = "OFF" }, { "arg" = "buildbenchmarks", "default" = "OFF" }]
 cmd = "cmake --build build --target all"
-depends-on = [{"task" = "configure", "args" = [{ "buildtype" = "{{buildtype}}" }] }]
+depends-on = [{"task" = "configure", "args" = [{"buildtype" = "{{buildtype}}" }, {"buildtests" = "{{buildtests}}" }, {"buildbenchmarks" = "{{buildbenchmarks}}" }] }]
 
 [tasks.test]
 cmd = "ctest --test-dir build --output-on-failure"
-depends-on = [{"task" = "build", "args" = [{ "buildtype" = "Debug" }] }]
+depends-on = [{"task" = "build", "args" = [{ "buildtype" = "Debug" }, {"buildtests" = "ON"}] }]
+
+[tasks.benchmark]
+cmd = "ctest --test-dir build --output-on-failure"
+depends-on = [{"task" = "build", "args" = [{ "buildtype" = "Release" }, {"buildbenchmarks" = "ON"}] }]
 
 [feature.lint]
 dependencies = { pre-commit = ">=3.6.2" }
