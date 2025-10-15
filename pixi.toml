@@ -46,7 +46,7 @@ cmd = "ctest --test-dir build --output-on-failure"
 depends-on = [{"task" = "build", "args" = [{ "buildtype" = "Debug" }, {"buildtests" = "ON"}] }]
 
 [tasks.benchmark]
-cmd = "ctest --test-dir build --output-on-failure"
+cmd = "cmake --build build --target run-benchmarks"
 depends-on = [{"task" = "build", "args" = [{ "buildtype" = "Release" }, {"buildbenchmarks" = "ON"}] }]
 
 [feature.lint]
