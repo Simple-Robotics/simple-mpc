@@ -16,16 +16,6 @@ endmacro()
 file(GLOB TEST_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 message(STATUS "Test headers: ${TEST_HEADERS}")
 
-function(set_standard_output_directory target)
-  set_target_properties(
-    ${target}
-    PROPERTIES
-      RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin
-      LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
-      ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib
-  )
-endfunction()
-
 function(_add_test_prototype filename prefix dependencies)
   string(REGEX REPLACE "/" "_" name ${filename})
   set(test_name "test-cpp-${prefix}${name}")
@@ -34,7 +24,6 @@ function(_add_test_prototype filename prefix dependencies)
 
   ADD_UNIT_TEST(${test_name} ${test_file} ${TEST_HEADERS})
   set_target_properties(${test_name} PROPERTIES LINKER_LANGUAGE CXX)
-  # set_standard_output_directory(${test_name})
   target_include_directories(${test_name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
   set(MODULE_NAME "${name}Test")
