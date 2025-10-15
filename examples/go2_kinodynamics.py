@@ -1,11 +1,10 @@
 import numpy as np
 from bullet_robot import BulletRobot
-from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC, IDSolver, Interpolator
+from simple_mpc import RobotModelHandler, RobotDataHandler, KinodynamicsOCP, MPC, Interpolator, KinodynamicsID, KinodynamicsIDSettings
 import example_robot_data as erd
 import pinocchio as pin
 import time
 import copy
-from utils import save_trajectory
 
 # ####### CONFIGURATION  ############
 # Load robot
@@ -15,14 +14,10 @@ robot_wrapper = erd.load('go2')
 
 # Create Model and Data handler
 model_handler = RobotModelHandler(robot_wrapper.model, "standing", base_joint_name)
-model_handler.addFoot("FL_foot", base_joint_name)
-model_handler.addFoot("FR_foot", base_joint_name)
-model_handler.addFoot("RL_foot", base_joint_name)
-model_handler.addFoot("RR_foot", base_joint_name)
-model_handler.setFootReferencePlacement("FL_foot", pin.XYZQUATToSE3(np.array([ 0.17, 0.15, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("FR_foot", pin.XYZQUATToSE3(np.array([ 0.17,-0.15, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("RL_foot", pin.XYZQUATToSE3(np.array([-0.24, 0.15, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("RR_foot", pin.XYZQUATToSE3(np.array([-0.24,-0.15, 0.0, 0,0,0,1])))
+model_handler.addPointFoot("FL_foot", base_joint_name)
+model_handler.addPointFoot("FR_foot", base_joint_name)
+model_handler.addPointFoot("RL_foot", base_joint_name)
+model_handler.addPointFoot("RR_foot", base_joint_name)
 data_handler = RobotDataHandler(model_handler)
 
 nq = model_handler.getModel().nq
@@ -30,12 +25,12 @@ nv = model_handler.getModel().nv
 nu = nv - 6
 nf = 12
 force_size = 3
-nk = len(model_handler.getFeetNames())
+nk = model_handler.getFeetNb()
 gravity = np.array([0, 0, -9.81])
 fref = np.zeros(force_size)
 fref[2] = -model_handler.getMass() / nk * gravity[2]
 u0 = np.concatenate((fref, fref, fref, fref, np.zeros(model_handler.getModel().nv - 6)))
-dt = 0.01
+dt_mpc = 0.01
 
 w_basepos = [0, 0, 100, 10, 10, 0]
 w_legpos = [1, 1, 1]
@@ -64,7 +59,7 @@ w_centder_ang = np.ones(3) * 0.1
 w_centder = np.diag(np.concatenate((w_centder_lin, w_centder_ang)))
 
 problem_conf = dict(
-    timestep=dt,
+    timestep=dt_mpc,
     w_x=w_x,
     w_u=w_u,
     w_cent=w_cent,
@@ -98,7 +93,7 @@ mpc_conf = dict(
     swing_apex=0.15,
     T_fly=T_ss,
     T_contact=T_ds,
-    timestep=dt,
+    timestep=dt_mpc,
 )
 
 mpc = MPC(mpc_conf, dynproblem)
@@ -134,33 +129,30 @@ contact_phases += [contact_phase_quadru] * T_ds
 contact_phases += [contact_phase_lift_FR] * T_ss
 mpc.generateCycleHorizon(contact_phases)
 
-""" Initialize whole-body inverse dynamics QP"""
-contact_ids = model_handler.getFeetIds()
-id_conf = dict(
-    contact_ids=contact_ids,
-    x0=model_handler.getReferenceState(),
-    mu=0.8,
-    Lfoot=0.01,
-    Wfoot=0.01,
-    force_size=3,
-    kd=0,
-    w_force=100,
-    w_acc=1,
-    w_tau=0,
-    verbose=False,
-)
-
-qp = IDSolver(id_conf, model_handler.getModel())
-
 """ Interpolation """
+N_simu = 10 # Number of substep the simulation does between two MPC computation
+dt_simu = dt_mpc/N_simu
 interpolator = Interpolator(model_handler.getModel())
+
+""" Inverse Dynamics """
+kino_ID_settings = KinodynamicsIDSettings()
+kino_ID_settings.kp_base = 7.
+kino_ID_settings.kp_posture = 10.
+kino_ID_settings.kp_contact = 10.
+kino_ID_settings.w_base = 100.
+kino_ID_settings.w_posture = 1.
+kino_ID_settings.w_contact_force = 1.
+kino_ID_settings.w_contact_motion = 1.
+
+kino_ID = KinodynamicsID(model_handler, dt_simu, kino_ID_settings)
+
 
 """ Initialize simulation"""
 device = BulletRobot(
     model_handler.getModel().names,
     erd.getModelPath(URDF_SUBPATH),
     URDF_SUBPATH,
-    1e-3,
+    dt_simu,
     model_handler.getModel(),
     model_handler.getReferenceState()[:3],
 )
@@ -172,10 +164,10 @@ q_meas, v_meas = device.measureState()
 x_measured  = np.concatenate([q_meas, v_meas])
 
 device.showQuadrupedFeet(
-    mpc.getDataHandler().getFootPose("FL_foot"),
-    mpc.getDataHandler().getFootPose("FR_foot"),
-    mpc.getDataHandler().getFootPose("RL_foot"),
-    mpc.getDataHandler().getFootPose("RR_foot"),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FL_foot")),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FR_foot")),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RL_foot")),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RR_foot")),
 )
 
 force_FL = []
@@ -197,12 +189,11 @@ com_measured = []
 solve_time = []
 L_measured = []
 
-N_simu = 10
 v = np.zeros(6)
 v[0] = 0.2
 mpc.velocity_base = v
-for t in range(300):
-    # print("Time " + str(t))
+for step in range(300):
+    # print("Time " + str(step))
     land_LF = mpc.getFootLandCycle("FL_foot")
     land_RF = mpc.getFootLandCycle("RL_foot")
     takeoff_LF = mpc.getFootTakeoffCycle("FL_foot")
@@ -222,10 +213,10 @@ for t in range(300):
     force_RL.append(mpc.us[0][6:9])
     force_RR.append(mpc.us[0][9:12])
 
-    FL_measured.append(mpc.getDataHandler().getFootPose("FL_foot").translation)
-    FR_measured.append(mpc.getDataHandler().getFootPose("FR_foot").translation)
-    RL_measured.append(mpc.getDataHandler().getFootPose("RL_foot").translation)
-    RR_measured.append(mpc.getDataHandler().getFootPose("RR_foot").translation)
+    FL_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FL_foot")).translation)
+    FR_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FR_foot")).translation)
+    RL_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RL_foot")).translation)
+    RR_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RR_foot")).translation)
     FL_references.append(mpc.getReferencePose(0, "FL_foot").translation)
     FR_references.append(mpc.getReferencePose(0, "FR_foot").translation)
     RL_references.append(mpc.getReferencePose(0, "RL_foot").translation)
@@ -254,30 +245,28 @@ for t in range(300):
         mpc.getReferencePose(0, "RR_foot").translation,
     )
 
-    for j in range(N_simu):
-        # time.sleep(0.01)
-        delay = j / float(N_simu) * dt
+    for sub_step in range(N_simu):
+        t = step * dt_mpc + sub_step * dt_simu
 
-        acc_interp = interpolator.interpolateLinear(delay, dt, ddqs)
-        force_interp = interpolator.interpolateLinear(delay, dt, forces)
+        delay = sub_step / float(N_simu) * dt_mpc
+        xs_interp = interpolator.interpolateState(delay, dt_mpc, xss)
+        acc_interp = interpolator.interpolateLinear(delay, dt_mpc, ddqs)
+        force_interp = interpolator.interpolateLinear(delay, dt_mpc, forces).reshape((4,3))
+
+        q_interp = xs_interp[:mpc.getModelHandler().getModel().nq]
+        v_interp = xs_interp[mpc.getModelHandler().getModel().nq:]
+        force_interp = [force_interp[i, :] for i in range(4)]
 
         q_meas, v_meas = device.measureState()
         x_measured  = np.concatenate([q_meas, v_meas])
 
         mpc.getDataHandler().updateInternalData(x_measured, True)
 
-        qp.solveQP(
-            mpc.getDataHandler().getData(),
-            contact_states,
-            x_measured[nq:],
-            acc_interp,
-            np.zeros(12),
-            force_interp,
-            mpc.getDataHandler().getData().M,
-        )
+        kino_ID.setTarget(q_interp, v_interp, acc_interp, contact_states, force_interp)
+        tau_cmd = kino_ID.solve(t, q_meas, v_meas)
 
-        device.execute(qp.solved_torque)
-        u_multibody.append(copy.deepcopy(qp.solved_torque))
+        device.execute(tau_cmd)
+        u_multibody.append(copy.deepcopy(tau_cmd))
         x_multibody.append(x_measured)
 
 
@@ -297,6 +286,6 @@ RR_references = np.array(RR_references)
 com_measured = np.array(com_measured)
 L_measured = np.array(L_measured)
 
-save_trajectory(x_multibody, u_multibody, com_measured, force_FL, force_FR, force_RL, force_RR, solve_time,
+""" save_trajectory(x_multibody, u_multibody, com_measured, force_FL, force_FR, force_RL, force_RR, solve_time,
                 FL_measured, FR_measured, RL_measured, RR_measured,
-                FL_references, FR_references, RL_references, RR_references, L_measured, "kinodynamics")
+                FL_references, FR_references, RL_references, RR_references, L_measured, "kinodynamics") """

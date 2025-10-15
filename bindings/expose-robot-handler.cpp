@@ -23,17 +23,20 @@ namespace simple_mpc
       bp::class_<RobotModelHandler>(
         "RobotModelHandler", bp::init<const pinocchio::Model &, const std::string &, const std::string &>(
                                bp::args("self", "model", "reference_configuration_name", "base_frame_name")))
-        .def("addFoot", &RobotModelHandler::addFoot)
+        .def("addPointFoot", &RobotModelHandler::addPointFoot)
+        .def("addQuadFoot", &RobotModelHandler::addQuadFoot)
         .def("setFootReferencePlacement", &RobotModelHandler::setFootReferencePlacement)
         .def("difference", &RobotModelHandler::difference)
+        .def("getBaseFrameName", &RobotModelHandler::getBaseFrameName)
         .def("getBaseFrameId", &RobotModelHandler::getBaseFrameId)
         .def("getReferenceState", &RobotModelHandler::getReferenceState)
+        .def("getFeetNb", &RobotModelHandler::getFeetNb)
         .def("getFootNb", &RobotModelHandler::getFootNb)
-        .def("getFeetIds", &RobotModelHandler::getFeetIds, bp::return_internal_reference<>())
-        .def("getFootName", &RobotModelHandler::getFootName, bp::return_internal_reference<>())
-        .def("getFeetNames", &RobotModelHandler::getFeetNames, bp::return_internal_reference<>())
-        .def("getFootId", &RobotModelHandler::getFootId)
-        .def("getRefFootId", &RobotModelHandler::getRefFootId)
+        .def("getFeetFrameIds", &RobotModelHandler::getFeetFrameIds, bp::return_internal_reference<>())
+        .def("getFootFrameName", &RobotModelHandler::getFootFrameName, bp::return_internal_reference<>())
+        .def("getFeetFrameNames", &RobotModelHandler::getFeetFrameNames, bp::return_internal_reference<>())
+        .def("getFootFrameId", &RobotModelHandler::getFootFrameId)
+        .def("getFootRefFrameId", &RobotModelHandler::getFootRefFrameId)
         .def("getMass", &RobotModelHandler::getMass)
         .def("getModel", &RobotModelHandler::getModel, bp::return_internal_reference<>());
 
@@ -41,9 +44,11 @@ namespace simple_mpc
 
       bp::class_<RobotDataHandler>(
         "RobotDataHandler", bp::init<const RobotModelHandler &>(bp::args("self", "model_handler")))
-        .def("updateInternalData", &RobotDataHandler::updateInternalData)
+        .def(
+          "updateInternalData", static_cast<void (RobotDataHandler::*)(const ConstVectorRef &, const bool)>(
+                                  &RobotDataHandler::updateInternalData))
         .def("updateJacobiansMassMatrix", &RobotDataHandler::updateJacobiansMassMatrix)
-        .def("getRefFootPose", &RobotDataHandler::getRefFootPose, bp::return_internal_reference<>())
+        .def("getFootRefPose", &RobotDataHandler::getFootRefPose, bp::return_internal_reference<>())
         .def("getFootPose", &RobotDataHandler::getFootPose, bp::return_internal_reference<>())
         .def("getBaseFramePose", &RobotDataHandler::getBaseFramePose, bp::return_internal_reference<>())
         .def("getModelHandler", &RobotDataHandler::getModelHandler, bp::return_internal_reference<>())

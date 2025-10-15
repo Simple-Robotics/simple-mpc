@@ -9,11 +9,11 @@ set(
   expose-robot-handler.cpp
   expose-problem.cpp
   expose-mpc.cpp
-  expose-qp.cpp
   expose-interpolate.cpp
   expose-centroidal.cpp
   expose-fulldynamics.cpp
   expose-kinodynamics.cpp
+  expose-inverse-dynamics.cpp
   expose-friction-compensation.cpp
 )
 

@@ -33,4 +33,9 @@
 
 .cache/
 build*/
-/__pycache__/
+__pycache__/
+
+
+.vscode
+CMakeFiles/
+CMakeCache.txt

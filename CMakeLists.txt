@@ -95,8 +95,8 @@ endif()
 include(dependencies.cmake)
 
 # Main Library
-file(GLOB mpc_SOURCE CONFIGURE_DEPENDS src/*.cpp)
-file(GLOB mpc_HEADER CONFIGURE_DEPENDS include/${PROJECT_NAME}/*.hpp)
+file(GLOB_RECURSE mpc_SOURCE CONFIGURE_DEPENDS src/*.cpp)
+file(GLOB_RECURSE mpc_HEADER CONFIGURE_DEPENDS include/${PROJECT_NAME}/*.hpp)
 
 add_library(${PROJECT_NAME} SHARED ${mpc_HEADER} ${mpc_SOURCE})
 target_include_directories(
@@ -112,6 +112,7 @@ target_link_libraries(
     aligator::aligator
     example-robot-data::example-robot-data
     ndcurves::ndcurves
+    tsid::tsid
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${mpc_HEADER}")

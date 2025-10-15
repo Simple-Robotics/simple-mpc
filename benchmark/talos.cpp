@@ -72,13 +72,16 @@ int main()
   RobotModelHandler model_handler(model, "half_sitting", base_joint);
 
   // Add feet
-  model_handler.addFoot("left_sole_link", base_joint);
-  model_handler.addFoot("right_sole_link", base_joint);
+  Eigen::Matrix<double, 4, 3> foot_quad{{0.1, 0.075, 0}, {-0.1, 0.075, 0}, {-0.1, -0.075, 0}, {0.1, -0.075, 0}};
+  model_handler.addQuadFoot("left_sole_link", base_joint, foot_quad);
+  model_handler.addQuadFoot("right_sole_link", base_joint, foot_quad);
 
   model_handler.setFootReferencePlacement(
-    "left_sole_link", pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., 0.1, 0.)));
+    model_handler.getFootNb("left_sole_link"),
+    pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., 0.1, 0.)));
   model_handler.setFootReferencePlacement(
-    "right_sole_link", pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., -0.1, 0.)));
+    model_handler.getFootNb("right_sole_link"),
+    pinocchio::SE3(Eigen::Quaternion(0., 0., 0., 1.), Eigen::Vector3d(0., -0.1, 0.)));
 
   RobotDataHandler data_handler(model_handler);
 
@@ -152,36 +155,36 @@ int main()
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 50; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), false});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), false});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 50; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), false});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), false});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
 

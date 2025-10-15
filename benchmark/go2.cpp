@@ -40,14 +40,14 @@ int main()
   ref_FR_foot.translation() = Eigen::Vector3d(0.17, -0.15, 0.0);
   ref_RL_foot.translation() = Eigen::Vector3d(-0.24, 0.15, 0.0);
   ref_RR_foot.translation() = Eigen::Vector3d(-0.24, -0.15, 0.0);
-  model_handler.addFoot("FL_foot", base_joint_name);
-  model_handler.addFoot("FR_foot", base_joint_name);
-  model_handler.addFoot("RL_foot", base_joint_name);
-  model_handler.addFoot("RR_foot", base_joint_name);
-  model_handler.setFootReferencePlacement("FL_foot", ref_FL_foot);
-  model_handler.setFootReferencePlacement("FR_foot", ref_FR_foot);
-  model_handler.setFootReferencePlacement("RL_foot", ref_RL_foot);
-  model_handler.setFootReferencePlacement("RR_foot", ref_RR_foot);
+  model_handler.addPointFoot("FL_foot", base_joint_name);
+  model_handler.addPointFoot("FR_foot", base_joint_name);
+  model_handler.addPointFoot("RL_foot", base_joint_name);
+  model_handler.addPointFoot("RR_foot", base_joint_name);
+  model_handler.setFootReferencePlacement(model_handler.getFootNb("FL_foot"), ref_FL_foot);
+  model_handler.setFootReferencePlacement(model_handler.getFootNb("FR_foot"), ref_FR_foot);
+  model_handler.setFootReferencePlacement(model_handler.getFootNb("RL_foot"), ref_RL_foot);
+  model_handler.setFootReferencePlacement(model_handler.getFootNb("RR_foot"), ref_RR_foot);
 
   RobotDataHandler data_handler(model_handler);
 
@@ -109,7 +109,6 @@ int main()
   int T_fly = 30;
   int T_contact = 5;
   simple_mpc::MPCSettings mpc_settings;
-  mpc_settings.ddpIteration = 1;
   mpc_settings.support_force = -gravity[2] * model_handler.getMass();
   mpc_settings.TOL = 1e-4;
   mpc_settings.mu_init = 1e-8;

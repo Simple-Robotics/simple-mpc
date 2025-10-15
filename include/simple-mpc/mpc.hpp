@@ -175,7 +175,7 @@ namespace simple_mpc
      * @brief Return contact forces for a full dynamics MPC problem
      * @warning Only work with fulldynamics OCP handler
      */
-    const Eigen::VectorXd getContactForces(const std::size_t t);
+    const Eigen::Matrix<double, Eigen::Dynamic, 3> getContactForces(const std::size_t t);
 
     void switchToWalk(const Vector6d & velocity_base);
 

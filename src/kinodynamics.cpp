@@ -31,7 +31,7 @@ namespace simple_mpc
   , settings_(settings)
   {
 
-    nu_ = nv_ - 6 + settings_.force_size * (int)model_handler_.getFeetNames().size();
+    nu_ = nv_ - 6 + settings_.force_size * (int)model_handler_.getFeetNb();
     x0_ = model_handler_.getReferenceState();
     control_ref_.resize(nu_);
     control_ref_.setZero();
@@ -55,19 +55,20 @@ namespace simple_mpc
 
     auto cent_mom = CentroidalMomentumResidual(space.ndx(), nu_, model_handler_.getModel(), Eigen::VectorXd::Zero(6));
     auto centder_mom = CentroidalMomentumDerivativeResidual(
-      space.ndx(), model_handler_.getModel(), settings_.gravity, contact_states, model_handler_.getFeetIds(),
+      space.ndx(), model_handler_.getModel(), settings_.gravity, contact_states, model_handler_.getFeetFrameIds(),
       settings_.force_size);
     rcost.addCost("state_cost", QuadraticStateCost(space, nu_, model_handler_.getReferenceState(), settings_.w_x));
     rcost.addCost("control_cost", QuadraticControlCost(space, control_ref_, settings_.w_u));
     rcost.addCost("centroidal_cost", QuadraticResidualCost(space, cent_mom, settings_.w_cent));
     rcost.addCost("centroidal_derivative_cost", QuadraticResidualCost(space, centder_mom, settings_.w_centder));
 
-    for (auto const & name : model_handler_.getFeetNames())
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
+      const std::string & name = model_handler_.getFootFrameName(foot_nb);
       if (settings_.force_size == 6)
       {
         FramePlacementResidual frame_residual = FramePlacementResidual(
-          space.ndx(), nu_, model_handler_.getModel(), contact_pose.at(name), model_handler_.getFootId(name));
+          space.ndx(), nu_, model_handler_.getModel(), contact_pose.at(name), model_handler_.getFootFrameId(foot_nb));
 
         rcost.addCost(name + "_pose_cost", QuadraticResidualCost(space, frame_residual, settings_.w_frame));
       }
@@ -75,14 +76,14 @@ namespace simple_mpc
       {
         FrameTranslationResidual frame_residual = FrameTranslationResidual(
           space.ndx(), nu_, model_handler_.getModel(), contact_pose.at(name).translation(),
-          model_handler_.getFootId(name));
+          model_handler_.getFootFrameId(foot_nb));
 
         rcost.addCost(name + "_pose_cost", QuadraticResidualCost(space, frame_residual, settings_.w_frame));
       }
     }
 
     KinodynamicsFwdDynamics ode = KinodynamicsFwdDynamics(
-      space, model_handler_.getModel(), settings_.gravity, contact_states, model_handler_.getFeetIds(),
+      space, model_handler_.getModel(), settings_.gravity, contact_states, model_handler_.getFeetFrameIds(),
       settings_.force_size);
     IntegratorSemiImplEuler dyn_model = IntegratorSemiImplEuler(ode, settings_.timestep);
     StageModel stm = StageModel(rcost, dyn_model);
@@ -101,12 +102,13 @@ namespace simple_mpc
 
     Motion v_ref = Motion::Zero();
     int i = 0;
-    for (auto const & name : model_handler_.getFeetNames())
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
+      const std::string & name = model_handler_.getFootFrameName(foot_nb);
       if (contact_phase.at(name))
       {
         FrameVelocityResidual frame_vel = FrameVelocityResidual(
-          space.ndx(), nu_, model_handler_.getModel(), v_ref, model_handler_.getFootId(name), pinocchio::LOCAL);
+          space.ndx(), nu_, model_handler_.getModel(), v_ref, model_handler_.getFootFrameId(foot_nb), pinocchio::LOCAL);
         if (settings_.force_size == 6)
         {
           if (settings_.force_cone)
@@ -135,7 +137,7 @@ namespace simple_mpc
 
             FrameTranslationResidual frame_residual = FrameTranslationResidual(
               space.ndx(), nu_, model_handler_.getModel(), contact_pose.at(name).translation(),
-              model_handler_.getFootId(name));
+              model_handler_.getFootFrameId(foot_nb));
 
             FunctionSliceXpr frame_slice = FunctionSliceXpr(frame_residual, frame_id);
 
@@ -168,13 +170,13 @@ namespace simple_mpc
 
   void KinodynamicsOCP::setReferencePoses(const std::size_t t, const std::map<std::string, pinocchio::SE3> & pose_refs)
   {
-    if (pose_refs.size() != model_handler_.getFeetNames().size())
+    if (pose_refs.size() != model_handler_.getFeetNb())
     {
       throw std::runtime_error("pose_refs size does not match number of end effectors");
     }
 
     CostStack * cs = getCostStack(t);
-    for (auto ee_name : model_handler_.getFeetNames())
+    for (auto ee_name : model_handler_.getFeetFrameNames())
     {
       QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>(ee_name + "_pose_cost");
       if (settings_.force_size == 6)
@@ -226,14 +228,14 @@ namespace simple_mpc
 
   void KinodynamicsOCP::computeControlFromForces(const std::map<std::string, Eigen::VectorXd> & force_refs)
   {
-    for (std::size_t i = 0; i < model_handler_.getFeetNames().size(); i++)
+    for (std::size_t i = 0; i < model_handler_.getFeetNb(); i++)
     {
-      if (settings_.force_size != force_refs.at(model_handler_.getFootName(i)).size())
+      if (settings_.force_size != force_refs.at(model_handler_.getFootFrameName(i)).size())
       {
         throw std::runtime_error("force size in settings does not match reference force size");
       }
       control_ref_.segment((long)i * settings_.force_size, settings_.force_size) =
-        force_refs.at(model_handler_.getFootName(i));
+        force_refs.at(model_handler_.getFootFrameName(i));
     }
   }
 
@@ -247,7 +249,7 @@ namespace simple_mpc
   void
   KinodynamicsOCP::setReferenceForce(const std::size_t i, const std::string & ee_name, const ConstVectorRef & force_ref)
   {
-    std::vector<std::string> hname = model_handler_.getFeetNames();
+    std::vector<std::string> hname = model_handler_.getFeetFrameNames();
     std::vector<std::string>::iterator it = std::find(hname.begin(), hname.end(), ee_name);
     long id = it - hname.begin();
     control_ref_.segment(id * settings_.force_size, settings_.force_size) = force_ref;
@@ -256,7 +258,7 @@ namespace simple_mpc
 
   const Eigen::VectorXd KinodynamicsOCP::getReferenceForce(const std::size_t i, const std::string & ee_name)
   {
-    std::vector<std::string> hname = model_handler_.getFeetNames();
+    std::vector<std::string> hname = model_handler_.getFeetFrameNames();
     std::vector<std::string>::iterator it = std::find(hname.begin(), hname.end(), ee_name);
     long id = it - hname.begin();
 
@@ -287,7 +289,7 @@ namespace simple_mpc
   {
     CostStack * cs = getCostStack(t);
     QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
-    return qc->getTarget().head(7);
+    return qc->getTarget().head<7>();
   };
 
   void KinodynamicsOCP::setPoseBase(const std::size_t t, const ConstVectorRef & pose_base)
@@ -299,7 +301,7 @@ namespace simple_mpc
     CostStack * cs = getCostStack(t);
     QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
     x0_ = getReferenceState(t);
-    x0_.head(7) = pose_base;
+    x0_.head<7>() = pose_base;
     qc->setTarget(x0_);
   }
 

@@ -1,0 +1,446 @@
+
+#include <boost/test/tools/old/interface.hpp>
+#include <boost/test/unit_test.hpp>
+#include <pinocchio/algorithm/center-of-mass.hpp>
+#include <pinocchio/algorithm/frames.hpp>
+
+#include "simple-mpc/inverse-dynamics/centroidal-id.hpp"
+#include "simple-mpc/robot-handler.hpp"
+#include "test_utils.cpp"
+
+BOOST_AUTO_TEST_SUITE(inverse_dynamics_centroidal)
+
+using namespace simple_mpc;
+
+Eigen::VectorXd solo_q_start(const RobotModelHandler & model_handler)
+{
+  Eigen::VectorXd q_start = model_handler.getReferenceState().head(model_handler.getModel().nq);
+  for (int l = 0; l < 4; l++)
+  {
+    q_start[7 + 3 * l + 1] = 0.9;
+    q_start[7 + 3 * l + 2] = -1.8;
+  }
+  q_start[0] = 0.01;
+  q_start[1] = 0.01;
+  q_start[2] = 0.21;
+
+  return q_start;
+}
+
+// Helper class to create the problem and run it
+class TestCentroidalID
+{
+public:
+  TestCentroidalID(RobotModelHandler model_handler_, CentroidalID::Settings settings_)
+  : model_handler(model_handler_)
+  , data_handler(model_handler)
+  , settings(settings_)
+  , solver(model_handler, dt, settings)
+  , q(model_handler.getReferenceState().head(model_handler.getModel().nq))
+  , dq(Eigen::VectorXd::Zero(model_handler.getModel().nv))
+  , ddq(Eigen::VectorXd::Zero(model_handler.getModel().nv))
+  , tau(Eigen::VectorXd::Zero(model_handler.getModel().nv - 6))
+  {
+  }
+
+  void step()
+  {
+    // Solve
+    solver.solve(t, q, dq, tau);
+    solver.getAccelerations(ddq);
+
+    // Integrate
+    step_i += 1;
+    t += dt;
+    q = pinocchio::integrate(model_handler.getModel(), q, (dq + ddq / 2. * dt) * dt);
+    dq += ddq * dt;
+
+    // Update data handler
+    data_handler.updateInternalData(q, dq, true);
+
+    // Check common to all tests
+    check_joint_limits();
+  }
+
+  bool is_error_decreasing(std::string name, double error)
+  {
+    if (errors.count(name) == 0)
+    {
+      errors.insert({name, error});
+      return true; // no further check
+    }
+    const bool res{error <= errors.at(name)};
+    errors.at(name) = error; // Update value
+    return res;
+  }
+
+protected:
+  void check_joint_limits()
+  {
+    const pinocchio::Model & model = model_handler.getModel();
+    for (int i = 0; i < model.nv - 6; i++)
+    {
+      BOOST_CHECK_LE(q[7 + i], model.upperPositionLimit[7 + i]);
+      BOOST_CHECK_GE(q[7 + i], model.lowerPositionLimit[7 + i]);
+      BOOST_CHECK_LE(dq[6 + i], model.velocityLimit[6 + i]);
+      // Do not use lower velocity bound as TSID cannot handle it
+      BOOST_CHECK_GE(dq[6 + i], -model.velocityLimit[6 + i]);
+      BOOST_CHECK_LE(tau[i], model.effortLimit[6 + i]);
+      BOOST_CHECK_GE(tau[i], -model.effortLimit[6 + i]);
+    }
+  }
+
+public:
+  const RobotModelHandler model_handler;
+  RobotDataHandler data_handler;
+  CentroidalID::Settings settings;
+  double dt = 1e-3;
+  CentroidalID solver;
+
+  double t = 0.;
+  int step_i = 0;
+  Eigen::VectorXd q;
+  Eigen::VectorXd dq;
+  Eigen::VectorXd ddq;
+  Eigen::VectorXd tau;
+
+  std::map<std::string, double> errors;
+};
+
+BOOST_AUTO_TEST_CASE(CentroidalID_postureTask)
+{
+  CentroidalID::Settings settings;
+  settings.kp_posture = 20.;
+  settings.w_posture = 1.;
+
+  TestCentroidalID test(getSoloHandler(), settings);
+
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  const int nq = model_handler.getModel().nq;
+  const int nv = model_handler.getModel().nv;
+
+  // Target state
+  const Eigen::VectorXd q_target =
+    model_handler.getReferenceState().head(nq); // CentroidalID set posture target to reference configuration
+  CentroidalID::FeetPoseVector feet_pose_vec;
+  CentroidalID::FeetVelocityVector feet_vel_vec;
+  for (size_t foot_nb = 0; foot_nb < test.model_handler.getFeetNb(); foot_nb++)
+  {
+    feet_pose_vec.push_back(pinocchio::SE3::Identity());
+    feet_vel_vec.push_back(pinocchio::Motion::Zero());
+  }
+  test.solver.setTarget(
+    Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), feet_pose_vec, feet_vel_vec, {false, false, false, false}, {});
+
+  // Change initial state
+  test.q = solo_q_start(model_handler);
+  for (int i = 0; i < 1000; i++)
+  {
+    // Solve
+    test.step();
+
+    // compensate for free fall as we did not set any contact (we only care about joint posture)
+    test.q.head(7) = q_target.head(7);
+    test.dq.head(6).setZero();
+
+    // Check error is decreasing
+    Eigen::VectorXd delta_q = pinocchio::difference(model_handler.getModel(), test.q, q_target);
+    const double error = delta_q.tail(nv - 6).norm(); // Consider only the posture not the free flyer
+    BOOST_CHECK(test.is_error_decreasing("posture", error));
+  }
+}
+
+void test_contact(TestCentroidalID & test)
+{
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  const RobotDataHandler & data_handler = test.data_handler;
+  const int nq = model_handler.getModel().nq;
+
+  // No need to set target as CentroidalID sets it by default to reference state
+  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
+
+  // Let the robot stabilize
+  const int N_STEP = 500;
+  while (test.step_i < N_STEP)
+  {
+    // Solve
+    test.step();
+
+    // Check that contact velocity is null
+    for (size_t foot_nb = 0; foot_nb < model_handler.getFeetNb(); foot_nb++)
+    {
+      const pinocchio::Motion foot_vel = pinocchio::getFrameVelocity(
+        model_handler.getModel(), data_handler.getData(), model_handler.getFootFrameId(foot_nb), pinocchio::WORLD);
+      BOOST_CHECK_LE(foot_vel.linear().norm(), 1e-2);
+      if (model_handler.getFootType(foot_nb) == RobotModelHandler::FootType::QUAD)
+      {
+        // Rotation should also be null for quadrilateral contacts
+        BOOST_CHECK_LE(foot_vel.angular().norm(), 1e-1);
+      }
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE(CentroidalID_contactPoint_cost)
+{
+  CentroidalID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_com = 1.0;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_com = 1.;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+
+  TestCentroidalID simu(getSoloHandler(), settings);
+  simu.q = solo_q_start(simu.model_handler); // Set initial configuration
+  test_contact(simu);
+}
+
+BOOST_AUTO_TEST_CASE(CentroidalID_contactQuad_cost)
+{
+  CentroidalID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_posture = 1.;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_posture = 0.05;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+
+  TestCentroidalID simu(getTalosModelHandler(), settings);
+  test_contact(simu);
+}
+
+BOOST_AUTO_TEST_CASE(CentroidalID_contactPoint_equality)
+{
+  CentroidalID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_com = 1.0;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_com = 1.;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+  settings.contact_motion_equality = true;
+  TestCentroidalID simu(getSoloHandler(), settings);
+  simu.q = solo_q_start(simu.model_handler); // Set initial configuration
+  test_contact(simu);
+}
+
+BOOST_AUTO_TEST_CASE(CentroidalID_contactQuad_equality)
+{
+  CentroidalID::Settings settings;
+  settings.kp_base = 1.0;
+  settings.kp_posture = 1.;
+  settings.kp_contact = 10.0;
+  settings.w_base = 1.;
+  settings.w_posture = 0.05;
+  settings.w_contact_motion = 10.0;
+  settings.w_contact_force = 1.0;
+  settings.contact_motion_equality = true;
+
+  TestCentroidalID simu(getTalosModelHandler(), settings);
+  test_contact(simu);
+}
+
+BOOST_AUTO_TEST_CASE(CentroidalID_baseTask)
+{
+  CentroidalID::Settings settings;
+  settings.kp_base = 7.;
+  settings.kp_contact = .1;
+  settings.w_base = 100.0;
+  settings.w_contact_force = 1.0;
+  settings.w_contact_motion = 1.0;
+
+  TestCentroidalID test(getSoloHandler(), settings);
+
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  const int nq = model_handler.getModel().nq;
+
+  // CentroidalID sets posture task by default to reference state
+  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
+
+  // Change initial state
+  test.q.segment<4>(3) << 0.0025, 0.05, 0.05, 0.998; // small orientation perturbation (~6° on pitch and yaw)
+  test.q.segment<4>(3) /= test.q.segment<4>(3).norm();
+
+  const int N_STEP = 5000;
+  for (int i = 0; i < N_STEP; i++)
+  {
+    // Solve
+    test.step();
+
+    // Compute error
+    const Eigen::VectorXd delta_orientation =
+      pinocchio::difference(model_handler.getModel(), test.q, q_target).segment<3>(3);
+    const double error = delta_orientation.norm();
+
+    // Checks
+    if (error > 1e-3) // If haven't converged yet, should be strictly decreasing
+      BOOST_CHECK(test.is_error_decreasing("base_orientation", error));
+    if (i > 9 * N_STEP / 10) // Should have converged by now
+      BOOST_CHECK(error < 1e-3);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(CentroidalID_comTask)
+{
+  CentroidalID::Settings settings;
+  settings.kp_com = 7.;
+  settings.kp_contact = .1;
+  settings.w_com = 100.0;
+  settings.w_contact_force = 1.0;
+  settings.w_contact_motion = 1.0;
+
+  TestCentroidalID test(getSoloHandler(), settings);
+  test.q = solo_q_start(test.model_handler);
+
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  RobotDataHandler & data_handler = test.data_handler;
+  const int feet_nb = test.model_handler.getFeetNb();
+
+  // Set target
+  const Eigen::Vector3d com_target{-0.01, -0.01, 0.15};
+  const Eigen::Vector3d com_vel{0., 0., 0.};
+  data_handler.updateInternalData(test.q, test.dq, false);
+  CentroidalID::FeetPoseVector feet_pose_vec(feet_nb);
+  CentroidalID::FeetVelocityVector feet_vel_vec(feet_nb);
+  std::vector<bool> feet_contact(feet_nb);
+  std::vector<CentroidalID::TargetContactForce> feet_force;
+  for (int i = 0; i < feet_nb; i++)
+  {
+    feet_pose_vec[i] = data_handler.getFootPose(i);
+    feet_vel_vec[i].setZero();
+    feet_contact[i] = true;
+    feet_force.push_back(CentroidalID::TargetContactForce::Zero(3));
+    feet_force[i][2] = 9.81 * model_handler.getMass() / feet_nb;
+  }
+  test.solver.setTarget(com_target, com_vel, feet_pose_vec, feet_vel_vec, feet_contact, feet_force);
+
+  const int N_STEP = 5000;
+  for (int i = 0; i < N_STEP; i++)
+  {
+    // Solve
+    test.step();
+
+    // Compute error
+    data_handler.updateInternalData(test.q, test.dq, false);
+    const Eigen::VectorXd delta_position = data_handler.getData().com[0] - com_target;
+    const double error = delta_position.norm();
+
+    // Checks
+    if (error > 1e-3) // If haven't converged yet, should be strictly decreasing
+      BOOST_CHECK(test.is_error_decreasing("com_position", error));
+    if (i > 9 * N_STEP / 10) // Should have converged by now
+      BOOST_CHECK(error < 1e-3);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(CentroidalID_footTrackingTask)
+{
+  CentroidalID::Settings settings;
+  settings.kp_feet_tracking = 5.;
+  settings.kp_posture = 0.1;
+  settings.kp_contact = 1.0;
+  settings.w_feet_tracking = 1e3;
+  settings.w_posture = 1.0;
+  settings.w_contact_force = 0.1;
+  settings.contact_motion_equality = true;
+
+  TestCentroidalID test(getSoloHandler(), settings);
+
+  // Rotate the robot slightly so that it doesn't fall forward due to gravity
+  test.q.segment<4>(3) << 0, -0.17, 0, 0.98;
+  test.q.segment<4>(3) /= test.q.segment<4>(3).norm();
+
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  RobotDataHandler & data_handler = test.data_handler;
+  const int feet_nb = test.model_handler.getFeetNb();
+
+  // Set target
+  data_handler.updateInternalData(test.q, test.dq, false);
+  const Eigen::Vector3d com_target{data_handler.getData().com[0]};
+  const Eigen::Vector3d com_vel{0., 0., 0.};
+  CentroidalID::FeetPoseVector feet_pose_vec(feet_nb);
+  CentroidalID::FeetVelocityVector feet_vel_vec(feet_nb);
+  std::vector<bool> feet_contact(feet_nb);
+  std::vector<CentroidalID::TargetContactForce> feet_force;
+  for (int i = 0; i < feet_nb; i++)
+  {
+    feet_pose_vec[i] = data_handler.getFootPose(i);
+    feet_vel_vec[i].setZero();
+    feet_contact[i] = true;
+    feet_force.push_back(CentroidalID::TargetContactForce::Zero(3));
+    feet_force[i][2] = 9.81 * model_handler.getMass() / (feet_nb - 1);
+  }
+
+  // Lift first foot (front right)
+  feet_contact[0] = false;
+  feet_pose_vec[0].translation()[0] -= 0.05; // Move foot 5 cm backward
+  feet_pose_vec[0].translation()[1] += 0.05; // Move foot 5cm to the left (inside)
+  feet_pose_vec[0].translation()[2] += 0.05; // Lift foot 5 cm higher
+
+  test.solver.setTarget(com_target, com_vel, feet_pose_vec, feet_vel_vec, feet_contact, feet_force);
+
+  const int N_STEP = 5000;
+  for (int i = 0; i < N_STEP; i++)
+  {
+    // Solve
+    test.step();
+
+    // Compute error
+    data_handler.updateInternalData(test.q, test.dq, false);
+    const Eigen::VectorXd delta_foot_pose =
+      pinocchio::log6(feet_pose_vec[0].actInv(data_handler.getFootPose(0))).toVector().head<3>();
+    const double error = delta_foot_pose.norm();
+
+    // Checks
+    if (error > 1e-3) // If haven't converged yet, should be strictly decreasing
+      BOOST_CHECK(test.is_error_decreasing("foot_pose", error));
+    if (i > 9 * N_STEP / 10) // Should have converged by now
+      BOOST_CHECK(error < 1e-3);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(CentroidalID_allTasks)
+{
+  CentroidalID::Settings settings;
+  settings.kp_base = 10.;
+  settings.kp_posture = 1.;
+  settings.kp_contact = 10.;
+  settings.w_base = 10.0;
+  settings.w_posture = 0.1;
+  settings.w_contact_force = 1.0;
+  settings.w_contact_motion = 1.0;
+
+  TestCentroidalID test(getSoloHandler(), settings);
+
+  // Easy access
+  const RobotModelHandler & model_handler = test.model_handler;
+  const int nq = model_handler.getModel().nq;
+
+  // No need to set target as CentroidalID sets it by default to reference state
+  const Eigen::VectorXd q_target = model_handler.getReferenceState().head(nq);
+
+  test.q = solo_q_start(model_handler);
+  const int N_STEP = 1000;
+  for (int i = 0; i < N_STEP; i++)
+  {
+    // Solve
+    test.step();
+
+    // Check error is decreasing
+    const Eigen::VectorXd delta_q = pinocchio::difference(model_handler.getModel(), test.q, q_target);
+    const double error = delta_q.norm();
+
+    BOOST_CHECK(test.is_error_decreasing("q", error));
+  }
+}
+
+BOOST_AUTO_TEST_SUITE_END()

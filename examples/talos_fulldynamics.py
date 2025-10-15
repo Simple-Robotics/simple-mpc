@@ -21,11 +21,15 @@ reference_configuration_name = "half_sitting"
 rmodelComplete, rmodel, qComplete, q0 = loadTalos()
 
 # Create Model and Data handler
+foot_points = np.array([
+    [0.1, 0.075, 0],
+    [-0.1, 0.075, 0],
+    [-0.1, -0.075, 0],
+    [0.1, -0.075, 0],
+])
 model_handler = RobotModelHandler(rmodel, reference_configuration_name, base_joint_name)
-model_handler.addFoot("left_sole_link",  base_joint_name)
-model_handler.addFoot("right_sole_link", base_joint_name)
-model_handler.setFootReferencePlacement("left_sole_link", pin.XYZQUATToSE3(np.array([ 0.0, 0.1, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("right_sole_link", pin.XYZQUATToSE3(np.array([ 0.0,-0.1, 0.0, 0,0,0,1])))
+model_handler.addQuadFoot("left_sole_link",  base_joint_name, foot_points)
+model_handler.addQuadFoot("right_sole_link", base_joint_name, foot_points)
 
 data_handler = RobotDataHandler(model_handler)
 
@@ -152,8 +156,8 @@ land_RF = -1
 takeoff_LF = -1
 takeoff_RF = -1
 device.showTargetToTrack(
-    mpc.getDataHandler().getFootPose("left_sole_link"),
-    mpc.getDataHandler().getFootPose("right_sole_link"),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("left_sole_link")),
+    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("right_sole_link")),
 )
 
 v = np.zeros(6)

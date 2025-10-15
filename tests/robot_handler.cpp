@@ -46,10 +46,10 @@ BOOST_AUTO_TEST_CASE(model_handler)
   RobotModelHandler model_handler(model, default_conf_name, base_frame);
 
   // Add feet
-  for (size_t i = 0; i < feet_names.size(); i++)
+  for (size_t foot_nb = 0; foot_nb < feet_names.size(); foot_nb++)
   {
-    model_handler.addFoot(feet_names.at(i), base_frame);
-    model_handler.setFootReferencePlacement(feet_names.at(i), feet_refs.at(i));
+    model_handler.addPointFoot(feet_names.at(foot_nb), base_frame);
+    model_handler.setFootReferencePlacement(foot_nb, feet_refs.at(foot_nb));
   }
 
   /*********/
@@ -71,12 +71,12 @@ BOOST_AUTO_TEST_CASE(model_handler)
     for (size_t i = 0; i < feet_names.size(); i++)
     {
       const std::string foot_name = feet_names.at(i);
-      BOOST_CHECK_EQUAL(foot_name, model_handler.getFootName(i));
-      BOOST_CHECK_EQUAL(foot_name, model_handler.getFeetNames().at(i));
-      BOOST_CHECK_EQUAL(foot_name, model.frames.at(model_handler.getFeetIds().at(i)).name);
-      BOOST_CHECK_EQUAL(foot_name, model.frames.at(model_handler.getFootId(foot_name)).name);
+      BOOST_CHECK_EQUAL(foot_name, model_handler.getFootFrameName(i));
+      BOOST_CHECK_EQUAL(foot_name, model_handler.getFeetFrameNames().at(i));
+      BOOST_CHECK_EQUAL(foot_name, model.frames.at(model_handler.getFeetFrameIds().at(i)).name);
+      BOOST_CHECK_EQUAL(foot_name, model.frames.at(model_handler.getFootFrameId(i)).name);
 
-      const FrameIndex ref_frame = model_handler.getRefFootId(foot_name);
+      const FrameIndex ref_frame = model_handler.getFootRefFrameId(i);
       const FrameIndex ref_frame_parent = model_handler.getModel().frames.at(ref_frame).parentFrame;
       BOOST_CHECK_EQUAL(model_handler.getModel().frames.at(ref_frame_parent).name, base_frame);
       BOOST_CHECK(model_handler.getModel().frames.at(ref_frame).placement.isApprox(feet_refs.at(i)));
@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(model_handler)
   // Check that the default foot pose actually match the reference configuration
   {
     const std::string foot_name = "FR_calf";
-    model_handler.addFoot(foot_name, base_frame);
+    const size_t foot_nb = model_handler.addPointFoot(foot_name, base_frame);
     // Do not set foot reference placement to check the default one
 
     RobotDataHandler data_handler(model_handler);
@@ -162,7 +162,7 @@ BOOST_AUTO_TEST_CASE(model_handler)
     data_handler.updateInternalData(model_handler.getReferenceState(), false);
 
     // Foot and ref should be coincident with reference configuration
-    data_handler.getFootPose(foot_name).isApprox(data_handler.getRefFootPose(foot_name));
+    data_handler.getFootPose(foot_nb).isApprox(data_handler.getFootRefPose(foot_nb));
   }
 }
 
@@ -213,9 +213,10 @@ BOOST_AUTO_TEST_CASE(data_handler)
       const std::string ref_foot_name = foot_name + "_ref";
       const FrameIndex foot_id = model.getFrameId(foot_name);
       const FrameIndex ref_foot_id = model.getFrameId(ref_foot_name);
+      const size_t foot_nb = model_handler.getFootNb(foot_name);
 
-      BOOST_CHECK(data.oMf[foot_id].isApprox(data_handler.getFootPose(foot_name)));
-      BOOST_CHECK(data.oMf[ref_foot_id].isApprox(data_handler.getRefFootPose(foot_name)));
+      BOOST_CHECK(data.oMf[foot_id].isApprox(data_handler.getFootPose(foot_nb)));
+      BOOST_CHECK(data.oMf[ref_foot_id].isApprox(data_handler.getFootRefPose(foot_nb)));
     }
   }
 

@@ -47,29 +47,29 @@ BOOST_AUTO_TEST_CASE(mpc_fulldynamics)
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 50; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), false});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), false});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 50; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), false});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), false});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
 
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE(mpc_fulldynamics)
 
   Eigen::VectorXd xdot = mpc.getStateDerivative(0);
 
-  Eigen::VectorXd forces = mpc.getContactForces(0);
+  Eigen::Matrix<double, Eigen::Dynamic, 3> forces = mpc.getContactForces(0);
 }
 
 BOOST_AUTO_TEST_CASE(mpc_kinodynamics)
@@ -133,29 +133,29 @@ BOOST_AUTO_TEST_CASE(mpc_kinodynamics)
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 50; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), false});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), false});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 50; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), false});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), false});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
 
@@ -210,29 +210,29 @@ BOOST_AUTO_TEST_CASE(mpc_centroidal)
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 50; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), false});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), false});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 10; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), true});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), true});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
   for (std::size_t i = 0; i < 50; i++)
   {
     std::map<std::string, bool> contact_state;
-    contact_state.insert({model_handler.getFootName(0), false});
-    contact_state.insert({model_handler.getFootName(1), true});
+    contact_state.insert({model_handler.getFootFrameName(0), false});
+    contact_state.insert({model_handler.getFootFrameName(1), true});
     contact_states.push_back(contact_state);
   }
 

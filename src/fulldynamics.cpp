@@ -47,9 +47,9 @@ namespace simple_mpc
       throw std::runtime_error("Force must be of same size as Kd correction");
     }
 
-    for (auto const & name : model_handler_.getFeetNames())
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
-      auto frame_ids = model_handler_.getFootId(name);
+      auto frame_ids = model_handler_.getFootFrameId(foot_nb);
       auto joint_ids = model_handler_.getModel().frames[frame_ids].parentJoint;
       pinocchio::SE3 pl1 = model_handler_.getModel().frames[frame_ids].placement;
       pinocchio::SE3 pl2 = pinocchio::SE3::Identity();
@@ -60,7 +60,7 @@ namespace simple_mpc
           pinocchio::LOCAL_WORLD_ALIGNED);
         constraint_model.corrector.Kp = settings.Kp_correction;
         constraint_model.corrector.Kd = settings.Kd_correction;
-        constraint_model.name = name;
+        constraint_model.name = model_handler_.getFootFrameName(foot_nb);
         constraint_models_.push_back(constraint_model);
       }
       else
@@ -69,7 +69,7 @@ namespace simple_mpc
           pinocchio::ContactType::CONTACT_3D, model_handler_.getModel(), joint_ids, pl1, 0, pl2, pinocchio::LOCAL);
         constraint_model.corrector.Kp = settings.Kp_correction;
         constraint_model.corrector.Kd = settings.Kd_correction;
-        constraint_model.name = name;
+        constraint_model.name = model_handler_.getFootFrameName(foot_nb);
         constraint_models_.push_back(constraint_model);
       }
     }
@@ -94,12 +94,13 @@ namespace simple_mpc
     pinocchio::context::RigidConstraintModelVector cms;
 
     size_t c_id = 0;
-    for (auto const & name : model_handler_.getFeetNames())
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
+      const std::string & name = model_handler_.getFootFrameName(foot_nb);
       if (settings_.force_size == 6)
       {
         FramePlacementResidual frame_residual = FramePlacementResidual(
-          space.ndx(), nu_, model_handler_.getModel(), contact_pose.at(name), model_handler_.getFootId(name));
+          space.ndx(), nu_, model_handler_.getModel(), contact_pose.at(name), model_handler_.getFootFrameId(foot_nb));
 
         rcost.addCost(name + "_pose_cost", QuadraticResidualCost(space, frame_residual, settings_.w_frame));
       }
@@ -107,7 +108,7 @@ namespace simple_mpc
       {
         FrameTranslationResidual frame_residual = FrameTranslationResidual(
           space.ndx(), nu_, model_handler_.getModel(), contact_pose.at(name).translation(),
-          model_handler_.getFootId(name));
+          model_handler_.getFootFrameId(foot_nb));
 
         rcost.addCost(name + "_pose_cost", QuadraticResidualCost(space, frame_residual, settings_.w_frame));
       }
@@ -118,8 +119,9 @@ namespace simple_mpc
       c_id++;
     }
 
-    for (auto const & name : model_handler_.getFeetNames())
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
+      const std::string & name = model_handler_.getFootFrameName(foot_nb);
       std::shared_ptr<ContactForceResidual> frame_force;
       if (contact_force.at(name).size() != settings_.force_size)
       {
@@ -157,8 +159,9 @@ namespace simple_mpc
       stm.addConstraint(state_slice, BoxConstraint(settings_.qmin, settings_.qmax));
     }
 
-    for (auto const & name : model_handler_.getFeetNames())
+    for (size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
     {
+      const std::string & name = model_handler_.getFootFrameName(foot_nb);
       if (settings_.force_size == 6 and contact_phase.at(name))
       {
         if (settings_.force_cone)
@@ -172,7 +175,7 @@ namespace simple_mpc
         if (settings_.land_cstr and land_constraint.at(name))
         {
           FrameVelocityResidual velocity_residual = FrameVelocityResidual(
-            space.ndx(), nu_, model_handler_.getModel(), Motion::Zero(), model_handler_.getFootId(name),
+            space.ndx(), nu_, model_handler_.getModel(), Motion::Zero(), model_handler_.getFootFrameId(foot_nb),
             pinocchio::LOCAL_WORLD_ALIGNED);
           stm.addConstraint(velocity_residual, EqualityConstraint());
         }
@@ -189,7 +192,7 @@ namespace simple_mpc
         {
           std::vector<int> vel_id = {0, 1, 2};
           FrameVelocityResidual velocity_residual = FrameVelocityResidual(
-            space.ndx(), nu_, model_handler_.getModel(), Motion::Zero(), model_handler_.getFootId(name),
+            space.ndx(), nu_, model_handler_.getModel(), Motion::Zero(), model_handler_.getFootFrameId(foot_nb),
             pinocchio::LOCAL_WORLD_ALIGNED);
           FunctionSliceXpr vel_slice = FunctionSliceXpr(velocity_residual, vel_id);
           stm.addConstraint(vel_slice, EqualityConstraint());
@@ -198,7 +201,7 @@ namespace simple_mpc
 
           FrameTranslationResidual frame_residual = FrameTranslationResidual(
             space.ndx(), nu_, model_handler_.getModel(), contact_pose.at(name).translation(),
-            model_handler_.getFootId(name));
+            model_handler_.getFootFrameId(foot_nb));
 
           FunctionSliceXpr frame_slice = FunctionSliceXpr(frame_residual, frame_id);
 
@@ -212,13 +215,13 @@ namespace simple_mpc
 
   void FullDynamicsOCP::setReferencePoses(const std::size_t t, const std::map<std::string, pinocchio::SE3> & pose_refs)
   {
-    if (pose_refs.size() != model_handler_.getFeetNames().size())
+    if (pose_refs.size() != model_handler_.getFeetNb())
     {
       throw std::runtime_error("pose_refs size does not match number of end effectors");
     }
 
     CostStack * cs = getCostStack(t);
-    for (auto ee_name : model_handler_.getFeetNames())
+    for (auto ee_name : model_handler_.getFeetFrameNames())
     {
       QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>(ee_name + "_pose_cost");
 
@@ -272,11 +275,11 @@ namespace simple_mpc
   FullDynamicsOCP::setReferenceForces(const std::size_t t, const std::map<std::string, Eigen::VectorXd> & force_refs)
   {
     CostStack * cs = getCostStack(t);
-    if (force_refs.size() != model_handler_.getFeetNames().size())
+    if (force_refs.size() != model_handler_.getFeetNb())
     {
       throw std::runtime_error("force_refs size does not match number of end effectors");
     }
-    for (auto ee_name : model_handler_.getFeetNames())
+    for (auto ee_name : model_handler_.getFeetFrameNames())
     {
       QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>(ee_name + "_force_cost");
       ContactForceResidual * cfr = qrc->getResidual<ContactForceResidual>();
@@ -343,7 +346,7 @@ namespace simple_mpc
   {
     CostStack * cs = getCostStack(t);
     QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
-    return qc->getTarget().head(7);
+    return qc->getTarget().head<7>();
   };
 
   void FullDynamicsOCP::setPoseBase(const std::size_t t, const ConstVectorRef & pose_base)
@@ -355,7 +358,7 @@ namespace simple_mpc
     CostStack * cs = getCostStack(t);
     QuadraticStateCost * qc = cs->getComponent<QuadraticStateCost>("state_cost");
     x0_ = getReferenceState(t);
-    x0_.head(7) = pose_base;
+    x0_.head<7>() = pose_base;
     qc->setTarget(x0_);
   }
 
@@ -378,7 +381,7 @@ namespace simple_mpc
     MultibodyConstraintFwdDynamics * ode =
       problem_->stages_[t]->getDynamics<IntegratorSemiImplEuler>()->getDynamics<MultibodyConstraintFwdDynamics>();
     assert(ode != nullptr);
-    for (auto name : model_handler_.getFeetNames())
+    for (auto name : model_handler_.getFeetFrameNames())
     {
       std::size_t i;
       for (i = 0; i < ode->constraint_models_.size(); i++)

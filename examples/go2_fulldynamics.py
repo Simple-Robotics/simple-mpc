@@ -5,7 +5,6 @@ from simple_mpc import (
     RobotDataHandler,
     FullDynamicsOCP,
     MPC,
-    IDSolver,
     Interpolator,
     FrictionCompensation
 )
@@ -24,14 +23,10 @@ robot_wrapper = erd.load('go2')
 # Create Model and Data handler
 model_handler = RobotModelHandler(robot_wrapper.model, "standing", base_joint_name)
 
-model_handler.addFoot("FL_foot", base_joint_name)
-model_handler.addFoot("FR_foot", base_joint_name)
-model_handler.addFoot("RL_foot", base_joint_name)
-model_handler.addFoot("RR_foot", base_joint_name)
-model_handler.setFootReferencePlacement("FL_foot", pin.XYZQUATToSE3(np.array([ 0.17, 0.15, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("FR_foot", pin.XYZQUATToSE3(np.array([ 0.17,-0.15, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("RL_foot", pin.XYZQUATToSE3(np.array([-0.24, 0.15, 0.0, 0,0,0,1])))
-model_handler.setFootReferencePlacement("RR_foot", pin.XYZQUATToSE3(np.array([-0.24,-0.15, 0.0, 0,0,0,1])))
+model_handler.addPointFoot("FL_foot", base_joint_name)
+model_handler.addPointFoot("FR_foot", base_joint_name)
+model_handler.addPointFoot("RL_foot", base_joint_name)
+model_handler.addPointFoot("RR_foot", base_joint_name)
 
 data_handler = RobotDataHandler(model_handler)
 
@@ -39,7 +34,7 @@ nq = model_handler.getModel().nq
 nv = model_handler.getModel().nv
 nu = nv - 6
 force_size = 3
-nk = len(model_handler.getFeetNames())
+nk = model_handler.getFeetNb()
 nf = force_size
 
 gravity = np.array([0, 0, -9.81])
@@ -48,12 +43,12 @@ fref[2] = -model_handler.getMass() / nk * gravity[2]
 u0 = np.zeros(model_handler.getModel().nv - 6)
 
 w_basepos = [0, 0, 0, 0, 0, 0]
-w_legpos = [10, 10, 10]
+w_legpos = [1, 1, 1]
 
 w_basevel = [10, 10, 10, 10, 10, 10]
 w_legvel = [0.1, 0.1, 0.1]
 w_x = np.array(w_basepos + w_legpos * 4 + w_basevel + w_legvel * 4)
-w_cent_lin = np.array([0.0, 0.0, 0])
+w_cent_lin = np.array([0.04, 0.04, 0])
 w_cent_ang = np.array([0, 0, 0])
 w_forces_lin = np.array([0.0001, 0.0001, 0.0001])
 w_frame = np.diag(np.array([1000, 1000, 1000]))
@@ -140,24 +135,6 @@ contact_phases += [contact_phase_quadru] * int(T_ds / 2) """
 
 mpc.generateCycleHorizon(contact_phases)
 
-""" Initialize whole-body inverse dynamics QP"""
-contact_ids = model_handler.getFeetIds()
-id_conf = dict(
-    contact_ids=contact_ids,
-    x0=model_handler.getReferenceState(),
-    mu=0.8,
-    Lfoot=0.01,
-    Wfoot=0.01,
-    force_size=3,
-    kd=0,
-    w_force=0,
-    w_acc=0,
-    w_tau=1,
-    verbose=False,
-)
-
-qp = IDSolver(id_conf, model_handler.getModel())
-
 """ Friction """
 fcompensation = FrictionCompensation(model_handler.getModel(), True)
 """ Interpolation """
@@ -183,7 +160,7 @@ q_meas, v_meas = device.measureState()
 x_measured  = np.concatenate([q_meas, v_meas])
 mpc.getDataHandler().updateInternalData(x_measured, False)
 
-ref_foot_pose = [mpc.getDataHandler().getRefFootPose(mpc.getModelHandler().getFeetNames()[i]) for i in range(4)]
+ref_foot_pose = [mpc.getDataHandler().getFootRefPose(i) for i in range(4)]
 for pose in ref_foot_pose:
     pose.translation[2] = 0
 device.showQuadrupedFeet(*ref_foot_pose)
@@ -248,20 +225,20 @@ for t in range(500):
     forces_vec1 = mpc.getContactForces(1)
     contact_states = mpc.ocp_handler.getContactState(0)
 
-    force_FL.append(forces_vec0[:3])
-    force_FR.append(forces_vec0[3:6])
-    force_RL.append(forces_vec0[6:9])
-    force_RR.append(forces_vec0[9:12])
+    force_FL.append(forces_vec0[0,:])
+    force_FR.append(forces_vec0[1,:])
+    force_RL.append(forces_vec0[2,:])
+    force_RR.append(forces_vec0[3,:])
 
-    forces = [forces_vec0, forces_vec1]
+    forces = [forces_vec0.flatten(), forces_vec1.flatten()] # Flattening for interpolation
     ddqs = [a0, a1]
     xss = [mpc.xs[0], mpc.xs[1]]
     uss = [mpc.us[0], mpc.us[1]]
 
-    FL_measured.append(mpc.getDataHandler().getFootPose("FL_foot").translation)
-    FR_measured.append(mpc.getDataHandler().getFootPose("FR_foot").translation)
-    RL_measured.append(mpc.getDataHandler().getFootPose("RL_foot").translation)
-    RR_measured.append(mpc.getDataHandler().getFootPose("RR_foot").translation)
+    FL_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FL_foot")).translation)
+    FR_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("FR_foot")).translation)
+    RL_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RL_foot")).translation)
+    RR_measured.append(mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("RR_foot")).translation)
     FL_references.append(mpc.getReferencePose(0, "FL_foot").translation)
     FR_references.append(mpc.getReferencePose(0, "FR_foot").translation)
     RL_references.append(mpc.getReferencePose(0, "RL_foot").translation)
@@ -277,7 +254,7 @@ for t in range(500):
         x_interp = interpolator.interpolateState(delay, dt, xss)
         u_interp = interpolator.interpolateLinear(delay, dt, uss)
         acc_interp = interpolator.interpolateLinear(delay, dt, ddqs)
-        force_interp = interpolator.interpolateLinear(delay, dt, forces)
+        force_interp = interpolator.interpolateLinear(delay, dt, forces).reshape(4,3)
 
         q_meas, v_meas = device.measureState()
         x_measured = np.concatenate([q_meas, v_meas])
@@ -288,19 +265,8 @@ for t in range(500):
             x_measured, x_interp
         )
 
-        qp.solveQP(
-            mpc.getDataHandler().getData(),
-            contact_states,
-            x_measured[nq:],
-            acc_interp,
-            current_torque,
-            force_interp,
-            mpc.getDataHandler().getData().M,
-        )
-
-        qp_torque = qp.solved_torque.copy()
-        friction_torque = fcompensation.computeFriction(x_interp[nq + 6:], qp_torque)
-        device.execute(friction_torque)
+        friction_torque = fcompensation.computeFriction(x_interp[nq + 6:], current_torque)
+        device.execute(current_torque)
 
         u_multibody.append(copy.deepcopy(friction_torque))
         x_multibody.append(x_measured)
