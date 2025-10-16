@@ -1,5 +1,6 @@
 #include <boost/test/unit_test.hpp>
 
+#include "simple-mpc/arm-dynamics.hpp"
 #include "simple-mpc/centroidal-dynamics.hpp"
 #include "simple-mpc/fulldynamics.hpp"
 #include "simple-mpc/kinodynamics.hpp"
@@ -92,6 +93,23 @@ RobotModelHandler getSoloHandler()
   model_handler.addPointFoot("FL_FOOT", base_joint);
   model_handler.addPointFoot("HR_FOOT", base_joint);
   model_handler.addPointFoot("HL_FOOT", base_joint);
+
+  return model_handler;
+}
+
+RobotModelHandler getPandaHandler()
+{
+  // Load pinocchio model from example robot data
+  Model model;
+  const std::string urdf_path = EXAMPLE_ROBOT_DATA_MODEL_DIR "/panda_description/urdf/panda.urdf";
+  const std::string srdf_path = EXAMPLE_ROBOT_DATA_MODEL_DIR "/panda_description/srdf/panda.srdf";
+
+  pinocchio::urdf::buildModel(urdf_path, model);
+  srdf::loadReferenceConfigurations(model, srdf_path, false);
+
+  // Actually create handler
+  std::string base_joint = "panda_link0";
+  RobotModelHandler model_handler(model, "default", base_joint);
 
   return model_handler;
 }
@@ -213,6 +231,29 @@ CentroidalSettings getCentroidalSettings()
   settings.Lfoot = 0.1;
   settings.Wfoot = 0.075;
   settings.force_size = 6;
+
+  return settings;
+}
+
+ArmDynamicsSettings getArmSettings(RobotModelHandler model_handler)
+{
+  int nv = 9;
+
+  ArmDynamicsSettings settings;
+  settings.timestep = 0.01;
+  settings.w_x = Eigen::MatrixXd::Identity(nv * 2, nv * 2);
+  settings.w_u = Eigen::MatrixXd::Identity(nv, nv);
+  settings.w_frame = Eigen::MatrixXd::Identity(3, 3) * 100;
+
+  settings.torque_limits = false;
+  settings.kinematics_limits = false;
+  settings.ee_name = "panda_hand_joint";
+  settings.gravity << 0, 0, -9.81;
+
+  settings.qmin = model_handler.getModel().lowerPositionLimit;
+  settings.qmax = model_handler.getModel().upperPositionLimit;
+  settings.umin = -model_handler.getModel().effortLimit;
+  settings.umax = model_handler.getModel().effortLimit;
 
   return settings;
 }

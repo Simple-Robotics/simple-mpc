@@ -47,7 +47,7 @@ set(
   problem
   inverse-dynamics/kinodynamics-id
   inverse-dynamics/centroidal-id
-  #mpc
+  mpc
   friction
   interpolator
 )
