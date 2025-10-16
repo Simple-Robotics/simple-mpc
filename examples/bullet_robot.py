@@ -52,9 +52,7 @@ class BulletRobot:
                 3
             ]  # of the base link
 
-            self.localInertiaOrient = p.getDynamicsInfo(self.robotId, -1)[
-                4
-            ]
+            self.localInertiaOrient = p.getDynamicsInfo(self.robotId, -1)[4]
 
         # leg_left (45-50), leg_right (52-57), torso (0-1), arm_left (11-17),
         # gripper_left (21), arm_right (28-34), gripper_right (38), head (3,4).
@@ -124,7 +122,12 @@ class BulletRobot:
         return lat_fric, spin_fric
 
     def setFrictionCoefficients(self, link_id, lateral_friction, spin_friction):
-        p.changeDynamics(self.robotId, link_id, lateralFriction=lateral_friction, spinningFriction=spin_friction)
+        p.changeDynamics(
+            self.robotId,
+            link_id,
+            lateralFriction=lateral_friction,
+            spinningFriction=spin_friction,
+        )
 
     def resetState(self, q0Start):
         # Initialize position in pyBullet
@@ -451,7 +454,6 @@ class BulletRobot:
         )
 
     def moveMarkers(self, LF_trans, RF_trans):
-
         p.resetBasePositionAndOrientation(
             self.sphereIdRight,
             posObj=[
@@ -472,7 +474,6 @@ class BulletRobot:
         )
 
     def moveQuadrupedFeet(self, FL_pose, FR_pose, RL_pose, RR_pose):
-
         p.resetBasePositionAndOrientation(
             self.sphereIdFL,
             posObj=[
@@ -515,5 +516,4 @@ class BulletRobot:
 
 
 if __name__ == "__main__":
-
     print("BulletRobot")

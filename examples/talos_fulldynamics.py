@@ -7,7 +7,6 @@ The contacts forces are modeled as 6D wrenches.
 import numpy as np
 import time
 from bullet_robot import BulletRobot
-import pinocchio as pin
 from simple_mpc import MPC, FullDynamicsOCP, RobotModelHandler, RobotDataHandler
 from utils import loadTalos
 import example_robot_data as erd
@@ -15,26 +14,30 @@ import example_robot_data as erd
 # ####### CONFIGURATION  ############
 # RobotWrapper
 URDF_SUBPATH = "/talos_data/robots/talos_reduced.urdf"
-base_joint_name ="root_joint"
+base_joint_name = "root_joint"
 reference_configuration_name = "half_sitting"
 
 rmodelComplete, rmodel, qComplete, q0 = loadTalos()
 
 # Create Model and Data handler
-foot_points = np.array([
-    [0.1, 0.075, 0],
-    [-0.1, 0.075, 0],
-    [-0.1, -0.075, 0],
-    [0.1, -0.075, 0],
-])
+foot_points = np.array(
+    [
+        [0.1, 0.075, 0],
+        [-0.1, 0.075, 0],
+        [-0.1, -0.075, 0],
+        [0.1, -0.075, 0],
+    ]
+)
 model_handler = RobotModelHandler(rmodel, reference_configuration_name, base_joint_name)
-model_handler.addQuadFoot("left_sole_link",  base_joint_name, foot_points)
+model_handler.addQuadFoot("left_sole_link", base_joint_name, foot_points)
 model_handler.addQuadFoot("right_sole_link", base_joint_name, foot_points)
 
 data_handler = RobotDataHandler(model_handler)
 
 controlled_joints = rmodel.names[1:].tolist()
-controlled_ids = [rmodelComplete.getJointId(name_joint) for name_joint in controlled_joints[1:]]
+controlled_ids = [
+    rmodelComplete.getJointId(name_joint) for name_joint in controlled_joints[1:]
+]
 
 nq = model_handler.getModel().nq
 nv = model_handler.getModel().nv
@@ -81,14 +84,14 @@ problem_conf = dict(
     qmin=model_handler.getModel().lowerPositionLimit[7:],
     qmax=model_handler.getModel().upperPositionLimit[7:],
     Kp_correction=np.array([0, 0, 50, 0, 0, 0]),
-    Kd_correction=np.array([100, 100, 100, 100, 100 ,100]),
+    Kd_correction=np.array([100, 100, 100, 100, 100, 100]),
     mu=0.8,
     Lfoot=0.1,
     Wfoot=0.075,
     torque_limits=True,
     kinematics_limits=True,
     force_cone=True,
-    land_cstr=False
+    land_cstr=False,
 )
 
 T = 100
@@ -145,7 +148,9 @@ device = BulletRobot(
     model_handler.getModel(),
     model_handler.getReferenceState()[:3],
 )
-device.initializeJoints(model_handler.getModel().referenceConfigurations[reference_configuration_name])
+device.initializeJoints(
+    model_handler.getModel().referenceConfigurations[reference_configuration_name]
+)
 device.changeCamera(1.0, 90, -5, [1.5, 0, 1])
 
 q_meas, v_meas = device.measureState()
@@ -157,7 +162,9 @@ takeoff_LF = -1
 takeoff_RF = -1
 device.showTargetToTrack(
     mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("left_sole_link")),
-    mpc.getDataHandler().getFootPose(mpc.getModelHandler().getFootNb("right_sole_link")),
+    mpc.getDataHandler().getFootPose(
+        mpc.getModelHandler().getFootNb("right_sole_link")
+    ),
 )
 
 v = np.zeros(6)
@@ -193,5 +200,7 @@ for t in range(Tmpc + 800):
         q_meas, v_meas = device.measureState()
         x_measured = np.concatenate((q_meas, v_meas))
 
-        current_torque = mpc.us[0] - mpc.Ks[0] @ model_handler.difference(x_measured, mpc.xs[0])
+        current_torque = mpc.us[0] - mpc.Ks[0] @ model_handler.difference(
+            x_measured, mpc.xs[0]
+        )
         device.execute(current_torque)

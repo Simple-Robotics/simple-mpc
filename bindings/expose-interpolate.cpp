@@ -55,7 +55,7 @@ namespace simple_mpc
 
     void exposeInterpolator()
     {
-      bp::class_<Interpolator>("Interpolator", bp::init<const Model &>(bp::args("self", "model")))
+      bp::class_<Interpolator>("Interpolator", bp::init<const pinocchio::Model &>(bp::args("self", "model")))
         .def("interpolateConfiguration", &interpolateConfigurationProxy)
         .def("interpolateState", &interpolateStateProxy)
         .def("interpolateLinear", &interpolateLinearProxy)
