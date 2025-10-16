@@ -1,5 +1,7 @@
 #include <boost/test/unit_test.hpp>
 
+#include "simple-mpc/arm-dynamics.hpp"
+#include "simple-mpc/arm-mpc.hpp"
 #include "simple-mpc/centroidal-dynamics.hpp"
 #include "simple-mpc/fulldynamics.hpp"
 #include "simple-mpc/fwd.hpp"
@@ -241,6 +243,42 @@ BOOST_AUTO_TEST_CASE(mpc_centroidal)
   for (std::size_t i = 0; i < 10; i++)
   {
     mpc.iterate(x_multibody);
+  }
+
+  Eigen::VectorXd xdot = mpc.getStateDerivative(0);
+}
+
+BOOST_AUTO_TEST_CASE(mpc_armdynamics)
+{
+  RobotModelHandler model_handler = getPandaHandler();
+  RobotDataHandler data_handler(model_handler);
+
+  ArmDynamicsSettings settings = getArmSettings(model_handler);
+  auto problem = std::make_shared<ArmDynamicsOCP>(settings, model_handler);
+
+  const size_t T = 100;
+  problem->createProblem(model_handler.getReferenceState(), T);
+
+  ArmMPCSettings mpc_settings;
+  mpc_settings.max_iters = 1;
+
+  mpc_settings.TOL = 1e-6;
+  mpc_settings.mu_init = 1e-8;
+  mpc_settings.num_threads = 1;
+  mpc_settings.timestep = 0.01;
+
+  ArmMPC mpc = ArmMPC(mpc_settings, problem);
+
+  BOOST_CHECK_EQUAL(mpc.xs_.size(), T + 1);
+  BOOST_CHECK_EQUAL(mpc.us_.size(), T);
+
+  Eigen::Vector3d reach_pose;
+  reach_pose << 0.5, 0.5, 0.5;
+  mpc.generateReachHorizon(reach_pose);
+
+  for (std::size_t i = 0; i < 10; i++)
+  {
+    mpc.iterate(model_handler.getReferenceState());
   }
 
   Eigen::VectorXd xdot = mpc.getStateDerivative(0);
