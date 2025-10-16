@@ -1,5 +1,6 @@
 #include <boost/test/unit_test.hpp>
 
+#include "simple-mpc/arm-dynamics.hpp"
 #include "simple-mpc/centroidal-dynamics.hpp"
 #include "simple-mpc/fulldynamics.hpp"
 #include "simple-mpc/fwd.hpp"
@@ -346,6 +347,46 @@ BOOST_AUTO_TEST_CASE(centroidal_solo)
   cproblem.setReferenceForces(3, force_refs);
   BOOST_CHECK_EQUAL(cproblem.getReferenceForce(3, "FR_FOOT"), force_refs.at("FR_FOOT"));
   BOOST_CHECK_EQUAL(cproblem.getReferenceForce(3, "FL_FOOT"), force_refs.at("FL_FOOT"));
+}
+
+BOOST_AUTO_TEST_CASE(armdynamics)
+{
+  RobotModelHandler model_handler = getPandaHandler();
+  RobotDataHandler data_handler(model_handler);
+
+  ArmDynamicsSettings settings = getArmSettings(model_handler);
+  ArmDynamicsOCP armproblem(settings, model_handler);
+  Eigen::Vector3d reach_pose;
+  reach_pose << 0.1, 0.1, 0.1;
+  StageModel sm = armproblem.createStage(true, reach_pose);
+  CostStack * cs = dynamic_cast<CostStack *>(&*sm.cost_);
+
+  BOOST_CHECK_EQUAL(cs->components_.size(), 3);
+  BOOST_CHECK_EQUAL(sm.numConstraints(), 2);
+
+  armproblem.createProblem(model_handler.getReferenceState(), 100);
+
+  CostStack * csp = dynamic_cast<CostStack *>(&*armproblem.getProblem().stages_[0]->cost_);
+  QuadraticControlCost * cc = csp->getComponent<QuadraticControlCost>("control_cost");
+  QuadraticResidualCost * crc = csp->getComponent<QuadraticResidualCost>(settings.ee_name + "_cost");
+
+  std::vector<bool> cs2 = {true, true};
+  BOOST_CHECK_EQUAL(armproblem.getSize(), 100);
+  BOOST_CHECK_EQUAL(cc->weights_, settings.w_u);
+  BOOST_CHECK_EQUAL(crc->weights_, settings.w_frame);
+
+  Eigen::Vector3d pose_left_random;
+  pose_left_random << 0.2, 0.3, 0.4;
+  armproblem.setReferencePose(4, pose_left_random);
+
+  BOOST_CHECK_EQUAL(armproblem.getReferencePose(4), pose_left_random);
+
+  Eigen::VectorXd new_q = pinocchio::randomConfiguration(model_handler.getModel());
+  Eigen::VectorXd new_x(model_handler.getModel().nq + model_handler.getModel().nv);
+  new_x.head(model_handler.getModel().nq) = new_q;
+  new_x.tail(model_handler.getModel().nv).setRandom();
+  armproblem.setReferenceState(2, new_x);
+  BOOST_CHECK_EQUAL(armproblem.getReferenceState(2), new_x);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
