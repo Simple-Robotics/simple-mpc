@@ -114,7 +114,6 @@ target_link_libraries(
     ndcurves::ndcurves
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_CXX)
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${mpc_HEADER}")
 set_target_properties(
   ${PROJECT_NAME}
   PROPERTIES LINKER_LANGUAGE CXX INSTALL_RPATH "\$ORIGIN"
@@ -142,7 +141,11 @@ endif()
 install(
   TARGETS ${PROJECT_NAME}
   EXPORT ${TARGETS_EXPORT_NAME}
-  PUBLIC_HEADER DESTINATION include/${PROJECT_NAME}
   LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
 )
 install(FILES package.xml DESTINATION share/${PROJECT_NAME})
+
+install(
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}
+  DESTINATION include
+)
