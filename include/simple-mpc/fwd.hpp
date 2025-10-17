@@ -35,6 +35,7 @@ namespace simple_mpc
   class FullDynamicsOCP;
   class KinodynamicsOCP;
   class CentroidalOCP;
+  class ArmDynamicsOCP;
   class OCPHandler;
   class IDSolver;
   class IKIDSolver;

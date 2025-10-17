@@ -52,10 +52,6 @@ namespace simple_mpc
       REACHING
     };
 
-    std::vector<std::shared_ptr<StageModel>> reach_horizon_;
-    std::vector<std::shared_ptr<StageData>> reach_horizon_data_;
-    std::vector<std::shared_ptr<StageModel>> rest_horizon_;
-    std::vector<std::shared_ptr<StageData>> rest_horizon_data_;
     // INTERNAL UPDATING function
     void updateTargetReference();
 
@@ -104,11 +100,6 @@ namespace simple_mpc
     const RobotModelHandler & getModelHandler() const
     {
       return ocp_handler_->getModelHandler();
-    }
-
-    std::vector<std::shared_ptr<StageModel>> & getReachHorizon()
-    {
-      return reach_horizon_;
     }
 
     const ConstVectorRef getStateDerivative(const std::size_t t);
