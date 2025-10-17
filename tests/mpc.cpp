@@ -272,10 +272,6 @@ BOOST_AUTO_TEST_CASE(mpc_armdynamics)
   BOOST_CHECK_EQUAL(mpc.xs_.size(), T + 1);
   BOOST_CHECK_EQUAL(mpc.us_.size(), T);
 
-  Eigen::Vector3d reach_pose;
-  reach_pose << 0.5, 0.5, 0.5;
-  mpc.generateReachHorizon(reach_pose);
-
   for (std::size_t i = 0; i < 10; i++)
   {
     mpc.iterate(model_handler.getReferenceState());

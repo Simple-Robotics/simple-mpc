@@ -36,7 +36,7 @@ namespace simple_mpc
     else
       solver_->linear_solver_choice = aligator::LQSolverChoice::SERIAL;
     solver_->force_initial_condition_ = true;
-    // solver_->reg_min = 1e-6;
+    solver_->reg_min = 1e-6;
 
     ee_name_ = problem->getSettings().ee_name;
 
@@ -44,34 +44,18 @@ namespace simple_mpc
     {
       xs_.push_back(x0_);
       us_.push_back(Eigen::VectorXd::Zero(model_handler.getModel().nv));
-
-      std::shared_ptr<StageModel> sm = std::make_shared<StageModel>(ocp_handler_->createStage());
-      rest_horizon_.push_back(sm);
-      rest_horizon_data_.push_back(sm->createData());
     }
     xs_.push_back(x0_);
 
     solver_->setup(ocp_handler_->getProblem());
     solver_->run(ocp_handler_->getProblem(), xs_, us_);
 
-    /*xs_ = solver_->results_.xs;
+    xs_ = solver_->results_.xs;
     us_ = solver_->results_.us;
     Ks_ = solver_->results_.getCtrlFeedbacks();
 
-    solver_->max_iters = settings_.max_iters; */
-  }
-
-  void ArmMPC::generateReachHorizon(const Eigen::Vector3d & reach_pose)
-  {
-    reach_pose_ = reach_pose;
-    // Generate the model stages for cycle horizon
-    for (std::size_t i = 0; i < ocp_handler_->getProblem().numSteps(); i++)
-    {
-
-      std::shared_ptr<StageModel> sm = std::make_shared<StageModel>(ocp_handler_->createStage(true, reach_pose));
-      reach_horizon_.push_back(sm);
-      reach_horizon_data_.push_back(sm->createData());
-    }
+    solver_->max_iters = settings_.max_iters;
+    now_ = RESTING;
   }
 
   void ArmMPC::iterate(const ConstVectorRef & x)
@@ -107,33 +91,46 @@ namespace simple_mpc
 
   void ArmMPC::recedeWithCycle()
   {
+    std::size_t last_id = ocp_handler_->getSize() - 1;
+    rotate_vec_left(ocp_handler_->getProblem().stages_);
+
     if (now_ == REACHING)
     {
-      ocp_handler_->getProblem().replaceStageCircular(*reach_horizon_[0]);
-      solver_->cycleProblem(ocp_handler_->getProblem(), reach_horizon_data_[0]);
-
-      rotate_vec_left(reach_horizon_);
-      rotate_vec_left(reach_horizon_data_);
+      ocp_handler_->setWeight(last_id, "frame_cost", 1.0);
+      ocp_handler_->setTerminalWeight("frame_cost", 1.0);
     }
     else
     {
-      ocp_handler_->getProblem().replaceStageCircular(*rest_horizon_[0]);
-      solver_->cycleProblem(ocp_handler_->getProblem(), rest_horizon_data_[0]);
-
-      rotate_vec_left(rest_horizon_);
-      rotate_vec_left(rest_horizon_data_);
+      ocp_handler_->setWeight(last_id, "frame_cost", 0.0);
+      ocp_handler_->setTerminalWeight("frame_cost", 0.0);
     }
   }
 
   void ArmMPC::updateTargetReference()
   {
     ocp_handler_->setReferencePose(ocp_handler_->getSize() - 1, reach_pose_);
+    ocp_handler_->setTerminalReferencePose(reach_pose_);
     ocp_handler_->setReferenceState(ocp_handler_->getSize() - 1, x_reference_);
+  }
+
+  void ArmMPC::setReferencePose(const std::size_t t, const Eigen::Vector3d & pose_ref)
+  {
+    if (t < ocp_handler_->getSize() - 1)
+      ocp_handler_->setReferencePose(t, pose_ref);
+    else
+      ocp_handler_->setTerminalReferencePose(pose_ref);
+    ;
   }
 
   const Eigen::Vector3d ArmMPC::getReferencePose(const std::size_t t) const
   {
-    return ocp_handler_->getReferencePose(t);
+    Eigen::Vector3d pos_ref;
+    if (t < ocp_handler_->getSize() - 1)
+      pos_ref = ocp_handler_->getReferencePose(t);
+    else
+      pos_ref = ocp_handler_->getTerminalReferencePose();
+
+    return pos_ref;
   }
 
   TrajOptProblem & ArmMPC::getTrajOptProblem()

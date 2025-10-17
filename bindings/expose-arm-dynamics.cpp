@@ -1,6 +1,16 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 2-Clause License
+//
+// Copyright (C) 2025, INRIA
+// Copyright note valid unless otherwise stated in individual files.
+// All rights reserved.
+///////////////////////////////////////////////////////////////////////////////
+
 #include "simple-mpc/arm-dynamics.hpp"
 #include "simple-mpc/python.hpp"
 
+#include "simple-mpc/fwd.hpp"
+#include <eigenpy/eigenpy.hpp>
 #include <eigenpy/std-map.hpp>
 
 namespace simple_mpc::python
@@ -59,7 +69,13 @@ namespace simple_mpc::python
         "__init__",
         bp::make_constructor(&createArmDynamics, bp::default_call_policies(), ("settings"_a, "model_handler")))
       .def("getSettings", &getSettingsArm)
-      .def("createStage", &ArmDynamicsOCP::createStage, bp::args("self", "reaching", "reach_pose"));
+      .def("createStage", &ArmDynamicsOCP::createStage, bp::args("self", "reaching", "reach_pose"))
+      .def("createProblem", &ArmDynamicsOCP::createProblem, ("self"_a, "x0", "horizon"))
+      .def("setReferencePose", &ArmDynamicsOCP::setReferencePose, bp::args("self", "t", "pose_ref"))
+      .def("getReferencePose", &ArmDynamicsOCP::getReferencePose, bp::args("self", "t"))
+      .def("setReferenceState", &ArmDynamicsOCP::setReferenceState, bp::args("self", "t", "x_ref"))
+      .def("getReferenceState", &ArmDynamicsOCP::getReferenceState, bp::args("self", "t"))
+      .def("getProblem", +[](ArmDynamicsOCP & ocp) { return boost::ref(ocp.getProblem()); }, "self"_a);
   }
 
 } // namespace simple_mpc::python
