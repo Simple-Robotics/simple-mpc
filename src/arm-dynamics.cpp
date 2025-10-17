@@ -36,18 +36,18 @@ namespace simple_mpc
     auto space = MultibodyPhaseSpace(model_handler_.getModel());
     auto rcost = CostStack(space, nv_);
 
-    rcost.addCost("state_cost", QuadraticStateCost(space, nv_, model_handler_.getReferenceState(), settings_.w_x));
+    rcost.addCost("state_cost", QuadraticStateCost(space, nv_, x0_, settings_.w_x));
     rcost.addCost("control_cost", QuadraticControlCost(space, Eigen::VectorXd::Zero(nv_), settings_.w_u));
 
     FrameTranslationResidual frame_residual =
       FrameTranslationResidual(space.ndx(), nv_, model_handler_.getModel(), reach_pose, ee_id_);
     if (reaching)
     {
-      rcost.addCost(settings_.ee_name + "_cost", QuadraticResidualCost(space, frame_residual, settings_.w_frame));
+      rcost.addCost("frame_cost", QuadraticResidualCost(space, frame_residual, settings_.w_frame));
     }
     else
     {
-      rcost.addCost(settings_.ee_name + "_cost", QuadraticResidualCost(space, frame_residual, settings_.w_frame), 0.);
+      rcost.addCost("frame_cost", QuadraticResidualCost(space, frame_residual, settings_.w_frame), 0.);
     }
 
     MultibodyFreeFwdDynamics ode = MultibodyFreeFwdDynamics(space, Eigen::MatrixXd::Identity(nv_, nv_));
@@ -63,8 +63,14 @@ namespace simple_mpc
     }
     if (settings_.kinematics_limits)
     {
+      std::vector<int> state_id;
+      for (int i = 0; i < nv_; i++)
+      {
+        state_id.push_back(i);
+      }
       StateErrorResidual state_fn = StateErrorResidual(space, nv_, space.neutral());
-      stm.addConstraint(state_fn, BoxConstraint(settings_.qmin, settings_.qmax));
+      FunctionSliceXpr state_slice = FunctionSliceXpr(state_fn, state_id);
+      stm.addConstraint(state_slice, BoxConstraint(settings_.qmin, settings_.qmax));
     }
 
     return stm;
@@ -81,10 +87,17 @@ namespace simple_mpc
     return cs;
   }
 
+  CostStack * ArmDynamicsOCP::getTerminalCostStack()
+  {
+    CostStack * cs = dynamic_cast<CostStack *>(&*problem_->term_cost_);
+
+    return cs;
+  }
+
   void ArmDynamicsOCP::setReferencePose(const std::size_t t, const Eigen::Vector3d & pose_ref)
   {
     CostStack * cs = getCostStack(t);
-    QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>(settings_.ee_name + "_cost");
+    QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("frame_cost");
     FrameTranslationResidual * cfr = qrc->getResidual<FrameTranslationResidual>();
     cfr->setReference(pose_ref);
   }
@@ -92,7 +105,25 @@ namespace simple_mpc
   const Eigen::Vector3d ArmDynamicsOCP::getReferencePose(const std::size_t t)
   {
     CostStack * cs = getCostStack(t);
-    QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>(settings_.ee_name + "_cost");
+    QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("frame_cost");
+    FrameTranslationResidual * cfr = qrc->getResidual<FrameTranslationResidual>();
+    Eigen::Vector3d ref = cfr->getReference();
+
+    return ref;
+  }
+
+  void ArmDynamicsOCP::setTerminalReferencePose(const Eigen::Vector3d & pose_ref)
+  {
+    CostStack * cs = getTerminalCostStack();
+    QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("frame_cost");
+    FrameTranslationResidual * cfr = qrc->getResidual<FrameTranslationResidual>();
+    cfr->setReference(pose_ref);
+  }
+
+  const Eigen::Vector3d ArmDynamicsOCP::getTerminalReferencePose()
+  {
+    CostStack * cs = getTerminalCostStack();
+    QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("frame_cost");
     FrameTranslationResidual * cfr = qrc->getResidual<FrameTranslationResidual>();
     Eigen::Vector3d ref = cfr->getReference();
 
@@ -119,6 +150,30 @@ namespace simple_mpc
     return qc->getTarget();
   }
 
+  void ArmDynamicsOCP::setTerminalWeight(const std::string key, double weight)
+  {
+    CostStack * cs = getTerminalCostStack();
+    cs->setWeight(key, weight);
+  }
+
+  double ArmDynamicsOCP::getTerminalWeight(const std::string key)
+  {
+    CostStack * cs = getTerminalCostStack();
+    return cs->getWeight(key);
+  }
+
+  void ArmDynamicsOCP::setWeight(const std::size_t t, const std::string key, double weight)
+  {
+    CostStack * cs = getCostStack(t);
+    cs->setWeight(key, weight);
+  }
+
+  double ArmDynamicsOCP::getWeight(const std::size_t t, const std::string key)
+  {
+    CostStack * cs = getCostStack(t);
+    return cs->getWeight(key);
+  }
+
   CostStack ArmDynamicsOCP::createTerminalCost()
   {
     auto ter_space = MultibodyPhaseSpace(model_handler_.getModel());
@@ -126,6 +181,10 @@ namespace simple_mpc
 
     term_cost.addCost(
       "state_cost", QuadraticStateCost(ter_space, nv_, model_handler_.getReferenceState(), settings_.w_x));
+
+    FrameTranslationResidual frame_residual =
+      FrameTranslationResidual(ter_space.ndx(), nv_, model_handler_.getModel(), Eigen::Vector3d::Zero(), ee_id_);
+    term_cost.addCost("frame_cost", QuadraticResidualCost(ter_space, frame_residual, settings_.w_frame), 0.0);
 
     return term_cost;
   }

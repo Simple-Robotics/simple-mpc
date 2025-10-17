@@ -76,13 +76,21 @@ namespace simple_mpc
 
     // Getters and setters
     CostStack * getCostStack(std::size_t t);
+    CostStack * getTerminalCostStack();
     void deactivateReach(const std::size_t t);
     void activateReach(const std::size_t t);
     void setReferencePose(const std::size_t t, const Eigen::Vector3d & pose_ref);
     const Eigen::Vector3d getReferencePose(const std::size_t t);
+    void setTerminalReferencePose(const Eigen::Vector3d & pose_ref);
+    const Eigen::Vector3d getTerminalReferencePose();
     const Eigen::VectorXd getProblemState(const RobotDataHandler & data_handler);
     void setReferenceState(const std::size_t t, const ConstVectorRef & x_ref);
     const ConstVectorRef getReferenceState(const std::size_t t);
+    void setWeight(const std::size_t t, const std::string key, double weight);
+    double getWeight(const std::size_t t, const std::string key);
+    void setTerminalWeight(const std::string key, double weight);
+    double getTerminalWeight(const std::string key);
+
     ArmDynamicsSettings getSettings()
     {
       return settings_;

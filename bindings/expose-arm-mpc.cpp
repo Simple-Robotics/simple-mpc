@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // BSD 2-Clause License
 //
-// Copyright (C) 2024, INRIA
+// Copyright (C) 2025, INRIA
 // Copyright note valid unless otherwise stated in individual files.
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
@@ -60,7 +60,6 @@ namespace simple_mpc
       bp::class_<ArmMPC, boost::noncopyable>("ArmMPC", bp::no_init)
         .def("__init__", bp::make_constructor(&createArmMPC, bp::default_call_policies()))
         .def("getSettings", &getSettings)
-        .def("generateReachHorizon", &ArmMPC::generateReachHorizon, bp::args("self", "reach_pose"))
         .def("iterate", &ArmMPC::iterate, bp::args("self", "x"))
         .def("setReferencePose", &ArmMPC::setReferencePose, bp::args("self", "t", "pose_ref"))
         .def("getReferencePose", &ArmMPC::getReferencePose, bp::args("self", "t"))
@@ -78,9 +77,6 @@ namespace simple_mpc
         .def(
           "getTrajOptProblem", &ArmMPC::getTrajOptProblem, "self"_a, bp::return_internal_reference<>(),
           "Get the trajectory optimal problem.")
-        .def(
-          "getReachHorizon", &ArmMPC::getReachHorizon, "self"_a, bp::return_internal_reference<>(),
-          "Get the reach horizon.")
         .add_property("solver", bp::make_getter(&ArmMPC::solver_, eigenpy::ReturnInternalStdUniquePtr{}))
         .add_property("xs", &ArmMPC::xs_)
         .add_property("us", &ArmMPC::us_)
