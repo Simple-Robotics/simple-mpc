@@ -42,6 +42,11 @@ args = [{ "arg" = "buildtype", "default" = "Release" }, { "arg" = "buildtests", 
 cmd = "cmake --build build --target all"
 depends-on = [{"task" = "configure", "args" = [{"buildtype" = "{{buildtype}}" }, {"buildtests" = "{{buildtests}}" }, {"buildbenchmarks" = "{{buildbenchmarks}}" }] }]
 
+[tasks.install]
+args = [{ "arg" = "buildtype", "default" = "Release" }, { "arg" = "buildtests", "default" = "OFF" }, { "arg" = "buildbenchmarks", "default" = "OFF" }]
+cmd = "cmake --build build --target install"
+depends-on = [{"task" = "build", "args" = [{"buildtype" = "{{buildtype}}" }, {"buildtests" = "{{buildtests}}" }, {"buildbenchmarks" = "{{buildbenchmarks}}" }] }]
+
 [tasks.test]
 cmd = "ctest --test-dir build --output-on-failure"
 depends-on = [{"task" = "build", "args" = [{ "buildtype" = "Debug" }, {"buildtests" = "ON"}] }]
