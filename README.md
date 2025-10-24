@@ -23,9 +23,15 @@ git clone git@github.com:Simple-Robotics/simple-mpc.git --recursive
 cd simple-mpc
 ```
 
-2. Build
+2. Build and install
 ```bash
-pixi run build
+pixi run install
+```
+
+3. Run an example
+```bash
+pixi shell
+python examples/go2_kinodynamics.py
 ```
 
 #### Dependencies
