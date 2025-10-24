@@ -19,12 +19,13 @@ pkg-config = ">=0.29.2"
 libboost-python-devel = ">=1.80.0"
 python = "3.11"
 eigenpy = ">=3.10.1"
-aligator = ">=0.15"
+aligator = ">=0.16"
 proxsuite = ">=0.7.2"
 benchmark = ">=1.8.0"
 pytest = ">=8.3.0"
 matplotlib = ">=3.9"
 tsid = ">=1.9.0,<2"
+pybullet = ">=3.25,<4"
 
 [activation]
 scripts = ["build_scripts/pixi/activation.sh"]
@@ -40,6 +41,11 @@ cmd = "CXXFLAGS=$ALIGATOR_CXX_FLAGS cmake -G Ninja -B build -S . -DCMAKE_BUILD_T
 args = [{ "arg" = "buildtype", "default" = "Release" }, { "arg" = "buildtests", "default" = "OFF" }, { "arg" = "buildbenchmarks", "default" = "OFF" }]
 cmd = "cmake --build build --target all"
 depends-on = [{"task" = "configure", "args" = [{"buildtype" = "{{buildtype}}" }, {"buildtests" = "{{buildtests}}" }, {"buildbenchmarks" = "{{buildbenchmarks}}" }] }]
+
+[tasks.install]
+args = [{ "arg" = "buildtype", "default" = "Release" }, { "arg" = "buildtests", "default" = "OFF" }, { "arg" = "buildbenchmarks", "default" = "OFF" }]
+cmd = "cmake --build build --target install"
+depends-on = [{"task" = "build", "args" = [{"buildtype" = "{{buildtype}}" }, {"buildtests" = "{{buildtests}}" }, {"buildbenchmarks" = "{{buildbenchmarks}}" }] }]
 
 [tasks.test]
 cmd = "ctest --test-dir build --output-on-failure"
