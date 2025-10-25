@@ -133,11 +133,12 @@ void KinodynamicsID::setTarget(
   postureTask_->setReference(samplePosture_);
 
   // Base task
-  const pinocchio::SE3 oMb{data_handler_.getBaseFramePose()};
-  const pinocchio::SE3 oMb_rotation(oMb.rotation(), Eigen::Vector3d::Zero());
-  const pinocchio::Motion v_world_aligned{oMb_rotation.act(pinocchio::Motion(v_target.head<6>()))};
-  const pinocchio::Motion a_world_aligned{oMb_rotation.act(pinocchio::Motion(a_target.head<6>()))};
-  baseTask_->setReference(oMb, v_world_aligned, a_world_aligned);
+  tsid::math::SE3ToVector(data_handler_.getBaseFramePose(), sampleBase_.pos);
+  /* Velocity and acceleration not set here since the actual position of the robot is needed to transform from local to
+   * world-aligned frame. Will be done in solve()
+   */
+  targetVelBase_ = v_target.head<6>();
+  targetAccBase_ = a_target.head<6>();
 
   // Foot contacts
   for (std::size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
@@ -215,6 +216,15 @@ void KinodynamicsID::solve(
     }
   }
 
+  // Convert robot base vel/acc from local to world-aligned frame using actual robot pose
+  const pinocchio::SE3 oMb_rotation(data_handler_.getBaseFramePose().rotation(), Eigen::Vector3d::Zero());
+  const pinocchio::Motion v_world_aligned{oMb_rotation.act(pinocchio::Motion(targetVelBase_))};
+  const pinocchio::Motion a_world_aligned{oMb_rotation.act(pinocchio::Motion(targetAccBase_))};
+  sampleBase_.setDerivative(v_world_aligned.toVector());
+  sampleBase_.setDerivative(a_world_aligned.toVector());
+  baseTask_->setReference(sampleBase_);
+
+  // Solve QP
   const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(t, q_meas, v_meas);
   last_solution_ = solver_.solve(solver_data);
   assert(last_solution_.status == tsid::solvers::HQPStatus::HQP_STATUS_OPTIMAL);
