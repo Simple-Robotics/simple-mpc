@@ -37,8 +37,6 @@ namespace simple_mpc
   class CentroidalOCP;
   class ArmDynamicsOCP;
   class OCPHandler;
-  class IDSolver;
-  class IKIDSolver;
   class FrictionCompensation;
 
   /// EIGEN TYPEDEFS
