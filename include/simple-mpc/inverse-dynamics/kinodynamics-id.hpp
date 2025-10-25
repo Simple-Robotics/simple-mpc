@@ -85,6 +85,8 @@ namespace simple_mpc
     tsid::solvers::HQPOutput last_solution_;
     tsid::trajectories::TrajectorySample samplePosture_;
     tsid::trajectories::TrajectorySample sampleBase_;
+    pinocchio::Motion targetVelBase_;
+    pinocchio::Motion targetAccBase_;
   };
 
 } // namespace simple_mpc
