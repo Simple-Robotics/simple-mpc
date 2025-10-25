@@ -289,8 +289,6 @@ for step in range(300):
         q_meas, v_meas = device.measureState()
         x_measured = np.concatenate([q_meas, v_meas])
 
-        mpc.getDataHandler().updateInternalData(x_measured, True)
-
         kino_ID.setTarget(q_interp, v_interp, acc_interp, contact_states, force_interp)
         tau_cmd = kino_ID.solve(t, q_meas, v_meas)
 
