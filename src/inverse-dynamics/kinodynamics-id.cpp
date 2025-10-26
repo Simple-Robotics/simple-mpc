@@ -4,11 +4,19 @@
 
 using namespace simple_mpc;
 
+static bool isFloatingBase(const pinocchio::Model & model)
+{
+  return model.joints[0].nq() == 6;
+}
+
 KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double control_dt, const Settings settings)
 : settings_(settings)
 , model_handler_(model_handler)
 , data_handler_(model_handler_)
-, robot_(model_handler_.getModel())
+, robot_(
+    model_handler_.getModel(),
+    isFloatingBase(model_handler.getModel()) ? tsid::robots::RobotWrapper::RootJointType::FLOATING_BASE_SYSTEM
+                                             : tsid::robots::RobotWrapper::RootJointType::FIXED_BASE_SYSTEM)
 , formulation_("tsid", robot_)
 , solver_("solver-proxqp")
 {
@@ -16,7 +24,7 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
   const int nq = model.nq;
   const int nq_actuated = robot_.nq_actuated();
   const int nv = model.nv;
-  const int nu = nv - 6;
+  const int nu = robot_.na();
 
   // Prepare foot contact tasks
   const size_t n_contacts = model_handler_.getFeetNb();
@@ -64,14 +72,21 @@ KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double c
 
   samplePosture_.resize(nq_actuated, nu);
 
-  // Add the base task
-  baseTask_ = std::make_unique<tsid::tasks::TaskSE3Equality>("task-base", robot_, model_handler_.getBaseFrameName());
-  baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
-  baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
-  if (settings_.w_base > 0.)
-    formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
+  // Add the base task iff the robot has floating base
+  if (isFloatingBase(model_handler.getModel()))
+  {
+    baseTask_ = std::make_unique<tsid::tasks::TaskSE3Equality>("task-base", robot_, model_handler_.getBaseFrameName());
+    baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
+    baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
+    if (settings_.w_base > 0.)
+      formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
 
-  sampleBase_.resize(12, 6);
+    sampleBase_.resize(12, 6);
+  }
+  else
+  {
+    baseTask_.reset(nullptr); // Do not instantiate base task for this robot
+  }
 
   // Add joint limit task
   boundsTask_ = std::make_unique<tsid::tasks::TaskJointPosVelAccBounds>("task-joint-limits", robot_, control_dt);
@@ -132,13 +147,16 @@ void KinodynamicsID::setTarget(
   samplePosture_.setSecondDerivative(a_target.tail(robot_.na()));
   postureTask_->setReference(samplePosture_);
 
-  // Base task
-  tsid::math::SE3ToVector(data_handler_.getBaseFramePose(), sampleBase_.pos);
-  /* Velocity and acceleration not set here since the actual position of the robot is needed to transform from local to
-   * world-aligned frame. Will be done in solve()
-   */
-  targetVelBase_ = v_target.head<6>();
-  targetAccBase_ = a_target.head<6>();
+  // Base task might not be defined in some cases
+  if (baseTask_)
+  {
+    tsid::math::SE3ToVector(data_handler_.getBaseFramePose(), sampleBase_.pos);
+    /* Velocity and acceleration not set here since the actual position of the robot is needed to transform from local
+     * to world-aligned frame. Will be done in solve()
+     */
+    targetVelBase_ = v_target.head<6>();
+    targetAccBase_ = a_target.head<6>();
+  }
 
   // Foot contacts
   for (std::size_t foot_nb = 0; foot_nb < model_handler_.getFeetNb(); foot_nb++)
@@ -216,13 +234,17 @@ void KinodynamicsID::solve(
     }
   }
 
-  // Convert robot base vel/acc from local to world-aligned frame using actual robot pose
-  const pinocchio::SE3 oMb_rotation(data_handler_.getBaseFramePose().rotation(), Eigen::Vector3d::Zero());
-  const pinocchio::Motion v_world_aligned{oMb_rotation.act(pinocchio::Motion(targetVelBase_))};
-  const pinocchio::Motion a_world_aligned{oMb_rotation.act(pinocchio::Motion(targetAccBase_))};
-  sampleBase_.setDerivative(v_world_aligned.toVector());
-  sampleBase_.setDerivative(a_world_aligned.toVector());
-  baseTask_->setReference(sampleBase_);
+  // Base task might not be defined in some cases
+  if (baseTask_)
+  {
+    // Convert robot base vel/acc from local to world-aligned frame using actual robot pose
+    const pinocchio::SE3 oMb_rotation(data_handler_.getBaseFramePose().rotation(), Eigen::Vector3d::Zero());
+    const pinocchio::Motion v_world_aligned{oMb_rotation.act(pinocchio::Motion(targetVelBase_))};
+    const pinocchio::Motion a_world_aligned{oMb_rotation.act(pinocchio::Motion(targetAccBase_))};
+    sampleBase_.setDerivative(v_world_aligned.toVector());
+    sampleBase_.setDerivative(a_world_aligned.toVector());
+    baseTask_->setReference(sampleBase_);
+  }
 
   // Solve QP
   const tsid::solvers::HQPData & solver_data = formulation_.computeProblemData(t, q_meas, v_meas);
