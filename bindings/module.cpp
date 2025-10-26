@@ -15,8 +15,6 @@ namespace simple_mpc::python
   void exposeCentroidalOcp();
   void exposeKinodynamicsOcp();
   void exposeMPC();
-  void exposeIDSolver();
-  void exposeIKIDSolver();
   void exposeInterpolator();
   void exposeFrictionCompensation();
   void exposeInverseDynamics();

@@ -36,8 +36,6 @@ namespace simple_mpc
   class KinodynamicsOCP;
   class CentroidalOCP;
   class OCPHandler;
-  class IDSolver;
-  class IKIDSolver;
   class FrictionCompensation;
 
   /// EIGEN TYPEDEFS
