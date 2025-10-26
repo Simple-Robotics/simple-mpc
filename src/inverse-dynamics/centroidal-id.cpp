@@ -8,15 +8,18 @@ namespace simple_mpc
   , settings_(settings)
   {
     // Update base task to be only on the base orientation
-    const Eigen::Vector<double, 6> orientation_mask{0., 0., 0., 1., 1., 1.};
-    baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
-    baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
-    baseTask_->setMask(orientation_mask);
-    if (settings_.w_base > 0.)
+    if (baseTask_)
     {
-      // Task has changed size, need to be removed and added again for new size to be taken into account.
-      formulation_.removeTask(baseTask_->name(), 0);
-      formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
+      const Eigen::Vector<double, 6> orientation_mask{0., 0., 0., 1., 1., 1.};
+      baseTask_->Kp(settings_.kp_base * Eigen::VectorXd::Ones(6));
+      baseTask_->Kd(2.0 * baseTask_->Kp().cwiseSqrt());
+      baseTask_->setMask(orientation_mask);
+      if (settings_.w_base > 0.)
+      {
+        // Task has changed size, need to be removed and added again for new size to be taken into account.
+        formulation_.removeTask(baseTask_->name(), 0);
+        formulation_.addMotionTask(*baseTask_, settings_.w_base, 1);
+      }
     }
 
     // Add the center of mass task
