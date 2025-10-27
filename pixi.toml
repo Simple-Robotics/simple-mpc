@@ -27,9 +27,6 @@ matplotlib = ">=3.9"
 tsid = ">=1.9.0,<2"
 pybullet = ">=3.25,<4"
 
-[activation]
-scripts = ["build_scripts/pixi/activation.sh"]
-
 [tasks]
 clean = { cmd = "rm -rf build" }
 
@@ -67,7 +64,6 @@ python = "3.11.*"
 # to avoid cxx-compiler to overwrite them.
 [feature.clang]
 platforms = ["linux-64"]
-activation = { scripts = ["build_scripts/pixi/activation_clang.sh"] }
 dependencies = { clangxx = "*" }
 
 [environments]
