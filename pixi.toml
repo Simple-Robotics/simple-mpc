@@ -32,7 +32,7 @@ clean = { cmd = "rm -rf build" }
 
 [tasks.configure]
 args = [{ "arg" = "buildtype", "default" = "Release" }, { "arg" = "buildtests", "default" = "OFF" }, { "arg" = "buildbenchmarks", "default" = "OFF" }]
-cmd = "CXXFLAGS=$ALIGATOR_CXX_FLAGS cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE={{buildtype}} -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTING={{buildtests}} -DBUILD_BENCHMARK={{buildbenchmarks}} -DGENERATE_PYTHON_STUBS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+cmd = "cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE={{buildtype}} -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTING={{buildtests}} -DBUILD_BENCHMARK={{buildbenchmarks}} -DGENERATE_PYTHON_STUBS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
 
 [tasks.build]
 args = [{ "arg" = "buildtype", "default" = "Release" }, { "arg" = "buildtests", "default" = "OFF" }, { "arg" = "buildbenchmarks", "default" = "OFF" }]
