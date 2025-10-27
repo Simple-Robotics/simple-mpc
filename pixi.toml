@@ -13,29 +13,23 @@ ccache = ">=4.9.1"
 cmake = ">=3.10"
 cxx-compiler = ">=1.7.0"
 ninja = ">=1.11"
-pkg-config = ">=0.29.2"
 
 [dependencies]
-libboost-python-devel = ">=1.80.0"
-python = "3.11"
-eigenpy = ">=3.10.1"
+python = ">=3"
+eigenpy = ">=3.9.0"
+pinocchio = ">=3,<4"
 aligator = ">=0.16"
-proxsuite = ">=0.7.2"
+proxsuite = ">=0.7"
 benchmark = ">=1.8.0"
-pytest = ">=8.3.0"
-matplotlib = ">=3.9"
 tsid = ">=1.9.0,<2"
-pybullet = ">=3.25,<4"
-
-[activation]
-scripts = ["build_scripts/pixi/activation.sh"]
+pybullet = ">=3"
 
 [tasks]
 clean = { cmd = "rm -rf build" }
 
 [tasks.configure]
 args = [{ "arg" = "buildtype", "default" = "Release" }, { "arg" = "buildtests", "default" = "OFF" }, { "arg" = "buildbenchmarks", "default" = "OFF" }]
-cmd = "CXXFLAGS=$ALIGATOR_CXX_FLAGS cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE={{buildtype}} -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTING={{buildtests}} -DBUILD_BENCHMARK={{buildbenchmarks}} -DGENERATE_PYTHON_STUBS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+cmd = "cmake -G Ninja -B build -S . -DCMAKE_BUILD_TYPE={{buildtype}} -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX -DBUILD_TESTING={{buildtests}} -DBUILD_BENCHMARK={{buildbenchmarks}} -DGENERATE_PYTHON_STUBS=ON -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
 
 [tasks.build]
 args = [{ "arg" = "buildtype", "default" = "Release" }, { "arg" = "buildtests", "default" = "OFF" }, { "arg" = "buildbenchmarks", "default" = "OFF" }]
@@ -48,8 +42,9 @@ cmd = "cmake --build build --target install"
 depends-on = [{"task" = "build", "args" = [{"buildtype" = "{{buildtype}}" }, {"buildtests" = "{{buildtests}}" }, {"buildbenchmarks" = "{{buildbenchmarks}}" }] }]
 
 [tasks.test]
+args = [{ "arg" = "buildtype", "default" = "Debug" }]
 cmd = "ctest --test-dir build --output-on-failure"
-depends-on = [{"task" = "build", "args" = [{ "buildtype" = "Debug" }, {"buildtests" = "ON"}] }]
+depends-on = [{"task" = "build", "args" = [{ "buildtype" = "{{buildtype}}" }, {"buildtests" = "ON"}] }]
 
 [tasks.benchmark]
 cmd = "cmake --build build --target run-benchmarks"
@@ -59,19 +54,5 @@ depends-on = [{"task" = "build", "args" = [{ "buildtype" = "Release" }, {"buildb
 dependencies = { pre-commit = ">=3.6.2" }
 tasks = { lint = { cmd = "pre-commit run --all" } }
 
-[feature.py311.dependencies]
-python = "3.11.*"
-
-# Use clang on GNU/Linux.
-# We must use scripts instead of env to setup CC and CXX
-# to avoid cxx-compiler to overwrite them.
-[feature.clang]
-platforms = ["linux-64"]
-activation = { scripts = ["build_scripts/pixi/activation_clang.sh"] }
-dependencies = { clangxx = "*" }
-
 [environments]
-default = { features = ["py311"], solve-group = "py311" }
-clang = { features = ["clang", "py311"] }
-lint = { features = ["lint"], solve-group = "py311" }
-all = { features = [], solve-group = "py311" }
+lint = { features = ["lint"]}
