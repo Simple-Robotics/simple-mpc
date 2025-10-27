@@ -11,7 +11,7 @@ readme = "README.md"
 [build-dependencies]
 ccache = ">=4.9.1"
 cmake = ">=3.10"
-cxx-compiler = ">=1.0.0"
+cxx-compiler = ">=1.7.0"
 ninja = ">=1.11"
 
 [dependencies]
