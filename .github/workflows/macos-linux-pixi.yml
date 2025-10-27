@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   simple-mpc-pixi:
-    name: ${{ matrix.os }} - Env ${{ matrix.environment }} ${{ matrix.build_type }}
+    name: ${{ matrix.os }} - ${{ matrix.build_type }}
     runs-on: ${{ matrix.os }}
     env:
       CCACHE_BASEDIR: "${GITHUB_WORKSPACE}"
@@ -31,7 +31,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        environment: [all]
         build_type: [Release, Debug]
 
     steps:
@@ -49,15 +48,13 @@ jobs:
       with:
         pixi-version: v0.56.0
         cache: true
-        environments: ${{ matrix.environment }}
 
     - name: Build simple-mpc
       shell: bash -l {0}
       env:
         CMAKE_BUILD_PARALLEL_LEVEL: 4
-        SIMPLE_MPC_BUILD_TYPE: ${{ matrix.build_type }}
       run: |
-        pixi run -e ${{ matrix.environment }} test
+        pixi run test buildtype=${{ matrix.build_type }}
 
   check:
     if: always()
