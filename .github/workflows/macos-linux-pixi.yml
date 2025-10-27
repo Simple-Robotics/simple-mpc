@@ -7,12 +7,7 @@ on:
       - '.gitignore'
       - '*.md'
       - 'CHANGELOG.md'
-  pull_request:
-    paths-ignore:
-      - 'doc/'
-      - '.gitignore'
-      - '*.md'
-      - 'CHANGELOG.md'
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
