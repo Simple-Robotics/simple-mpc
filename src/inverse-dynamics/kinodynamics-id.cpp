@@ -6,7 +6,7 @@ using namespace simple_mpc;
 
 static bool isFloatingBase(const pinocchio::Model & model)
 {
-  return model.joints[0].nq() == 6;
+  return model.nqs[1] == 7; // (Joint 0 is universe)
 }
 
 KinodynamicsID::KinodynamicsID(const RobotModelHandler & model_handler, double control_dt, const Settings settings)
