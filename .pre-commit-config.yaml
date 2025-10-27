@@ -32,7 +32,7 @@ repos:
       - id: gersemi
         args: ["--print-config=verbose"]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.1
+    rev: v0.14.2
     hooks:
       - id: ruff-check # Run the linter.
         args: [ --fix ]
