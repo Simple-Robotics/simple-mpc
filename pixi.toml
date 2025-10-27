@@ -56,18 +56,6 @@ depends-on = [{"task" = "build", "args" = [{ "buildtype" = "Release" }, {"buildb
 dependencies = { pre-commit = ">=3.6.2" }
 tasks = { lint = { cmd = "pre-commit run --all" } }
 
-[feature.py311.dependencies]
-python = "3.11.*"
-
-# Use clang on GNU/Linux.
-# We must use scripts instead of env to setup CC and CXX
-# to avoid cxx-compiler to overwrite them.
-[feature.clang]
-platforms = ["linux-64"]
-dependencies = { clangxx = "*" }
-
 [environments]
-default = { features = ["py311"], solve-group = "py311" }
-clang = { features = ["clang", "py311"] }
-lint = { features = ["lint"], solve-group = "py311" }
-all = { features = [], solve-group = "py311" }
+default = { features = ["py311"] }
+lint = { features = ["lint"]}
