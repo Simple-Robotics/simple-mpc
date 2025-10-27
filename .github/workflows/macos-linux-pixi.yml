@@ -54,7 +54,7 @@ jobs:
       env:
         CMAKE_BUILD_PARALLEL_LEVEL: 4
       run: |
-        pixi run test buildtype=${{ matrix.build_type }}
+        pixi run test ${{ matrix.build_type }}
 
   check:
     if: always()
