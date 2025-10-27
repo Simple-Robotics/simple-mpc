@@ -11,21 +11,18 @@ readme = "README.md"
 [build-dependencies]
 ccache = ">=4.9.1"
 cmake = ">=3.10"
-cxx-compiler = ">=1.7.0"
+cxx-compiler = ">=1.0.0"
 ninja = ">=1.11"
-pkg-config = ">=0.29.2"
 
 [dependencies]
-libboost-python-devel = ">=1.80.0"
-python = "*"
-eigenpy = ">=3.10.1"
+python = ">=3"
+eigenpy = ">=3.9.0"
+pinocchio = ">=3,<4"
 aligator = ">=0.16"
-proxsuite = ">=0.7.2"
+proxsuite = ">=0.7"
 benchmark = ">=1.8.0"
-pytest = ">=8.3.0"
-matplotlib = ">=3.9"
 tsid = ">=1.9.0,<2"
-pybullet = ">=3.25,<4"
+pybullet = ">=3"
 
 [tasks]
 clean = { cmd = "rm -rf build" }
