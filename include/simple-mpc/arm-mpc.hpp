@@ -72,7 +72,7 @@ namespace simple_mpc
 
     // Generate the cycle walking problem along which we will iterate
     // the receding horizon
-    void generateReachHorizon(const Eigen::Vector3d & reach_pose);
+    void generateReachHorizon(const pinocchio::SE3 & reach_pose);
 
     // Perform one iteration of MPC
     void iterate(const ConstVectorRef & x);
@@ -81,9 +81,9 @@ namespace simple_mpc
     void recedeWithCycle();
 
     // Getters and setters
-    void setReferencePose(const std::size_t t, const Eigen::Vector3d & pose_ref);
+    void setReferencePose(const std::size_t t, const pinocchio::SE3 & pose_ref);
 
-    const Eigen::Vector3d getReferencePose(const std::size_t t) const;
+    const pinocchio::SE3 getReferencePose(const std::size_t t) const;
 
     void setReferenceState(const VectorXd & state_ref)
     {
@@ -104,7 +104,7 @@ namespace simple_mpc
 
     const ConstVectorRef getStateDerivative(const std::size_t t);
 
-    void switchToReach(const Eigen::Vector3d & reach_pose);
+    void switchToReach(const pinocchio::SE3 & reach_pose);
 
     void switchToRest();
 
@@ -115,7 +115,7 @@ namespace simple_mpc
     std::vector<MatrixXd> Ks_;
     VectorXd x_reference_;
     MoveType now_;
-    Eigen::Vector3d reach_pose_;
+    pinocchio::SE3 reach_pose_;
 
     // Initial quantities
     VectorXd x0_;

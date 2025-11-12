@@ -113,7 +113,7 @@ namespace simple_mpc
     ocp_handler_->setReferenceState(ocp_handler_->getSize() - 1, x_reference_);
   }
 
-  void ArmMPC::setReferencePose(const std::size_t t, const Eigen::Vector3d & pose_ref)
+  void ArmMPC::setReferencePose(const std::size_t t, const pinocchio::SE3 & pose_ref)
   {
     if (t < ocp_handler_->getSize() - 1)
       ocp_handler_->setReferencePose(t, pose_ref);
@@ -122,9 +122,9 @@ namespace simple_mpc
     ;
   }
 
-  const Eigen::Vector3d ArmMPC::getReferencePose(const std::size_t t) const
+  const pinocchio::SE3 ArmMPC::getReferencePose(const std::size_t t) const
   {
-    Eigen::Vector3d pos_ref;
+    pinocchio::SE3 pos_ref;
     if (t < ocp_handler_->getSize() - 1)
       pos_ref = ocp_handler_->getReferencePose(t);
     else
@@ -146,7 +146,7 @@ namespace simple_mpc
     return int_data->continuous_data->xdot_;
   }
 
-  void ArmMPC::switchToReach(const Eigen::Vector3d & reach_pose)
+  void ArmMPC::switchToReach(const pinocchio::SE3 & reach_pose)
   {
     now_ = REACHING;
     reach_pose_ = reach_pose;

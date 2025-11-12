@@ -356,8 +356,7 @@ BOOST_AUTO_TEST_CASE(armdynamics)
 
   ArmDynamicsSettings settings = getArmSettings(model_handler);
   ArmDynamicsOCP armproblem(settings, model_handler);
-  Eigen::Vector3d reach_pose;
-  reach_pose << 0.1, 0.1, 0.1;
+  pinocchio::SE3 reach_pose = pinocchio::SE3::Identity();
   StageModel sm = armproblem.createStage(true, reach_pose);
   CostStack * cs = dynamic_cast<CostStack *>(&*sm.cost_);
 
@@ -375,11 +374,10 @@ BOOST_AUTO_TEST_CASE(armdynamics)
   BOOST_CHECK_EQUAL(cc->weights_, settings.w_u);
   BOOST_CHECK_EQUAL(crc->weights_, settings.w_frame);
 
-  Eigen::Vector3d pose_left_random;
-  pose_left_random << 0.2, 0.3, 0.4;
-  armproblem.setReferencePose(4, pose_left_random);
+  pinocchio::SE3 pose_random = pinocchio::SE3::Random();
+  armproblem.setReferencePose(4, pose_random);
 
-  BOOST_CHECK_EQUAL(armproblem.getReferencePose(4), pose_left_random);
+  BOOST_CHECK_EQUAL(armproblem.getReferencePose(4), pose_random);
 
   Eigen::VectorXd new_q = pinocchio::randomConfiguration(model_handler.getModel());
   Eigen::VectorXd new_x(model_handler.getModel().nq + model_handler.getModel().nv);
