@@ -69,7 +69,7 @@ namespace simple_mpc
     void createProblem(const ConstVectorRef & x0, const size_t horizon);
 
     // Create one ArmDynamics stage
-    StageModel createStage(const bool reaching = false, const Eigen::Vector3d & reach_pose = Eigen::Vector3d::Zero());
+    StageModel createStage(const bool reaching = false, const pinocchio::SE3 & reach_pose = pinocchio::SE3::Identity());
 
     // Manage terminal cost and constraint
     CostStack createTerminalCost();
@@ -79,10 +79,10 @@ namespace simple_mpc
     CostStack * getTerminalCostStack();
     void deactivateReach(const std::size_t t);
     void activateReach(const std::size_t t);
-    void setReferencePose(const std::size_t t, const Eigen::Vector3d & pose_ref);
-    const Eigen::Vector3d getReferencePose(const std::size_t t);
-    void setTerminalReferencePose(const Eigen::Vector3d & pose_ref);
-    const Eigen::Vector3d getTerminalReferencePose();
+    void setReferencePose(const std::size_t t, const pinocchio::SE3 & pose_ref);
+    const pinocchio::SE3 getReferencePose(const std::size_t t);
+    void setTerminalReferencePose(const pinocchio::SE3 & pose_ref);
+    const pinocchio::SE3 getTerminalReferencePose();
     const Eigen::VectorXd getProblemState(const RobotDataHandler & data_handler);
     void setReferenceState(const std::size_t t, const ConstVectorRef & x_ref);
     const ConstVectorRef getReferenceState(const std::size_t t);

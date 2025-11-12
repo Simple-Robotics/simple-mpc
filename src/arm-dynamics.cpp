@@ -13,7 +13,6 @@ namespace simple_mpc
   using MultibodyPhaseSpace = MultibodyPhaseSpace<double>;
   using MultibodyFreeFwdDynamics = dynamics::MultibodyFreeFwdDynamicsTpl<double>;
   using FramePlacementResidual = FramePlacementResidualTpl<double>;
-  using FrameTranslationResidual = FrameTranslationResidualTpl<double>;
   using FrameVelocityResidual = FrameVelocityResidualTpl<double>;
   using IntegratorSemiImplEuler = dynamics::IntegratorSemiImplEulerTpl<double>;
 
@@ -30,7 +29,7 @@ namespace simple_mpc
     ee_id_ = model_handler_.getModel().getFrameId(settings_.ee_name);
   }
 
-  StageModel ArmDynamicsOCP::createStage(const bool reaching, const Eigen::Vector3d & reach_pose)
+  StageModel ArmDynamicsOCP::createStage(const bool reaching, const pinocchio::SE3 & reach_pose)
   {
 
     auto space = MultibodyPhaseSpace(model_handler_.getModel());
@@ -39,8 +38,8 @@ namespace simple_mpc
     rcost.addCost("state_cost", QuadraticStateCost(space, nv_, x0_, settings_.w_x));
     rcost.addCost("control_cost", QuadraticControlCost(space, Eigen::VectorXd::Zero(nv_), settings_.w_u));
 
-    FrameTranslationResidual frame_residual =
-      FrameTranslationResidual(space.ndx(), nv_, model_handler_.getModel(), reach_pose, ee_id_);
+    FramePlacementResidual frame_residual =
+      FramePlacementResidual(space.ndx(), nv_, model_handler_.getModel(), reach_pose, ee_id_);
     if (reaching)
     {
       rcost.addCost("frame_cost", QuadraticResidualCost(space, frame_residual, settings_.w_frame));
@@ -94,38 +93,38 @@ namespace simple_mpc
     return cs;
   }
 
-  void ArmDynamicsOCP::setReferencePose(const std::size_t t, const Eigen::Vector3d & pose_ref)
+  void ArmDynamicsOCP::setReferencePose(const std::size_t t, const pinocchio::SE3 & pose_ref)
   {
     CostStack * cs = getCostStack(t);
     QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("frame_cost");
-    FrameTranslationResidual * cfr = qrc->getResidual<FrameTranslationResidual>();
+    FramePlacementResidual * cfr = qrc->getResidual<FramePlacementResidual>();
     cfr->setReference(pose_ref);
   }
 
-  const Eigen::Vector3d ArmDynamicsOCP::getReferencePose(const std::size_t t)
+  const pinocchio::SE3 ArmDynamicsOCP::getReferencePose(const std::size_t t)
   {
     CostStack * cs = getCostStack(t);
     QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("frame_cost");
-    FrameTranslationResidual * cfr = qrc->getResidual<FrameTranslationResidual>();
-    Eigen::Vector3d ref = cfr->getReference();
+    FramePlacementResidual * cfr = qrc->getResidual<FramePlacementResidual>();
+    pinocchio::SE3 ref = cfr->getReference();
 
     return ref;
   }
 
-  void ArmDynamicsOCP::setTerminalReferencePose(const Eigen::Vector3d & pose_ref)
+  void ArmDynamicsOCP::setTerminalReferencePose(const pinocchio::SE3 & pose_ref)
   {
     CostStack * cs = getTerminalCostStack();
     QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("frame_cost");
-    FrameTranslationResidual * cfr = qrc->getResidual<FrameTranslationResidual>();
+    FramePlacementResidual * cfr = qrc->getResidual<FramePlacementResidual>();
     cfr->setReference(pose_ref);
   }
 
-  const Eigen::Vector3d ArmDynamicsOCP::getTerminalReferencePose()
+  const pinocchio::SE3 ArmDynamicsOCP::getTerminalReferencePose()
   {
     CostStack * cs = getTerminalCostStack();
     QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("frame_cost");
-    FrameTranslationResidual * cfr = qrc->getResidual<FrameTranslationResidual>();
-    Eigen::Vector3d ref = cfr->getReference();
+    FramePlacementResidual * cfr = qrc->getResidual<FramePlacementResidual>();
+    pinocchio::SE3 ref = cfr->getReference();
 
     return ref;
   }
@@ -182,8 +181,8 @@ namespace simple_mpc
     term_cost.addCost(
       "state_cost", QuadraticStateCost(ter_space, nv_, model_handler_.getReferenceState(), settings_.w_x));
 
-    FrameTranslationResidual frame_residual =
-      FrameTranslationResidual(ter_space.ndx(), nv_, model_handler_.getModel(), Eigen::Vector3d::Zero(), ee_id_);
+    FramePlacementResidual frame_residual =
+      FramePlacementResidual(ter_space.ndx(), nv_, model_handler_.getModel(), pinocchio::SE3::Identity(), ee_id_);
     term_cost.addCost("frame_cost", QuadraticResidualCost(ter_space, frame_residual, settings_.w_frame), 0.0);
 
     return term_cost;

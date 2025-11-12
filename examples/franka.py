@@ -4,7 +4,7 @@ import pinocchio as pin
 import coal
 import example_robot_data as erd
 from pinocchio.visualize import MeshcatVisualizer
-
+import time
 import simple
 
 # ####### CONFIGURATION  ############
@@ -38,7 +38,7 @@ w_q = np.ones(7) * 1
 w_v = np.ones(7) * 1
 w_x = np.concatenate((w_q, w_v))
 w_u = np.ones(7) * 1e-2
-w_frame = np.diag(np.array([1000, 1000, 1000]))
+w_frame = np.diag(np.array([1000, 1000, 1000, 10, 10, 10]))
 
 dt = 0.01
 dt_sim = 1e-3
@@ -73,7 +73,9 @@ mpc_conf = dict(
 
 mpc = ArmMPC(mpc_conf, dynproblem)
 
-target_pos = np.array([0.15, 0.5, 0.5])
+target = pin.SE3.Identity()
+target.rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
+target.translation = np.array([0.15, 0.5, 0.5])
 
 nv = mpc.getModelHandler().getModel().nv
 nx = nv * 2
@@ -88,7 +90,7 @@ fr_name = "universe"
 fr_id = rmodel.getFrameId(fr_name)
 joint_id = rmodel.frames[fr_id].parentJoint
 target_place = pin.SE3.Identity()
-target_place.translation = target_pos
+target_place.translation = target.translation
 target_object1 = pin.GeometryObject(
     "target1", fr_id, joint_id, coal.Sphere(0.02), target_place
 )
@@ -110,10 +112,11 @@ vizer.setBackgroundColor()
 vizer.display(q)
 
 Tmpc = 1000
-target_new = target_pos.copy()
+target_new = target.copy()
 
+total = 0
 print("Start simu")
-for t in range(1000):
+for t in range(Tmpc):
     if t == 300:
         # Stop tracking target
         print("Switch to rest")
@@ -139,10 +142,24 @@ for t in range(1000):
         x_measured = np.concatenate((q, v))
 
     # Change current target in MPC
-    target_new[0] = target_pos[0] + x_mov * np.sin(np.pi * t * freq_mov / 180)
-    target_new[2] = target_pos[2] + z_mov * np.cos(np.pi * t * freq_mov / 180)
+    target_new.translation[0] = target.translation[0] + x_mov * np.sin(
+        np.pi * t * freq_mov / 180
+    )
+    target_new.translation[2] = target.translation[2] + z_mov * np.cos(
+        np.pi * t * freq_mov / 180
+    )
 
-    vizer.visual_model.geometryObjects[target_id1].placement.translation = target_new
+    vizer.visual_model.geometryObjects[
+        target_id1
+    ].placement.translation = target_new.translation
 
+    start = time.time()
     mpc.iterate(x_measured)
+    end = time.time()
+    print(end - start)
+    total += end - start
     vizer.display(q)
+
+total = total / Tmpc
+print("Mean time")
+print(total)
