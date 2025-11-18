@@ -3,9 +3,11 @@
 
 #include "aligator/modelling/dynamics/multibody-free-fwd.hpp"
 #include <aligator/modelling/dynamics/integrator-semi-euler.hpp>
+#include <aligator/modelling/multibody/contact-force.hpp>
 #include <aligator/modelling/multibody/frame-placement.hpp>
 #include <aligator/modelling/multibody/frame-translation.hpp>
 #include <aligator/modelling/multibody/frame-velocity.hpp>
+#include <pinocchio/multibody/fwd.hpp>
 
 namespace simple_mpc
 {
@@ -15,6 +17,7 @@ namespace simple_mpc
   using FramePlacementResidual = FramePlacementResidualTpl<double>;
   using FrameVelocityResidual = FrameVelocityResidualTpl<double>;
   using IntegratorSemiImplEuler = dynamics::IntegratorSemiImplEulerTpl<double>;
+  using ContactForceResidual = ContactForceResidualTpl<double>;
 
   ArmDynamicsOCP::ArmDynamicsOCP(const ArmDynamicsSettings & settings, const RobotModelHandler & model_handler)
   : settings_(settings)
@@ -27,9 +30,28 @@ namespace simple_mpc
     ndx_ = 2 * model_handler.getModel().nv;
 
     ee_id_ = model_handler_.getModel().getFrameId(settings_.ee_name);
+
+    prox_settings_ = ProximalSettings(1e-9, 1e-10, 10);
+    actuation_matrix_.resize(nv_, nv_);
+    actuation_matrix_.setIdentity();
+
+    auto joint_ids = model_handler_.getModel().frames[ee_id_].parentJoint;
+    pinocchio::SE3 pl1 = model_handler_.getModel().frames[ee_id_].placement;
+    pinocchio::SE3 pl2 = pinocchio::SE3::Identity();
+    pinocchio::RigidConstraintModel constraint_model = pinocchio::RigidConstraintModel(
+      pinocchio::ContactType::CONTACT_3D, model_handler_.getModel(), joint_ids, pl1, 0, pl2,
+      pinocchio::LOCAL_WORLD_ALIGNED);
+    constraint_model.corrector.Kp = settings.Kp_correction;
+    constraint_model.corrector.Kd = settings.Kd_correction;
+    constraint_model.name = "hand_contact";
+    constraint_models_.push_back(constraint_model);
   }
 
-  StageModel ArmDynamicsOCP::createStage(const bool reaching, const pinocchio::SE3 & reach_pose)
+  StageModel ArmDynamicsOCP::createStage(
+    const bool reaching,
+    const pinocchio::SE3 & reach_pose,
+    const bool is_contact,
+    const Eigen::Vector3d & contact_force)
   {
 
     auto space = MultibodyPhaseSpace(model_handler_.getModel());
@@ -49,7 +71,18 @@ namespace simple_mpc
       rcost.addCost("frame_cost", QuadraticResidualCost(space, frame_residual, settings_.w_frame), 0.);
     }
 
-    MultibodyFreeFwdDynamics ode = MultibodyFreeFwdDynamics(space, Eigen::MatrixXd::Identity(nv_, nv_));
+    pinocchio::context::RigidConstraintModelVector cms;
+    if (is_contact)
+    {
+      cms.push_back(constraint_models_[0]);
+
+      ContactForceResidual frame_force = ContactForceResidual(
+        space.ndx(), model_handler_.getModel(), actuation_matrix_, cms, prox_settings_, contact_force, "hand_contact");
+      rcost.addCost("hand_force_cost", QuadraticResidualCost(space, frame_force, settings_.w_forces));
+    }
+
+    MultibodyConstraintFwdDynamics ode = MultibodyConstraintFwdDynamics(space, actuation_matrix_, cms, prox_settings_);
+    // MultibodyFreeFwdDynamics ode = MultibodyFreeFwdDynamics(space, Eigen::MatrixXd::Identity(nv_, nv_));
     IntegratorSemiImplEuler dyn_model = IntegratorSemiImplEuler(ode, settings_.timestep);
 
     StageModel stm = StageModel(rcost, dyn_model);
@@ -84,6 +117,18 @@ namespace simple_mpc
     CostStack * cs = dynamic_cast<CostStack *>(&*problem_->stages_[t]->cost_);
 
     return cs;
+  }
+
+  MultibodyConstraintFwdDynamics * ArmDynamicsOCP::getDynamics(std::size_t t)
+  {
+    if (t >= getSize())
+    {
+      throw std::runtime_error("Stage index exceeds stage vector size");
+    }
+    MultibodyConstraintFwdDynamics * ode =
+      problem_->stages_[t]->getDynamics<IntegratorSemiImplEuler>()->getDynamics<MultibodyConstraintFwdDynamics>();
+
+    return ode;
   }
 
   CostStack * ArmDynamicsOCP::getTerminalCostStack()
@@ -125,6 +170,24 @@ namespace simple_mpc
     QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("frame_cost");
     FramePlacementResidual * cfr = qrc->getResidual<FramePlacementResidual>();
     pinocchio::SE3 ref = cfr->getReference();
+
+    return ref;
+  }
+
+  void ArmDynamicsOCP::setReferenceForce(const std::size_t t, const Eigen::Vector3d & force_ref)
+  {
+    CostStack * cs = getCostStack(t);
+    QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("hand_force_cost");
+    ContactForceResidual * cfr = qrc->getResidual<ContactForceResidual>();
+    cfr->setReference(force_ref);
+  }
+
+  const Eigen::Vector3d ArmDynamicsOCP::getReferenceForce(const std::size_t t)
+  {
+    CostStack * cs = getCostStack(t);
+    QuadraticResidualCost * qrc = cs->getComponent<QuadraticResidualCost>("hand_force_cost");
+    ContactForceResidual * cfr = qrc->getResidual<ContactForceResidual>();
+    Eigen::Vector3d ref = cfr->getReference();
 
     return ref;
   }
@@ -171,6 +234,26 @@ namespace simple_mpc
   {
     CostStack * cs = getCostStack(t);
     return cs->getWeight(key);
+  }
+
+  void ArmDynamicsOCP::removeContact(const std::size_t t)
+  {
+    MultibodyConstraintFwdDynamics * md = getDynamics(t);
+
+    if (md->constraint_models_.size() > 0)
+    {
+      md->constraint_models_.pop_back();
+    }
+  }
+
+  void ArmDynamicsOCP::addContact(const std::size_t t)
+  {
+    MultibodyConstraintFwdDynamics * md = getDynamics(t);
+
+    if (md->constraint_models_.size() == 0)
+    {
+      md->constraint_models_.push_back(constraint_models_[0]);
+    }
   }
 
   CostStack ArmDynamicsOCP::createTerminalCost()

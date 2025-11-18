@@ -7,6 +7,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "simple-mpc/arm-mpc.hpp"
+#include <Eigen/src/Core/Matrix.h>
+#include <chrono>
 
 namespace simple_mpc
 {
@@ -56,6 +58,21 @@ namespace simple_mpc
 
     solver_->max_iters = settings_.max_iters;
     now_ = RESTING;
+    reach_pose_ = pinocchio::SE3::Identity();
+  }
+
+  void ArmMPC::generateContactHorizon(const Eigen::Vector3d & contact_force)
+  {
+    for (std::size_t i = 0; i < ocp_handler_->getProblem().numSteps(); i++)
+    {
+      StageModel sm = StageModel(ocp_handler_->createStage(true, reach_pose_, true, contact_force));
+      contact_horizon_.push_back(sm);
+      contact_horizon_data_.push_back(sm.createData());
+
+      StageModel sm_nocontact = StageModel(ocp_handler_->createStage(true, reach_pose_));
+      no_contact_horizon_.push_back(sm_nocontact);
+      no_contact_horizon_data_.push_back(sm_nocontact.createData());
+    }
   }
 
   void ArmMPC::iterate(const ConstVectorRef & x)
@@ -81,8 +98,11 @@ namespace simple_mpc
     ocp_handler_->getProblem().setInitState(x0_);
 
     // Run solver
+    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     solver_->run(ocp_handler_->getProblem(), xs_, us_);
-
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    std::cout << "Time difference for run = "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << "[ms]" << std::endl;
     // Collect results
     xs_ = solver_->results_.xs;
     us_ = solver_->results_.us;
@@ -92,9 +112,32 @@ namespace simple_mpc
   void ArmMPC::recedeWithCycle()
   {
     std::size_t last_id = ocp_handler_->getSize() - 1;
-    rotate_vec_left(ocp_handler_->getProblem().stages_);
+    // rotate_vec_left(ocp_handler_->getProblem().stages_);
+    // std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+    if (now_ == CONTACT)
+    {
+      // ocp_handler_->addContact(last_id);
+      ocp_handler_->getProblem().replaceStageCircular(contact_horizon_[0]);
+      solver_->cycleProblem(ocp_handler_->getProblem(), contact_horizon_data_[0]);
+      rotate_vec_left(contact_horizon_);
+      rotate_vec_left(contact_horizon_data_);
+    }
+    else if (now_ == REACHING or now_ == RESTING)
+    {
+      // ocp_handler_->removeContact(last_id);
+      ocp_handler_->getProblem().replaceStageCircular(no_contact_horizon_[0]);
+      solver_->cycleProblem(ocp_handler_->getProblem(), no_contact_horizon_data_[0]);
+      rotate_vec_left(no_contact_horizon_);
+      rotate_vec_left(no_contact_horizon_data_);
+    }
 
-    if (now_ == REACHING)
+    // shared_ptr<StageData> stage_data = ocp_handler_->getProblem().stages_.back()->createData();
+    // solver_->cycleProblem(ocp_handler_->getProblem(), stage_data);
+    // std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    // std::cout << "Time difference for cycleProblem = " << std::chrono::duration_cast<std::chrono::milliseconds>(end -
+    // begin).count() << "[ms]" << std::endl;
+
+    if (now_ == REACHING or now_ == CONTACT)
     {
       ocp_handler_->setWeight(last_id, "frame_cost", 1.0);
       ocp_handler_->setTerminalWeight("frame_cost", 1.0);
@@ -119,7 +162,6 @@ namespace simple_mpc
       ocp_handler_->setReferencePose(t, pose_ref);
     else
       ocp_handler_->setTerminalReferencePose(pose_ref);
-    ;
   }
 
   const pinocchio::SE3 ArmMPC::getReferencePose(const std::size_t t) const
@@ -131,6 +173,35 @@ namespace simple_mpc
       pos_ref = ocp_handler_->getTerminalReferencePose();
 
     return pos_ref;
+  }
+
+  void ArmMPC::setReferenceForce(const std::size_t t, const Eigen::Vector3d & contact_force)
+  {
+    ocp_handler_->setReferenceForce(t, contact_force);
+  }
+
+  const Eigen::Vector3d ArmMPC::getReferenceForce(const std::size_t t) const
+  {
+    Eigen::Vector3d force_ref = ocp_handler_->getReferenceForce(t);
+
+    return force_ref;
+  }
+
+  const Eigen::Vector3d ArmMPC::getContactForce(const std::size_t t)
+  {
+    ExplicitIntegratorData * int_data =
+      dynamic_cast<ExplicitIntegratorData *>(&*solver_->workspace_.problem_data.stage_data[t]->dynamics_data);
+    assert(int_data != nullptr);
+    MultibodyConstraintFwdData * mc_data = dynamic_cast<MultibodyConstraintFwdData *>(&*int_data->continuous_data);
+    assert(mc_data != nullptr);
+
+    Eigen::Vector3d contact_forces = Eigen::Vector3d::Zero();
+    if (mc_data->constraint_datas_.size() > 0)
+    {
+      contact_forces = mc_data->constraint_datas_[0].contact_force.linear();
+    }
+
+    return contact_forces;
   }
 
   TrajOptProblem & ArmMPC::getTrajOptProblem()
@@ -155,6 +226,12 @@ namespace simple_mpc
   void ArmMPC::switchToRest()
   {
     now_ = RESTING;
+  }
+
+  void ArmMPC::switchToContact(const pinocchio::SE3 & reach_pose)
+  {
+    now_ = CONTACT;
+    reach_pose_ = reach_pose;
   }
 
 } // namespace simple_mpc

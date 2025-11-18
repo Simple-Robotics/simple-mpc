@@ -243,10 +243,11 @@ ArmDynamicsSettings getArmSettings(RobotModelHandler model_handler)
   settings.timestep = 0.01;
   settings.w_x = Eigen::MatrixXd::Identity(nv * 2, nv * 2);
   settings.w_u = Eigen::MatrixXd::Identity(nv, nv);
-  settings.w_frame = Eigen::MatrixXd::Identity(3, 3) * 100;
+  settings.w_frame = Eigen::MatrixXd::Identity(6, 6) * 100;
+  settings.w_forces = Eigen::MatrixXd::Identity(3, 3) * 1;
 
-  settings.torque_limits = false;
-  settings.kinematics_limits = false;
+  settings.torque_limits = true;
+  settings.kinematics_limits = true;
   settings.ee_name = "panda_hand_joint";
   settings.gravity << 0, 0, -9.81;
 
@@ -254,6 +255,8 @@ ArmDynamicsSettings getArmSettings(RobotModelHandler model_handler)
   settings.qmax = model_handler.getModel().upperPositionLimit;
   settings.umin = -model_handler.getModel().effortLimit;
   settings.umax = model_handler.getModel().effortLimit;
+  settings.Kp_correction = Eigen::Vector3d::Zero();
+  settings.Kd_correction = Eigen::Vector3d::Zero();
 
   return settings;
 }

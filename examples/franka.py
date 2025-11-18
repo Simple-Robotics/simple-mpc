@@ -39,6 +39,7 @@ w_v = np.ones(7) * 1
 w_x = np.concatenate((w_q, w_v))
 w_u = np.ones(7) * 1e-2
 w_frame = np.diag(np.array([1000, 1000, 1000, 10, 10, 10]))
+w_force = np.array([1, 1, 1])
 
 dt = 0.01
 dt_sim = 1e-3
@@ -52,6 +53,9 @@ problem_conf = dict(
     umax=model_handler.getModel().effortLimit,
     qmin=model_handler.getModel().lowerPositionLimit,
     qmax=model_handler.getModel().upperPositionLimit,
+    Kp_correction=np.array([0, 0, 0]),
+    Kd_correction=np.array([10, 10, 10]),
+    w_forces=np.diag(w_force),
     torque_limits=True,
     kinematics_limits=True,
     ee_name=tool_name,
@@ -72,10 +76,12 @@ mpc_conf = dict(
 )
 
 mpc = ArmMPC(mpc_conf, dynproblem)
+contact_force = np.array([0, 0, 5])
+mpc.generateContactHorizon(contact_force)
 
 target = pin.SE3.Identity()
 target.rotation = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]])
-target.translation = np.array([0.15, 0.5, 0.5])
+target.translation = np.array([0.15, 0.5, 0.0])
 
 nv = mpc.getModelHandler().getModel().nv
 nx = nv * 2
@@ -115,15 +121,19 @@ Tmpc = 1000
 target_new = target.copy()
 
 total = 0
+
 print("Start simu")
 for t in range(Tmpc):
-    if t == 300:
-        # Stop tracking target
-        print("Switch to rest")
-        mpc.switchToRest()
-    if t > 600 or t < 300:
-        # Track target
-        mpc.switchToReach(target_new)
+    """ if t == 300:
+        mpc.switchToContact(target_new) """
+    # if t == 300:
+    # Stop tracking target
+    # print("Switch to rest")
+    # mpc.switchToRest()
+    # if t > 600 or t < 300:
+    # Track target
+    """ if t == 10:
+        mpc.switchToReach(target_new) """
     print("Time " + str(t))
     for j in range(N_simu):
         u_interp = (N_simu - j) / N_simu * mpc.us[0] + j / N_simu * mpc.us[1]
@@ -142,12 +152,12 @@ for t in range(Tmpc):
         x_measured = np.concatenate((q, v))
 
     # Change current target in MPC
-    target_new.translation[0] = target.translation[0] + x_mov * np.sin(
+    """ target_new.translation[0] = target.translation[0] + x_mov * np.sin(
         np.pi * t * freq_mov / 180
     )
     target_new.translation[2] = target.translation[2] + z_mov * np.cos(
         np.pi * t * freq_mov / 180
-    )
+    ) """
 
     vizer.visual_model.geometryObjects[
         target_id1

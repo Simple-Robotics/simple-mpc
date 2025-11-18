@@ -22,8 +22,8 @@
 namespace simple_mpc
 {
   using ExplicitIntegratorData = dynamics::ExplicitIntegratorDataTpl<double>;
-  using MultibodyFreeFwdDataT = dynamics::MultibodyFreeFwdDataTpl<double>;
-  using MultibodyFreeFwdDynamicsT = dynamics::MultibodyFreeFwdDynamicsTpl<double>;
+  using MultibodyConstraintFwdData = dynamics::MultibodyConstraintFwdDataTpl<double>;
+  using MultibodyFreeFwdDynamics = dynamics::MultibodyFreeFwdDynamicsTpl<double>;
 
   struct ArmMPCSettings
   {
@@ -49,7 +49,8 @@ namespace simple_mpc
     enum MoveType
     {
       RESTING,
-      REACHING
+      REACHING,
+      CONTACT
     };
 
     // INTERNAL UPDATING function
@@ -60,6 +61,10 @@ namespace simple_mpc
     std::string ee_name_;
     Eigen::VectorXd x_internal_;
     bool time_to_solve_ddp_ = false;
+    std::vector<xyz::polymorphic<StageModel>> contact_horizon_;
+    std::vector<std::shared_ptr<StageData>> contact_horizon_data_;
+    std::vector<xyz::polymorphic<StageModel>> no_contact_horizon_;
+    std::vector<std::shared_ptr<StageData>> no_contact_horizon_data_;
 
     std::shared_ptr<RobotDataHandler> data_handler_;
 
@@ -72,7 +77,7 @@ namespace simple_mpc
 
     // Generate the cycle walking problem along which we will iterate
     // the receding horizon
-    void generateReachHorizon(const pinocchio::SE3 & reach_pose);
+    void generateContactHorizon(const Eigen::Vector3d & contact_force);
 
     // Perform one iteration of MPC
     void iterate(const ConstVectorRef & x);
@@ -84,6 +89,12 @@ namespace simple_mpc
     void setReferencePose(const std::size_t t, const pinocchio::SE3 & pose_ref);
 
     const pinocchio::SE3 getReferencePose(const std::size_t t) const;
+
+    void setReferenceForce(const std::size_t t, const Eigen::Vector3d & contact_force);
+
+    const Eigen::Vector3d getReferenceForce(const std::size_t t) const;
+
+    const Eigen::Vector3d getContactForce(const std::size_t t);
 
     void setReferenceState(const VectorXd & state_ref)
     {
@@ -107,6 +118,8 @@ namespace simple_mpc
     void switchToReach(const pinocchio::SE3 & reach_pose);
 
     void switchToRest();
+
+    void switchToContact(const pinocchio::SE3 & reach_pose);
 
     // Solution vectors for state and control
     std::vector<VectorXd> xs_;

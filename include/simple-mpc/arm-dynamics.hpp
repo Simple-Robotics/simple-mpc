@@ -7,6 +7,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+#include "aligator/modelling/dynamics/multibody-constraint-fwd.hpp"
 #include <pinocchio/algorithm/proximal.hpp>
 #include <pinocchio/multibody/frame.hpp>
 
@@ -15,6 +16,7 @@
 namespace simple_mpc
 {
   using namespace aligator;
+  using MultibodyConstraintFwdDynamics = dynamics::MultibodyConstraintFwdDynamicsTpl<double>;
 
   /**
    * @brief Build an arm dynamics problem based on the
@@ -31,9 +33,10 @@ namespace simple_mpc
     double timestep;
 
     // Cost function weights
-    Eigen::MatrixXd w_x;     // State
-    Eigen::MatrixXd w_u;     // Control
-    Eigen::MatrixXd w_frame; // End effector placement
+    Eigen::MatrixXd w_x;      // State
+    Eigen::MatrixXd w_u;      // Control
+    Eigen::MatrixXd w_frame;  // End effector placement
+    Eigen::MatrixXd w_forces; // Contact force
 
     // Physics parameters
     Eigen::Vector3d gravity;
@@ -49,6 +52,10 @@ namespace simple_mpc
     // Kinematics limits
     Eigen::VectorXd qmin;
     Eigen::VectorXd qmax;
+
+    // Baumgarte gains
+    Eigen::VectorXd Kp_correction;
+    Eigen::VectorXd Kd_correction;
 
     std::string ee_name;
   };
@@ -69,12 +76,17 @@ namespace simple_mpc
     void createProblem(const ConstVectorRef & x0, const size_t horizon);
 
     // Create one ArmDynamics stage
-    StageModel createStage(const bool reaching = false, const pinocchio::SE3 & reach_pose = pinocchio::SE3::Identity());
+    StageModel createStage(
+      const bool reaching = false,
+      const pinocchio::SE3 & reach_pose = pinocchio::SE3::Identity(),
+      const bool is_contact = false,
+      const Eigen::Vector3d & contact_force = Eigen::Vector3d::Zero());
 
     // Manage terminal cost and constraint
     CostStack createTerminalCost();
 
     // Getters and setters
+    MultibodyConstraintFwdDynamics * getDynamics(std::size_t t);
     CostStack * getCostStack(std::size_t t);
     CostStack * getTerminalCostStack();
     void deactivateReach(const std::size_t t);
@@ -83,6 +95,8 @@ namespace simple_mpc
     const pinocchio::SE3 getReferencePose(const std::size_t t);
     void setTerminalReferencePose(const pinocchio::SE3 & pose_ref);
     const pinocchio::SE3 getTerminalReferencePose();
+    void setReferenceForce(const std::size_t t, const Eigen::Vector3d & force_ref);
+    const Eigen::Vector3d getReferenceForce(const std::size_t t);
     const Eigen::VectorXd getProblemState(const RobotDataHandler & data_handler);
     void setReferenceState(const std::size_t t, const ConstVectorRef & x_ref);
     const ConstVectorRef getReferenceState(const std::size_t t);
@@ -90,6 +104,8 @@ namespace simple_mpc
     double getWeight(const std::size_t t, const std::string key);
     void setTerminalWeight(const std::string key, double weight);
     double getTerminalWeight(const std::string key);
+    void removeContact(const std::size_t t);
+    void addContact(const std::size_t t);
 
     ArmDynamicsSettings getSettings()
     {
@@ -124,6 +140,8 @@ namespace simple_mpc
     // Problem settings
     ArmDynamicsSettings settings_;
     pinocchio::FrameIndex ee_id_;
+    ProximalSettings prox_settings_;
+    Eigen::MatrixXd actuation_matrix_;
 
     // Size of the problem
     int nq_;
@@ -137,6 +155,9 @@ namespace simple_mpc
 
     /// The robot model
     RobotModelHandler model_handler_;
+
+    // Complete list of contact models to compute dynamics
+    pinocchio::context::RigidConstraintModelVector constraint_models_;
 
     /// The reference shooting problem storing all shooting nodes
     std::unique_ptr<TrajOptProblem> problem_;

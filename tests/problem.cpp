@@ -367,7 +367,7 @@ BOOST_AUTO_TEST_CASE(armdynamics)
 
   CostStack * csp = dynamic_cast<CostStack *>(&*armproblem.getProblem().stages_[0]->cost_);
   QuadraticControlCost * cc = csp->getComponent<QuadraticControlCost>("control_cost");
-  QuadraticResidualCost * crc = csp->getComponent<QuadraticResidualCost>(settings.ee_name + "_cost");
+  QuadraticResidualCost * crc = csp->getComponent<QuadraticResidualCost>("frame_cost");
 
   std::vector<bool> cs2 = {true, true};
   BOOST_CHECK_EQUAL(armproblem.getSize(), 100);
@@ -385,6 +385,13 @@ BOOST_AUTO_TEST_CASE(armdynamics)
   new_x.tail(model_handler.getModel().nv).setRandom();
   armproblem.setReferenceState(2, new_x);
   BOOST_CHECK_EQUAL(armproblem.getReferenceState(2), new_x);
+
+  MultibodyConstraintFwdDynamics * md = armproblem.getDynamics(5);
+  BOOST_CHECK_EQUAL(md->constraint_models_.size(), 0);
+  armproblem.addContact(5);
+  BOOST_CHECK_EQUAL(md->constraint_models_.size(), 1);
+  armproblem.removeContact(5);
+  BOOST_CHECK_EQUAL(md->constraint_models_.size(), 0);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
