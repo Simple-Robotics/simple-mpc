@@ -27,12 +27,12 @@ repos:
                 doc/doxygen-awesome.*
             )$
   - repo: https://github.com/BlankSpruce/gersemi
-    rev: 0.23.1
+    rev: 0.23.2
     hooks:
       - id: gersemi
         args: ["--print-config=verbose"]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.6
+    rev: v0.14.7
     hooks:
       - id: ruff-check # Run the linter.
         args: [ --fix ]
