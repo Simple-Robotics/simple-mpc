@@ -20,6 +20,8 @@ namespace simple_mpc
 
     void exposeHandler()
     {
+      ENABLE_SPECIFIC_MATRIX_TYPE(RobotModelHandler::ContactPointsMatrix);
+
       bp::class_<RobotModelHandler>(
         "RobotModelHandler", bp::init<const pinocchio::Model &, const std::string &, const std::string &>(
                                bp::args("self", "model", "reference_configuration_name", "base_frame_name")))
