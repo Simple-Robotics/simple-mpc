@@ -1,5 +1,6 @@
 ci:
   autoupdate_branch: main
+  autoupdate_schedule: quarterly
   autofix_prs: false
   submodules: true
 repos:
