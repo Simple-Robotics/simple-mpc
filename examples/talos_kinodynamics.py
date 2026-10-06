@@ -1,17 +1,18 @@
-import numpy as np
-import example_robot_data as erd
-from bullet_robot import BulletRobot
 import time
-from utils import loadTalos
+
+import example_robot_data as erd
+import numpy as np
+from bullet_robot import BulletRobot
 from simple_mpc import (
-    RobotModelHandler,
-    RobotDataHandler,
-    Interpolator,
-    KinodynamicsOCP,
     MPC,
+    Interpolator,
     KinodynamicsID,
     KinodynamicsIDSettings,
+    KinodynamicsOCP,
+    RobotDataHandler,
+    RobotModelHandler,
 )
+from utils import loadTalos
 
 # RobotWrapper
 URDF_SUBPATH = "/talos_data/robots/talos_reduced.urdf"

@@ -1,16 +1,17 @@
+import copy
+import time
+
+import example_robot_data as erd
 import numpy as np
 from bullet_robot import BulletRobot
 from simple_mpc import (
-    RobotModelHandler,
-    RobotDataHandler,
-    FullDynamicsOCP,
     MPC,
-    Interpolator,
     FrictionCompensation,
+    FullDynamicsOCP,
+    Interpolator,
+    RobotDataHandler,
+    RobotModelHandler,
 )
-import example_robot_data as erd
-import time
-import copy
 
 # ####### CONFIGURATION  ############
 # Load robot

@@ -1,7 +1,8 @@
+import os
+
+import example_robot_data
 import numpy as np
 import pinocchio as pin
-import example_robot_data
-import os
 
 CURRENT_DIRECTORY = os.getcwd()
 DEFAULT_SAVE_DIR = CURRENT_DIRECTORY + "/tmp"
