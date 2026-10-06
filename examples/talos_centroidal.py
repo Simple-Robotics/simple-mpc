@@ -1,15 +1,15 @@
+import example_robot_data as erd
 import numpy as np
 import pinocchio as pin
-import example_robot_data as erd
 from bullet_robot import BulletRobot
 from simple_mpc import (
-    RobotModelHandler,
-    RobotDataHandler,
-    CentroidalOCP,
     MPC,
     CentroidalID,
     CentroidalIDSettings,
+    CentroidalOCP,
     Interpolator,
+    RobotDataHandler,
+    RobotModelHandler,
 )
 from utils import loadTalos
 

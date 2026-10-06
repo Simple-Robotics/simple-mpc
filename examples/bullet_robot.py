@@ -5,9 +5,9 @@ Created on Mon May  9 18:22:56 2022
 @author: nvilla
 """
 
-import pybullet_data
-import pybullet as p  # PyBullet simulator
 import numpy as np
+import pybullet as p  # PyBullet simulator
+import pybullet_data
 from scipy.spatial.transform import Rotation as R
 
 # import os

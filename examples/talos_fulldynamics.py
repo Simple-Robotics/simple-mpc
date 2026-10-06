@@ -4,12 +4,13 @@ optimal control problem based on the full dynamics model of the humanoid robot T
 The contacts forces are modeled as 6D wrenches.
 """
 
-import numpy as np
 import time
-from bullet_robot import BulletRobot
-from simple_mpc import MPC, FullDynamicsOCP, RobotModelHandler, RobotDataHandler
-from utils import loadTalos
+
 import example_robot_data as erd
+import numpy as np
+from bullet_robot import BulletRobot
+from simple_mpc import MPC, FullDynamicsOCP, RobotDataHandler, RobotModelHandler
+from utils import loadTalos
 
 # ####### CONFIGURATION  ############
 # RobotWrapper

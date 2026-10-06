@@ -1,17 +1,18 @@
+import copy
+import time
+
+import example_robot_data as erd
 import numpy as np
 from bullet_robot import BulletRobot
 from simple_mpc import (
-    RobotModelHandler,
-    RobotDataHandler,
-    KinodynamicsOCP,
     MPC,
     Interpolator,
     KinodynamicsID,
     KinodynamicsIDSettings,
+    KinodynamicsOCP,
+    RobotDataHandler,
+    RobotModelHandler,
 )
-import example_robot_data as erd
-import time
-import copy
 
 # ####### CONFIGURATION  ############
 # Load robot
